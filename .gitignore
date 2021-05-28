@@ -1,0 +1,11 @@
+# Dependency directories
+node_modules/
+
+# Secrets
+.env
+
+# Dev
+/.vscode
+
+# Prod build output
+dist
