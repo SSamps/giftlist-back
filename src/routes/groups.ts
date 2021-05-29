@@ -32,10 +32,9 @@ router.post(
             return res.status(400).json({ errors: errors.array() });
         }
 
-        const userIdToken = req.user?._id;
+        const userIdToken = req.user._id;
         const { groupType, groupName, parentGroupId } = req.body;
         //TODO fix this again
-        //@ts-ignore
         const owner: IgroupMember = { userId: userIdToken };
 
         // build data obj if validation passes

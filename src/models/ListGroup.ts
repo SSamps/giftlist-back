@@ -5,7 +5,7 @@ export const CHILD_GROUP_TYPES = ['childGiftList'];
 
 export interface IgroupMember {
     userId: Schema.Types.ObjectId;
-    oldestReadMessage: Date | null;
+    oldestReadMessage?: Date | undefined;
 }
 
 type TlistGroupReg = {
@@ -31,12 +31,12 @@ export type TlistGroup = Document & TlistGroupBase;
 export const ListGroupSchema = new Schema({
     owner: {
         userId: { type: Schema.Types.ObjectId, required: true },
-        oldestUnreadMsg: { type: Date, ref: 'user' },
+        oldestUnreadMsg: { type: Date },
     },
     members: [
         {
             userId: { type: Schema.Types.ObjectId, required: true },
-            oldestUnreadMsg: { type: Date, ref: 'user' },
+            oldestUnreadMsg: { type: Date },
         },
     ],
     groupType: { type: String, required: true, enum: GROUP_TYPES },

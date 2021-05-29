@@ -4,7 +4,7 @@ export interface IUserCensoredProps {
     displayName?: string;
     email?: string;
     registrationDate?: Date;
-    _id?: Schema.Types.ObjectId;
+    _id: Schema.Types.ObjectId;
 }
 
 export interface IUserProps {
