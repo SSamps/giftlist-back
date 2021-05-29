@@ -12,9 +12,9 @@ router.get('/:userid', auth, async (req: Request, res: Response) => {
     console.log('GET api/test hit');
 
     const userIdParams = req.params.userid;
-    const userIdToken = req.user?._id;
+    const userIdToken = req.user._id;
 
-    if (userIdParams !== userIdToken?.toString()) {
+    if (userIdParams !== userIdToken.toString()) {
         return res.status(401).json({ msg: 'User not authorized' });
     }
 
@@ -41,9 +41,9 @@ router.post(
         console.log('POST api/test hit');
 
         const userIdParams = req.params.userid;
-        const userIdToken = req.user?._id;
+        const userIdToken = req.user._id;
 
-        if (userIdParams !== userIdToken?.toString()) {
+        if (userIdParams !== userIdToken.toString()) {
             return res.status(401).json({ msg: 'User not authorized' });
         }
 
@@ -83,10 +83,10 @@ router.delete('/:userid/:testid', auth, async (req: Request, res: Response) => {
     console.log('DELETE api/test/:userid/:testid hit');
 
     const userIdParams = req.params.userid;
-    const userIdToken = req.user?._id;
+    const userIdToken = req.user._id;
     const testDataId = req.params.testid;
 
-    if (userIdParams !== userIdToken?.toString()) {
+    if (userIdParams !== userIdToken.toString()) {
         return res.status(401).json({ msg: 'User not authorized' });
     }
 
@@ -113,9 +113,9 @@ router.delete('/:userid', auth, async (req: Request, res: Response) => {
     console.log('DELETE api/test/:userid hit');
 
     const userIdParams = req.params.userid;
-    const userIdToken = req.user?._id;
+    const userIdToken = req.user._id;
 
-    if (userIdParams !== userIdToken?.toString()) {
+    if (userIdParams !== userIdToken.toString()) {
         return res.status(401).json({ msg: 'User not authorized' });
     }
 

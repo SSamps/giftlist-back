@@ -4,7 +4,7 @@ export const GROUP_TYPES = ['basicList', 'giftList', 'giftGroup', 'childGiftList
 export const CHILD_GROUP_TYPES = ['childGiftList'];
 
 export interface IgroupMember {
-    userId: Schema.Types.ObjectId;
+    userId: Schema.Types.ObjectId | string;
     oldestReadMessage?: Date | undefined;
 }
 
@@ -22,7 +22,7 @@ type TlistGroupChild = {
     groupType: 'childGiftList';
     groupName: string;
     creationDate?: Date;
-    parentGroupId: Schema.Types.ObjectId;
+    parentGroupId: Schema.Types.ObjectId | string;
 };
 
 export type TlistGroupBase = TlistGroupReg | TlistGroupChild;
