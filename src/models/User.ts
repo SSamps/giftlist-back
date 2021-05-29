@@ -4,7 +4,7 @@ export interface IUserCensoredProps {
     displayName?: string;
     email?: string;
     registrationDate?: Date;
-    _id?: string;
+    _id?: Schema.Types.ObjectId;
 }
 
 export interface IUserProps {
@@ -13,7 +13,7 @@ export interface IUserProps {
     password: string;
     registrationDate: Date;
     oldestValidJWT?: Date;
-    _id: string;
+    _id: Schema.Types.ObjectId;
 }
 
 export interface IUser extends Document {
