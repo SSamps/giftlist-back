@@ -44,8 +44,7 @@ export const ListGroupSchema = new Schema({
     creationDate: { type: Date, default: Date.now },
     parentGroupId: {
         type: Schema.Types.ObjectId,
-        required: function () {
-            //@ts-ignore
+        required: function (this: TlistGroup) {
             return this.groupType === 'childGiftList';
         },
     },

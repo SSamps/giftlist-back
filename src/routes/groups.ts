@@ -34,10 +34,8 @@ router.post(
 
         const userIdToken = req.user._id;
         const { groupType, groupName, parentGroupId } = req.body;
-        //TODO fix this again
         const owner: IgroupMember = { userId: userIdToken };
 
-        // build data obj if validation passes
         const newListGroupData: TlistGroupBase = { owner, groupType, groupName, parentGroupId };
 
         try {
