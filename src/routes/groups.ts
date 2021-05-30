@@ -25,15 +25,25 @@ router.get('/user/:userid', auth, async (req: Request, res: Response) => {
     }
 
     try {
-        const foundGroups = await ListGroup.find({
+        let foundMemberGroups = await ListGroup.find({
             $or: [{ 'owner.userId': userIdParams }, { 'members.userId': userIdParams }],
         });
+        let foundOwnedGroups: TlistGroup[] = [];
 
-        if (foundGroups.length == 0) {
+        for (var i = foundMemberGroups.length - 1; i >= 0; i--) {
+            let document = foundMemberGroups[i];
+            console.log(document);
+            if (document.owner.userId.toString() === userIdParams) {
+                foundOwnedGroups.push(document);
+                foundMemberGroups.splice(i, 1);
+            }
+        }
+
+        if (foundOwnedGroups.length == 0 && foundMemberGroups.length == 0) {
             return res.status(404).json({ msg: 'No groups found' });
         }
 
-        return res.status(200).json(foundGroups);
+        return res.status(200).json({ ownedGroups: foundOwnedGroups, memberGroups: foundMemberGroups });
     } catch (err) {
         console.log(err.message);
         return res.status(500).send('Server error');
