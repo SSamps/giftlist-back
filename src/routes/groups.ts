@@ -1,13 +1,14 @@
 import express, { Router, Request, Response } from 'express';
 import auth from '../middleware/auth';
 import { check, Result, ValidationError, validationResult } from 'express-validator';
-import ListGroup, {
-    CHILD_GROUP_TYPES,
-    GROUP_TYPES,
-    IgroupMember,
-    TlistGroup,
-    TlistGroupBase,
-} from '../models/ListGroup';
+import ListGroupSingle, {
+    SINGLE_GROUP_TYPES,
+    TlistGroupSingle,
+    TlistGroupSingleBase,
+} from '../models/listGroups/ListGroupSingle';
+import { IgroupMember, TlistGroupAny, TlistGroupAnyBase } from '../models/listGroups/ListGroupSharedTypes';
+import ListGroupParent from '../models/listGroups/ListGroupParent';
+import ListGroupChild from '../models/listGroups/ListGroupChild';
 
 const router: Router = express.Router();
 
@@ -25,19 +26,31 @@ router.get('/user/:userid', auth, async (req: Request, res: Response) => {
     }
 
     try {
-        let foundMemberGroups = await ListGroup.find({
+        let foundSingleGroups = await ListGroupSingle.find({
             $or: [{ 'owner.userId': userIdParams }, { 'members.userId': userIdParams }],
         });
-        let foundOwnedGroups: TlistGroup[] = [];
+        let foundParentGroups = await ListGroupParent.find({
+            $or: [{ 'owner.userId': userIdParams }, { 'members.userId': userIdParams }],
+        });
+        let foundChildGroups = await ListGroupChild.find({
+            $or: [{ 'owner.userId': userIdParams }, { 'members.userId': userIdParams }],
+        });
 
-        for (var i = foundMemberGroups.length - 1; i >= 0; i--) {
-            let document = foundMemberGroups[i];
-            console.log(document);
-            if (document.owner.userId.toString() === userIdParams) {
-                foundOwnedGroups.push(document);
-                foundMemberGroups.splice(i, 1);
+        let foundGroups = [foundSingleGroups, foundParentGroups, foundChildGroups];
+        let foundOwnedGroups: TlistGroupAnyBase[] = [];
+        let foundMemberGroups: TlistGroupAnyBase[] = [];
+
+        foundGroups.forEach((documentList) => {
+            for (var i = documentList.length - 1; i >= 0; i--) {
+                let document = documentList[i];
+                console.log(document);
+                if (document.owner.userId.toString() === userIdParams) {
+                    foundOwnedGroups.push(document);
+                } else {
+                    foundMemberGroups.push(document);
+                }
             }
-        }
+        });
 
         if (foundOwnedGroups.length == 0 && foundMemberGroups.length == 0) {
             return res.status(404).json({ msg: 'No groups found' });
@@ -50,21 +63,17 @@ router.get('/user/:userid', auth, async (req: Request, res: Response) => {
     }
 });
 
-// @route POST api/groups
-// @desc Add a new group
+// @route POST api/groups/single
+// @desc Add a new single group
 // @access Private
 router.post(
-    '/',
+    '/single',
     auth,
     check('groupName', 'groupName is required').not().isEmpty(),
     check('groupType', 'groupType is required').not().isEmpty(),
-    check('groupType', 'groupType is invalid').isIn(GROUP_TYPES),
-    check('groupType')
-        .if((value: string) => CHILD_GROUP_TYPES.includes(value))
-        .custom((value, { req }) => req.body.parentGroupId !== undefined)
-        .withMessage('Child groups must have a specified parentGroupId'),
+    check('groupType', 'groupType is invalid').isIn(SINGLE_GROUP_TYPES),
     async (req: Request, res: Response) => {
-        console.log('POST /api/groups hit');
+        console.log('POST /api/groups/single hit');
 
         const errors: Result<ValidationError> = validationResult(req);
         if (!errors.isEmpty()) {
@@ -72,16 +81,17 @@ router.post(
         }
 
         const userIdToken = req.user._id;
-        const { groupType, groupName, parentGroupId } = req.body;
+        const { groupType, groupName } = req.body;
         const owner: IgroupMember = { userId: userIdToken };
 
-        const newListGroupData: TlistGroupBase = { owner, groupType, groupName, parentGroupId };
+        const newListGroupData: TlistGroupSingleBase = { owner, groupType, groupName };
 
         try {
-            const newListGroup: TlistGroup = new ListGroup(newListGroupData);
+            const newListGroup: TlistGroupSingle = new ListGroupSingle(newListGroupData);
             await newListGroup.save();
             return res.status(200).json(newListGroup);
         } catch (err) {
+            console.log({ ...err });
             console.log(err.message);
             return res.status(500).send('Server error');
         }
