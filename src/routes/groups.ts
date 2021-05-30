@@ -11,7 +11,12 @@ import ListGroup, {
     TlistGroupParentBase,
     TlistGroupSingleBase,
 } from '../models/ListGroup';
-import { PERM_CHILD_GROUP_CREATE } from '../models/permissions/ListGroupPermissions';
+import {
+    PERM_CHILD_GROUP_CREATE,
+    PERM_GROUP_ADMIN,
+    PERM_GROUP_DELETE,
+    PERM_GROUP_INVITE,
+} from '../models/permissions/ListGroupPermissions';
 
 const router: Router = express.Router();
 
@@ -72,7 +77,10 @@ router.post(
 
         const userIdToken = req.user._id;
         const { groupType, groupName } = req.body;
-        const owner: IgroupMember = { userId: userIdToken, permissions: [] };
+        const owner: IgroupMember = {
+            userId: userIdToken,
+            permissions: [PERM_GROUP_DELETE, PERM_GROUP_INVITE, PERM_GROUP_ADMIN],
+        };
 
         const newListGroupData: TlistGroupSingleBase = { owner, groupType, groupName };
 
@@ -128,11 +136,14 @@ router.post(
             return res.status(500).send('Server error');
         }
 
-        // The user hasn't exceeded max number of allowable children
+        // TODO The user hasn't exceeded max number of allowable children
 
         // Create child group
 
-        const owner: IgroupMember = { userId: userIdToken, permissions: [] };
+        const owner: IgroupMember = {
+            userId: userIdToken,
+            permissions: [PERM_GROUP_DELETE, PERM_GROUP_INVITE, PERM_GROUP_ADMIN],
+        };
         const newListGroupData: TlistGroupChildBase = { owner, groupType, groupName, parentGroupId };
 
         try {
@@ -165,7 +176,10 @@ router.post(
 
         const userIdToken = req.user._id;
         const { groupType, groupName } = req.body;
-        const owner: IgroupMember = { userId: userIdToken, permissions: [PERM_CHILD_GROUP_CREATE] };
+        const owner: IgroupMember = {
+            userId: userIdToken,
+            permissions: [PERM_CHILD_GROUP_CREATE, PERM_GROUP_DELETE, PERM_GROUP_INVITE, PERM_GROUP_ADMIN],
+        };
 
         const newListGroupData: TlistGroupParentBase = { owner, groupType, groupName };
 
@@ -260,5 +274,49 @@ router.put('/leave/:groupid', auth, async (req: Request, res: Response) => {
 // @route DELETE api/groups/delete/groupid
 // @desc Delete a group and all child groups if any
 // @access Private
+
+router.delete('/delete/:groupid', auth, async (req: Request, res: Response) => {
+    console.log('DELETE /api/groups/delete hit');
+
+    const userIdToken = req.user._id;
+    const groupIdParams = req.params.groupid;
+
+    // Group must exist and user must have delete permissions
+    try {
+        var foundGroup = await ListGroup.findOne().and([
+            { _id: groupIdParams },
+            {
+                $or: [
+                    { 'owner.userId': userIdToken, 'owner.permissions': PERM_GROUP_DELETE },
+                    { 'members.userId': userIdToken, 'owner.permissions': PERM_GROUP_DELETE },
+                ],
+            },
+        ]);
+
+        if (!foundGroup) {
+            return res.status(400).send('Invalid groupId or unauthorized');
+        }
+    } catch (err) {
+        console.log(err.message);
+        return res.status(500).send('Server error');
+    }
+
+    // TODO Delete all associated list items and messages
+    try {
+        if (!PARENT_GROUP_TYPES.includes(foundGroup.groupType)) {
+            await ListGroup.deleteOne({ _id: groupIdParams });
+            return res.status(200).json({ msg: 'Group deleted' });
+        } else {
+            await ListGroup.deleteMany({ parentGroupId: groupIdParams });
+            await ListGroup.deleteOne({ _id: groupIdParams });
+            return res.status(200).json({ msg: 'Parent group and all child groups deleted' });
+        }
+    } catch (err) {
+        console.log(err.message);
+        return res.status(500).send('Server error');
+    }
+});
+
+// TODO Routes to grant / revoke permissions?
 
 module.exports = router;
