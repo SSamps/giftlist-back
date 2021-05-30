@@ -1,4 +1,5 @@
 import { Document, Schema, model } from 'mongoose';
+import { PERM_ALL_LIST_GROUP, TYPE_PERM_ALL_LIST_GROUP } from './permissions/ListGroupPermissions';
 
 export const SINGLE_GROUP_TYPES = ['basicList', 'giftList'];
 export const PARENT_GROUP_TYPES = ['parentGiftGroup'];
@@ -6,11 +7,9 @@ export const CHILD_GROUP_TYPES = ['childGiftList'];
 
 export const ALL_GROUP_TYPES = SINGLE_GROUP_TYPES.concat(CHILD_GROUP_TYPES, PARENT_GROUP_TYPES);
 
-export const PARENT_GROUP_PERMISSIONS = ['DELETE_PARENT_GROUP', 'CREATE_CHILD_GROUP'];
-
 export interface IgroupMember {
     userId: Schema.Types.ObjectId | string;
-    permissions: string[];
+    permissions: TYPE_PERM_ALL_LIST_GROUP[];
     oldestReadMessage?: Date | undefined;
 }
 
@@ -48,12 +47,13 @@ export type TlistGroupAny = Document & TlistGroupAnyBase;
 export const ListGroupSchema = new Schema({
     owner: {
         userId: { type: Schema.Types.ObjectId, required: true },
-        permissions: [{ type: String, required: true }],
+        permissions: [{ type: String, required: true, enum: PERM_ALL_LIST_GROUP }],
         oldestUnreadMsg: { type: Date },
     },
     members: [
         {
             userId: { type: Schema.Types.ObjectId, required: true },
+            permissions: [{ type: String, required: true, enum: PERM_ALL_LIST_GROUP }],
             oldestUnreadMsg: { type: Date },
         },
     ],

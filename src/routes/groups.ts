@@ -11,6 +11,7 @@ import ListGroup, {
     TlistGroupParentBase,
     TlistGroupSingleBase,
 } from '../models/ListGroup';
+import { PERM_CHILD_GROUP_CREATE } from '../models/permissions/ListGroupPermissions';
 
 const router: Router = express.Router();
 
@@ -108,15 +109,13 @@ router.post(
         const { groupType, groupName, parentGroupId } = req.body;
 
         // Validation
-        // The parent must exist and the user must be the owner or a member
         try {
-            // const foundParentRecord = await ListGroup.findById(parentGroupId);
             const foundParentRecord = await ListGroup.findOne().and([
                 { _id: parentGroupId },
                 {
                     $or: [
-                        { 'owner.userId': userIdToken, 'owner.permissions': 'CHILD_GROUP_CREATE' },
-                        { 'members.userId': userIdToken, 'owner.permissions': 'CHILD_GROUP_CREATE' },
+                        { 'owner.userId': userIdToken, 'owner.permissions': PERM_CHILD_GROUP_CREATE },
+                        { 'members.userId': userIdToken, 'owner.permissions': PERM_CHILD_GROUP_CREATE },
                     ],
                 },
             ]);
@@ -131,6 +130,8 @@ router.post(
         }
 
         // The user hasn't exceeded max number of allowable children
+
+        // Create child group
 
         const owner: IgroupMember = { userId: userIdToken, permissions: [] };
         const newListGroupData: TlistGroupChildBase = { owner, groupType, groupName, parentGroupId };
@@ -165,7 +166,7 @@ router.post(
 
         const userIdToken = req.user._id;
         const { groupType, groupName } = req.body;
-        const owner: IgroupMember = { userId: userIdToken, permissions: ['CHILD_GROUP_CREATE'] };
+        const owner: IgroupMember = { userId: userIdToken, permissions: [PERM_CHILD_GROUP_CREATE] };
 
         const newListGroupData: TlistGroupParentBase = { owner, groupType, groupName };
 
