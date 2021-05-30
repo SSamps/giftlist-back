@@ -110,7 +110,7 @@ router.post(
 
         // Validation
         try {
-            const foundParentRecord = await ListGroup.findOne().and([
+            const foundParentGroup = await ListGroup.findOne().and([
                 { _id: parentGroupId },
                 {
                     $or: [
@@ -120,8 +120,7 @@ router.post(
                 },
             ]);
 
-            console.log(foundParentRecord);
-            if (!foundParentRecord) {
+            if (!foundParentGroup) {
                 return res.status(400).send('Invalid parentGroupId or unauthorized');
             }
         } catch (err) {
@@ -175,7 +174,6 @@ router.post(
             await newListGroup.save();
             return res.status(200).json(newListGroup);
         } catch (err) {
-            console.log({ ...err });
             console.log(err.message);
             return res.status(500).send('Server error');
         }
@@ -185,10 +183,79 @@ router.post(
 // @route PUT api/groups/join/groupid
 // @desc Join a group
 // @access Private
+router.put('/join/:groupid', auth, async (req: Request, res: Response) => {
+    console.log('PUT /api/groups/leave hit');
+
+    const userIdToken = req.user._id;
+    const groupIdParams = req.params.groupid;
+
+    // Validation group must exist and must not already be a member or owner
+    try {
+        const foundGroup = await ListGroup.findOne().and([
+            { _id: groupIdParams },
+            {
+                $nor: [{ 'owner.userId': userIdToken }, { 'members.userId': userIdToken }],
+            },
+        ]);
+
+        if (!foundGroup) {
+            return res.status(400).send('Invalid groupId or already a member');
+        }
+    } catch (err) {
+        console.log(err.message);
+        return res.status(500).send('Server error');
+    }
+
+    // TODO permission users to join a group. Add an invited array?
+
+    const newMember: IgroupMember = { userId: userIdToken, permissions: [] };
+
+    try {
+        const updatedGroup = await ListGroup.findOneAndUpdate(
+            { _id: groupIdParams },
+            { $push: { members: newMember } },
+            { new: true }
+        );
+        return res.status(200).json(updatedGroup);
+    } catch (err) {
+        console.log(err.message);
+        return res.status(500).send('Server error');
+    }
+});
 
 // @route PUT api/groups/leave/groupid
 // @desc Leave a group if a member
 // @access Private
+router.put('/leave/:groupid', auth, async (req: Request, res: Response) => {
+    console.log('PUT /api/groups/leave hit');
+
+    const userIdToken = req.user._id;
+    const groupIdParams = req.params.groupid;
+
+    // Validation group must exist and user must be a member
+    try {
+        const foundGroup = await ListGroup.findOne().and([{ _id: groupIdParams }, { 'members.userId': userIdToken }]);
+
+        if (!foundGroup) {
+            return res.status(400).send('Invalid groupId or not a member');
+        }
+    } catch (err) {
+        console.log(err.message);
+        return res.status(500).send('Server error');
+    }
+
+    try {
+        const updatedGroup = await ListGroup.findOneAndUpdate(
+            { _id: groupIdParams },
+            { $pull: { members: { userId: userIdToken } } },
+            { new: true }
+        );
+        return res.status(200).json(updatedGroup);
+    } catch (err) {
+        console.log(err.message);
+        return res.status(500).send('Server error');
+    }
+});
 
 // @route DELETE api/groups/delete/groupid
 // @desc Delete a group and all child groups if any

@@ -45,6 +45,7 @@ export type TlistGroupChild = Document & TlistGroupChildBase;
 export type TlistGroupAny = Document & TlistGroupAnyBase;
 
 export const ListGroupSchema = new Schema({
+    groupType: { type: String, required: true, enum: ALL_GROUP_TYPES },
     owner: {
         userId: { type: Schema.Types.ObjectId, required: true },
         permissions: [{ type: String, required: true, enum: PERM_ALL_LIST_GROUP }],
@@ -55,9 +56,9 @@ export const ListGroupSchema = new Schema({
             userId: { type: Schema.Types.ObjectId, required: true },
             permissions: [{ type: String, required: true, enum: PERM_ALL_LIST_GROUP }],
             oldestUnreadMsg: { type: Date },
+            _id: false,
         },
     ],
-    groupType: { type: String, required: true, enum: ALL_GROUP_TYPES },
     groupName: { type: String, required: true },
     creationDate: { type: Date, default: Date.now },
     parentGroupId: {
