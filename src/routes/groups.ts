@@ -35,7 +35,6 @@ router.get('/user/:userid', auth, async (req: Request, res: Response) => {
 
         for (var i = foundMemberGroups.length - 1; i >= 0; i--) {
             let document = foundMemberGroups[i];
-            console.log(document);
             if (document.owner.userId.toString() === userIdParams) {
                 foundOwnedGroups.push(document);
                 foundMemberGroups.splice(i, 1);
@@ -72,7 +71,7 @@ router.post(
 
         const userIdToken = req.user._id;
         const { groupType, groupName } = req.body;
-        const owner: IgroupMember = { userId: userIdToken };
+        const owner: IgroupMember = { userId: userIdToken, permissions: [] };
 
         const newListGroupData: TlistGroupSingleBase = { owner, groupType, groupName };
 
@@ -105,15 +104,35 @@ router.post(
             return res.status(400).json({ errors: errors.array() });
         }
 
-        // Validation
-        // The parent must exist
-
-        // The user must be authed to make children on the parent.
-
         const userIdToken = req.user._id;
         const { groupType, groupName, parentGroupId } = req.body;
-        const owner: IgroupMember = { userId: userIdToken };
 
+        // Validation
+        // The parent must exist and the user must be the owner or a member
+        try {
+            // const foundParentRecord = await ListGroup.findById(parentGroupId);
+            const foundParentRecord = await ListGroup.findOne().and([
+                { _id: parentGroupId },
+                {
+                    $or: [
+                        { 'owner.userId': userIdToken, 'owner.permissions': 'CHILD_GROUP_CREATE' },
+                        { 'members.userId': userIdToken, 'owner.permissions': 'CHILD_GROUP_CREATE' },
+                    ],
+                },
+            ]);
+
+            console.log(foundParentRecord);
+            if (!foundParentRecord) {
+                return res.status(400).send('Invalid parentGroupId or unauthorized');
+            }
+        } catch (err) {
+            console.log(err.message);
+            return res.status(500).send('Server error');
+        }
+
+        // The user hasn't exceeded max number of allowable children
+
+        const owner: IgroupMember = { userId: userIdToken, permissions: [] };
         const newListGroupData: TlistGroupChildBase = { owner, groupType, groupName, parentGroupId };
 
         try {
@@ -146,7 +165,7 @@ router.post(
 
         const userIdToken = req.user._id;
         const { groupType, groupName } = req.body;
-        const owner: IgroupMember = { userId: userIdToken };
+        const owner: IgroupMember = { userId: userIdToken, permissions: ['CHILD_GROUP_CREATE'] };
 
         const newListGroupData: TlistGroupParentBase = { owner, groupType, groupName };
 
