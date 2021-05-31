@@ -3,10 +3,8 @@ import auth from '../middleware/auth';
 import { check, Result, ValidationError, validationResult } from 'express-validator';
 import ListGroup, {
     IgroupMemberBase,
-    PARENT_GROUP_TYPES,
     SINGLE_GROUP_TYPES,
     TlistGroupAny,
-    TlistGroupParentBase,
     TlistGroupSingleBase,
 } from '../models/listGroups/ListGroup';
 import {
@@ -16,10 +14,15 @@ import {
     PERM_GROUP_INVITE,
 } from '../models/listGroups/permissions/ListGroupPermissions';
 import ListGroupChild, {
-    CHILD_GROUP_TYPES,
+    LIST_CHILD_GROUP_TYPES,
     IgroupMemberChild,
     TlistGroupChildBase,
 } from '../models/listGroups/ListGroupChild';
+import ListGroupParent, {
+    IgroupMemberParent,
+    LIST_PARENT_GROUP_TYPES,
+    TlistGroupParentBase,
+} from '../models/listGroups/ListGroupParent';
 
 const router: Router = express.Router();
 
@@ -104,7 +107,7 @@ router.post(
 router.post(
     '/child',
     auth,
-    check('groupType', 'groupType is not a valid child group type').isIn(CHILD_GROUP_TYPES),
+    check('groupType', 'groupType is not a valid child group type').isIn(LIST_CHILD_GROUP_TYPES),
     check('groupName', 'groupName is required').not().isEmpty(),
     check('groupType', 'groupType is required').not().isEmpty(),
     check('parentGroupId', 'parentGroupId is required for child groups').not().isEmpty(),
@@ -168,7 +171,7 @@ router.post(
     auth,
     check('groupName', 'groupName is required').not().isEmpty(),
     check('groupType', 'groupType is required').not().isEmpty(),
-    check('groupType', 'groupType is not a valid parent group type').isIn(PARENT_GROUP_TYPES),
+    check('groupType', 'groupType is not a valid parent group type').isIn(LIST_PARENT_GROUP_TYPES),
     async (req: Request, res: Response) => {
         console.log('POST /api/groups/parent hit');
 
@@ -179,7 +182,7 @@ router.post(
 
         const userIdToken = req.user._id;
         const { groupType, groupName } = req.body;
-        const owner: IgroupMemberBase = {
+        const owner: IgroupMemberParent = {
             userId: userIdToken,
             permissions: [PERM_CHILD_GROUP_CREATE, PERM_GROUP_DELETE, PERM_GROUP_INVITE, PERM_GROUP_ADMIN],
         };
@@ -187,7 +190,7 @@ router.post(
         const newListGroupData: TlistGroupParentBase = { owner, groupType, groupName };
 
         try {
-            const newListGroup: TlistGroupAny = new ListGroup(newListGroupData);
+            const newListGroup = new ListGroupParent(newListGroupData);
             await newListGroup.save();
             return res.status(200).json(newListGroup);
         } catch (err) {
