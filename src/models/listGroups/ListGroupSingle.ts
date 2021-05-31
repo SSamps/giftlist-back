@@ -6,8 +6,8 @@ import { PERM_LIST_GROUP_SINGLE, TYPE_PERM_LIST_GROUP_SINGLE } from './permissio
 const BASIC_LIST = 'basicList';
 const GIFT_LIST = 'giftList';
 
-export const LIST_SINGLE_GROUP_TYPES = [BASIC_LIST, GIFT_LIST];
-type TYPE_LIST_SINGLE_GROUP_TYPES = typeof BASIC_LIST | typeof GIFT_LIST;
+export const LIST_GROUP_SINGLE_VARIANTS = [BASIC_LIST, GIFT_LIST];
+type TYPE_LIST_GROUP_SINGLE_VARIANTS = typeof BASIC_LIST | typeof GIFT_LIST;
 
 // Define other types and interfaces
 
@@ -18,7 +18,7 @@ export interface IgroupMemberSingle extends IgroupMemberBase {
 export type TlistGroupBaseExtensionSingle = {
     owner: IgroupMemberSingle;
     members?: [IgroupMemberSingle];
-    groupType: TYPE_LIST_SINGLE_GROUP_TYPES;
+    groupVariant: TYPE_LIST_GROUP_SINGLE_VARIANTS;
 };
 
 export type TlistGroupSingleBase = TlistGroupBase & TlistGroupBaseExtensionSingle;
@@ -27,7 +27,7 @@ export type TlistGroupSingle = Document & TlistGroupSingleBase;
 // Define schema
 
 const ListGroupSchemaExtensionSingle = new Schema({
-    groupType: { type: String, required: true, enum: LIST_SINGLE_GROUP_TYPES },
+    groupVariant: { type: String, required: true, enum: LIST_GROUP_SINGLE_VARIANTS },
     owner: {
         userId: { type: Schema.Types.ObjectId, required: true },
         permissions: [{ type: String, required: true, enum: PERM_LIST_GROUP_SINGLE }],

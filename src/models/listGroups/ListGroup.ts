@@ -20,7 +20,7 @@ export type TlistGroupParent = Document & TlistGroupParentBase;
 export type TlistGroupAny = Document & TlistGroupAnyBase;
 
 export const ListGroupSchemaBase = new Schema({
-    groupType: { type: String },
+    groupVariant: { type: String },
     owner: {
         userId: { type: Schema.Types.ObjectId },
         permissions: [{ type: String }],

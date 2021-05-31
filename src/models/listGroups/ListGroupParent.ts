@@ -5,8 +5,8 @@ import { PERM_LIST_GROUP_PARENT, TYPE_PERM_LIST_GROUP_PARENT } from './permissio
 // Define groupTypes which are parent groups
 const GIFT_GROUP = 'parentGiftGroup';
 
-export const LIST_PARENT_GROUP_TYPES = [GIFT_GROUP];
-type TYPE_LIST_PARENT_GROUP_TYPES = typeof GIFT_GROUP;
+export const LIST_GROUP_PARENT_VARIANTS = [GIFT_GROUP];
+type TYPE_LIST_GROUP_PARENT_VARIANTS = typeof GIFT_GROUP;
 
 // Define other types and interfaces
 
@@ -17,7 +17,7 @@ export interface IgroupMemberParent extends IgroupMemberBase {
 export type TlistGroupBaseExtensionParent = {
     owner: IgroupMemberParent;
     members?: [IgroupMemberParent];
-    groupType: TYPE_LIST_PARENT_GROUP_TYPES;
+    groupVariant: TYPE_LIST_GROUP_PARENT_VARIANTS;
 };
 
 export type TlistGroupParentBase = TlistGroupBase & TlistGroupBaseExtensionParent;
@@ -26,7 +26,7 @@ export type TlistGroupParent = Document & TlistGroupParentBase;
 // Define schema
 
 const ListGroupSchemaExtensionParent = new Schema({
-    groupType: { type: String, required: true, enum: LIST_PARENT_GROUP_TYPES },
+    groupVariant: { type: String, required: true, enum: LIST_GROUP_PARENT_VARIANTS },
     owner: {
         userId: { type: Schema.Types.ObjectId, required: true },
         permissions: [{ type: String, required: true, enum: PERM_LIST_GROUP_PARENT }],

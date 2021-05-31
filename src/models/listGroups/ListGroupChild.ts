@@ -5,8 +5,8 @@ import { PERM_LIST_GROUP_CHILD, TYPE_PERM_LIST_GROUP_CHILD } from './permissions
 // Define groupTypes which are child groups
 const CHILD_GIFT_LIST = 'childGiftList';
 
-export const LIST_CHILD_GROUP_TYPES = [CHILD_GIFT_LIST];
-type TYPE_LIST_CHILD_GROUP_TYPES = typeof CHILD_GIFT_LIST;
+export const LIST_GROUP_CHILD_VARIANTS = [CHILD_GIFT_LIST];
+type TYPE_LIST_GROUP_CHILD_VARIANTS = typeof CHILD_GIFT_LIST;
 
 // Define other types and interfaces
 
@@ -17,7 +17,7 @@ export interface IgroupMemberChild extends IgroupMemberBase {
 export type TlistGroupBaseExtensionChild = {
     owner: IgroupMemberChild;
     members?: [IgroupMemberChild];
-    groupType: TYPE_LIST_CHILD_GROUP_TYPES;
+    groupVariant: TYPE_LIST_GROUP_CHILD_VARIANTS;
     parentGroupId: Schema.Types.ObjectId | string;
 };
 
@@ -27,7 +27,7 @@ export type TlistGroupChild = Document & TlistGroupChildBase;
 // Define schema
 
 const ListGroupSchemaExtensionChild = new Schema({
-    groupType: { type: String, required: true, enum: LIST_CHILD_GROUP_TYPES },
+    groupVariant: { type: String, required: true, enum: LIST_GROUP_CHILD_VARIANTS },
     owner: {
         userId: { type: Schema.Types.ObjectId, required: true },
         permissions: [{ type: String, required: true, enum: PERM_LIST_GROUP_CHILD }],

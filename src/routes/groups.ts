@@ -9,18 +9,18 @@ import {
     PERM_GROUP_INVITE,
 } from '../models/listGroups/permissions/ListGroupPermissions';
 import ListGroupChild, {
-    LIST_CHILD_GROUP_TYPES,
+    LIST_GROUP_CHILD_VARIANTS,
     IgroupMemberChild,
     TlistGroupChildBase,
 } from '../models/listGroups/ListGroupChild';
 import ListGroupParent, {
     IgroupMemberParent,
-    LIST_PARENT_GROUP_TYPES,
+    LIST_GROUP_PARENT_VARIANTS,
     TlistGroupParentBase,
 } from '../models/listGroups/ListGroupParent';
 import ListGroupSingle, {
     IgroupMemberSingle,
-    LIST_SINGLE_GROUP_TYPES,
+    LIST_GROUP_SINGLE_VARIANTS,
     TlistGroupSingleBase,
 } from '../models/listGroups/ListGroupSingle';
 import ListGroupBase from '../models/listGroups/ListGroup';
@@ -73,8 +73,8 @@ router.post(
     '/single',
     auth,
     check('groupName', 'groupName is required').not().isEmpty(),
-    check('groupType', 'groupType is required').not().isEmpty(),
-    check('groupType', 'groupType is not a valid single group type').isIn(LIST_SINGLE_GROUP_TYPES),
+    check('groupVariant', 'groupVariant is required').not().isEmpty(),
+    check('groupVariant', 'groupVariant is not a valid single group type').isIn(LIST_GROUP_SINGLE_VARIANTS),
     async (req: Request, res: Response) => {
         console.log('POST /api/groups/single hit');
 
@@ -84,13 +84,13 @@ router.post(
         }
 
         const userIdToken = req.user._id;
-        const { groupType, groupName } = req.body;
+        const { groupVariant, groupName } = req.body;
         const owner: IgroupMemberSingle = {
             userId: userIdToken,
             permissions: [PERM_GROUP_DELETE, PERM_GROUP_INVITE, PERM_GROUP_ADMIN],
         };
 
-        const newListGroupData: TlistGroupSingleBase = { owner, groupType, groupName };
+        const newListGroupData: TlistGroupSingleBase = { owner, groupVariant, groupName };
 
         try {
             const newListGroup = new ListGroupSingle(newListGroupData);
@@ -109,9 +109,9 @@ router.post(
 router.post(
     '/child',
     auth,
-    check('groupType', 'groupType is not a valid child group type').isIn(LIST_CHILD_GROUP_TYPES),
+    check('groupVariant', 'groupVariant is not a valid child group type').isIn(LIST_GROUP_CHILD_VARIANTS),
     check('groupName', 'groupName is required').not().isEmpty(),
-    check('groupType', 'groupType is required').not().isEmpty(),
+    check('groupVariant', 'groupVariant is required').not().isEmpty(),
     check('parentGroupId', 'parentGroupId is required for child groups').not().isEmpty(),
     async (req: Request, res: Response) => {
         console.log('POST /api/groups/child hit');
@@ -122,7 +122,7 @@ router.post(
         }
 
         const userIdToken = req.user._id;
-        const { groupType, groupName, parentGroupId } = req.body;
+        const { groupVariant, groupName, parentGroupId } = req.body;
 
         // Validation
         try {
@@ -152,7 +152,7 @@ router.post(
             userId: userIdToken,
             permissions: [PERM_GROUP_DELETE, PERM_GROUP_INVITE, PERM_GROUP_ADMIN],
         };
-        const newListGroupData: TlistGroupChildBase = { owner, groupType, groupName, parentGroupId };
+        const newListGroupData: TlistGroupChildBase = { owner, groupVariant, groupName, parentGroupId };
 
         try {
             const newListGroup = new ListGroupChild(newListGroupData);
@@ -172,8 +172,8 @@ router.post(
     '/parent',
     auth,
     check('groupName', 'groupName is required').not().isEmpty(),
-    check('groupType', 'groupType is required').not().isEmpty(),
-    check('groupType', 'groupType is not a valid parent group type').isIn(LIST_PARENT_GROUP_TYPES),
+    check('groupVariant', 'groupVariant is required').not().isEmpty(),
+    check('groupVariant', 'groupVariant is not a valid parent group type').isIn(LIST_GROUP_PARENT_VARIANTS),
     async (req: Request, res: Response) => {
         console.log('POST /api/groups/parent hit');
 
@@ -183,13 +183,13 @@ router.post(
         }
 
         const userIdToken = req.user._id;
-        const { groupType, groupName } = req.body;
+        const { groupVariant, groupName } = req.body;
         const owner: IgroupMemberParent = {
             userId: userIdToken,
             permissions: [PERM_CHILD_GROUP_CREATE, PERM_GROUP_DELETE, PERM_GROUP_INVITE, PERM_GROUP_ADMIN],
         };
 
-        const newListGroupData: TlistGroupParentBase = { owner, groupType, groupName };
+        const newListGroupData: TlistGroupParentBase = { owner, groupVariant, groupName };
 
         try {
             const newListGroup = new ListGroupParent(newListGroupData);
@@ -311,7 +311,7 @@ router.delete('/delete/:groupid', auth, async (req: Request, res: Response) => {
 
     // TODO Delete all associated list items and messages
     try {
-        if (!LIST_PARENT_GROUP_TYPES.includes(foundGroup.groupType)) {
+        if (!LIST_GROUP_PARENT_VARIANTS.includes(foundGroup.groupVariant)) {
             await ListGroup.deleteOne({ _id: groupIdParams });
             return res.status(200).json({ msg: 'Group deleted' });
         } else {
