@@ -2,8 +2,7 @@ import express, { Router, Request, Response } from 'express';
 import auth from '../middleware/auth';
 import { check, Result, ValidationError, validationResult } from 'express-validator';
 import ListGroup, {
-    CHILD_GROUP_TYPES,
-    IgroupMember,
+    IgroupMemberBase,
     PARENT_GROUP_TYPES,
     SINGLE_GROUP_TYPES,
     TlistGroupAny,
@@ -16,7 +15,11 @@ import {
     PERM_GROUP_DELETE,
     PERM_GROUP_INVITE,
 } from '../models/listGroups/permissions/ListGroupPermissions';
-import ListGroupChild, { TlistGroupChildBase } from '../models/listGroups/ListGroupChild';
+import ListGroupChild, {
+    CHILD_GROUP_TYPES,
+    IgroupMemberChild,
+    TlistGroupChildBase,
+} from '../models/listGroups/ListGroupChild';
 
 const router: Router = express.Router();
 
@@ -77,7 +80,7 @@ router.post(
 
         const userIdToken = req.user._id;
         const { groupType, groupName } = req.body;
-        const owner: IgroupMember = {
+        const owner: IgroupMemberBase = {
             userId: userIdToken,
             permissions: [PERM_GROUP_DELETE, PERM_GROUP_INVITE, PERM_GROUP_ADMIN],
         };
@@ -140,7 +143,7 @@ router.post(
 
         // Create child group
 
-        const owner: IgroupMember = {
+        const owner: IgroupMemberChild = {
             userId: userIdToken,
             permissions: [PERM_GROUP_DELETE, PERM_GROUP_INVITE, PERM_GROUP_ADMIN],
         };
@@ -176,7 +179,7 @@ router.post(
 
         const userIdToken = req.user._id;
         const { groupType, groupName } = req.body;
-        const owner: IgroupMember = {
+        const owner: IgroupMemberBase = {
             userId: userIdToken,
             permissions: [PERM_CHILD_GROUP_CREATE, PERM_GROUP_DELETE, PERM_GROUP_INVITE, PERM_GROUP_ADMIN],
         };
@@ -222,7 +225,7 @@ router.put('/join/:groupid', auth, async (req: Request, res: Response) => {
 
     // TODO permission users to join a group. Add an invited array?
 
-    const newMember: IgroupMember = { userId: userIdToken, permissions: [] };
+    const newMember: IgroupMemberBase = { userId: userIdToken, permissions: [] };
 
     try {
         const updatedGroup = await ListGroup.findOneAndUpdate(
