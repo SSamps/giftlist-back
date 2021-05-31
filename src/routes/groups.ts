@@ -23,6 +23,7 @@ import ListGroupSingle, {
     LIST_SINGLE_GROUP_TYPES,
     TlistGroupSingleBase,
 } from '../models/listGroups/ListGroupSingle';
+import ListGroupBase from '../models/listGroups/ListGroup';
 
 const router: Router = express.Router();
 
@@ -40,7 +41,7 @@ router.get('/user/:userid', auth, async (req: Request, res: Response) => {
     }
 
     try {
-        let foundMemberGroups = await ListGroup.find({
+        let foundMemberGroups = await ListGroupBase.find({
             $or: [{ 'owner.userId': userIdParams }, { 'members.userId': userIdParams }],
         });
         console.log(foundMemberGroups);

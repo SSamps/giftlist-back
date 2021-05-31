@@ -3,11 +3,10 @@ import { TlistGroupChildBase } from './ListGroupChild';
 import { TlistGroupParentBase } from './ListGroupParent';
 import { TlistGroupSingleBase } from './ListGroupSingle';
 
-// export const ALL_GROUP_TYPES = SINGLE_GROUP_TYPES.concat(CHILD_GROUP_TYPES, PARENT_GROUP_TYPES);
-
 export interface IgroupMemberBase {
     userId: Schema.Types.ObjectId | string;
     oldestReadMessage?: Date | undefined;
+    permissions: string[];
 }
 
 export type TlistGroupBase = {
@@ -21,9 +20,26 @@ export type TlistGroupParent = Document & TlistGroupParentBase;
 export type TlistGroupAny = Document & TlistGroupAnyBase;
 
 export const ListGroupSchemaBase = new Schema({
-    groupName: { type: String, required: true },
+    groupType: { type: String },
+    owner: {
+        userId: { type: Schema.Types.ObjectId },
+        permissions: [{ type: String }],
+        oldestUnreadMsg: { type: Date },
+    },
+    members: [
+        {
+            userId: { type: Schema.Types.ObjectId },
+            permissions: [{ type: String }],
+            oldestUnreadMsg: { type: Date },
+            _id: false,
+        },
+    ],
+    parentGroupId: {
+        type: Schema.Types.ObjectId,
+    },
+    groupName: { type: String },
     creationDate: { type: Date, default: Date.now },
 });
 
-const ListGroup = model<TlistGroupAny>('ListGroup', ListGroupSchemaBase);
-export default ListGroup;
+const ListGroupBase = model<TlistGroupAny>('ListGroup', ListGroupSchemaBase);
+export default ListGroupBase;
