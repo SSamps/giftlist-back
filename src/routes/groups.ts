@@ -7,16 +7,16 @@ import ListGroup, {
     PARENT_GROUP_TYPES,
     SINGLE_GROUP_TYPES,
     TlistGroupAny,
-    TlistGroupChildBase,
     TlistGroupParentBase,
     TlistGroupSingleBase,
-} from '../models/ListGroup';
+} from '../models/listGroups/ListGroup';
 import {
     PERM_CHILD_GROUP_CREATE,
     PERM_GROUP_ADMIN,
     PERM_GROUP_DELETE,
     PERM_GROUP_INVITE,
-} from '../models/permissions/ListGroupPermissions';
+} from '../models/listGroups/permissions/ListGroupPermissions';
+import ListGroupChild, { TlistGroupChildBase } from '../models/listGroups/ListGroupChild';
 
 const router: Router = express.Router();
 
@@ -147,7 +147,7 @@ router.post(
         const newListGroupData: TlistGroupChildBase = { owner, groupType, groupName, parentGroupId };
 
         try {
-            const newListGroup: TlistGroupAny = new ListGroup(newListGroupData);
+            const newListGroup = new ListGroupChild(newListGroupData);
             await newListGroup.save();
             return res.status(200).json(newListGroup);
         } catch (err) {

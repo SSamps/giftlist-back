@@ -1,4 +1,5 @@
 import { Document, Schema, model } from 'mongoose';
+import { TlistGroupChildBase } from './ListGroupChild';
 import { PERM_ALL_LIST_GROUP, TYPE_PERM_ALL_LIST_GROUP } from './permissions/ListGroupPermissions';
 
 export const SINGLE_GROUP_TYPES = ['basicList', 'giftList'];
@@ -12,6 +13,14 @@ export interface IgroupMember {
     permissions: TYPE_PERM_ALL_LIST_GROUP[];
     oldestReadMessage?: Date | undefined;
 }
+
+export type TlistGroupBase = {
+    owner: IgroupMember;
+    members?: [IgroupMember];
+    groupType: 'childGiftList';
+    groupName: string;
+    creationDate?: Date;
+};
 
 export type TlistGroupSingleBase = {
     owner: IgroupMember;
@@ -29,22 +38,12 @@ export type TlistGroupParentBase = {
     creationDate?: Date;
 };
 
-export type TlistGroupChildBase = {
-    owner: IgroupMember;
-    members?: [IgroupMember];
-    groupType: 'childGiftList';
-    groupName: string;
-    creationDate?: Date;
-    parentGroupId: Schema.Types.ObjectId | string;
-};
-
 export type TlistGroupAnyBase = TlistGroupSingleBase | TlistGroupChildBase | TlistGroupParentBase;
 export type TlistGroupSingle = Document & TlistGroupSingleBase;
 export type TlistGroupParent = Document & TlistGroupParentBase;
-export type TlistGroupChild = Document & TlistGroupChildBase;
 export type TlistGroupAny = Document & TlistGroupAnyBase;
 
-export const ListGroupSchema = new Schema({
+export const ListGroupSchemaBase = new Schema({
     groupType: { type: String, required: true, enum: ALL_GROUP_TYPES },
     owner: {
         userId: { type: Schema.Types.ObjectId, required: true },
@@ -61,13 +60,7 @@ export const ListGroupSchema = new Schema({
     ],
     groupName: { type: String, required: true },
     creationDate: { type: Date, default: Date.now },
-    parentGroupId: {
-        type: Schema.Types.ObjectId,
-        required: function (this: TlistGroupChildBase) {
-            return this.groupType === 'childGiftList';
-        },
-    },
 });
 
-const ListGroup = model<TlistGroupAny>('ListGroup', ListGroupSchema);
+const ListGroup = model<TlistGroupAny>('ListGroup', ListGroupSchemaBase);
 export default ListGroup;
