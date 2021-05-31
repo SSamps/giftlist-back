@@ -1,7 +1,7 @@
 import express, { Router, Request, Response } from 'express';
 import auth from '../middleware/auth';
 import { check, Result, ValidationError, validationResult } from 'express-validator';
-import ListGroup, { IgroupMemberBase, TlistGroupAny } from '../models/listGroups/ListGroup';
+import ListGroupBase, { IgroupMemberBase, TlistGroupAny } from '../models/listGroups/ListGroup';
 import {
     PERM_CHILD_GROUP_CREATE,
     PERM_GROUP_ADMIN,
@@ -23,7 +23,6 @@ import ListGroupSingle, {
     LIST_GROUP_SINGLE_VARIANTS,
     TlistGroupSingleBase,
 } from '../models/listGroups/ListGroupSingle';
-import ListGroupBase from '../models/listGroups/ListGroup';
 
 const router: Router = express.Router();
 
@@ -126,7 +125,7 @@ router.post(
 
         // Validation
         try {
-            const foundParentGroup = await ListGroup.findOne().and([
+            const foundParentGroup = await ListGroupParent.findOne().and([
                 { _id: parentGroupId },
                 {
                     $or: [
@@ -213,7 +212,7 @@ router.put('/join/:groupid', auth, async (req: Request, res: Response) => {
 
     // Validation group must exist and must not already be a member or owner
     try {
-        const foundGroup = await ListGroup.findOne().and([
+        const foundGroup = await ListGroupBase.findOne().and([
             { _id: groupIdParams },
             {
                 $nor: [{ 'owner.userId': userIdToken }, { 'members.userId': userIdToken }],
@@ -233,7 +232,7 @@ router.put('/join/:groupid', auth, async (req: Request, res: Response) => {
     const newMember: IgroupMemberBase = { userId: userIdToken, permissions: [] };
 
     try {
-        const updatedGroup = await ListGroup.findOneAndUpdate(
+        const updatedGroup = await ListGroupBase.findOneAndUpdate(
             { _id: groupIdParams },
             { $push: { members: newMember } },
             { new: true }
@@ -256,7 +255,10 @@ router.put('/leave/:groupid', auth, async (req: Request, res: Response) => {
 
     // Validation group must exist and user must be a member
     try {
-        const foundGroup = await ListGroup.findOne().and([{ _id: groupIdParams }, { 'members.userId': userIdToken }]);
+        const foundGroup = await ListGroupBase.findOne().and([
+            { _id: groupIdParams },
+            { 'members.userId': userIdToken },
+        ]);
 
         if (!foundGroup) {
             return res.status(400).send('Invalid groupId or not a member');
@@ -267,7 +269,7 @@ router.put('/leave/:groupid', auth, async (req: Request, res: Response) => {
     }
 
     try {
-        const updatedGroup = await ListGroup.findOneAndUpdate(
+        const updatedGroup = await ListGroupBase.findOneAndUpdate(
             { _id: groupIdParams },
             { $pull: { members: { userId: userIdToken } } },
             { new: true }
@@ -291,7 +293,7 @@ router.delete('/delete/:groupid', auth, async (req: Request, res: Response) => {
 
     // Group must exist and user must have delete permissions
     try {
-        var foundGroup = await ListGroup.findOne().and([
+        var foundGroup = await ListGroupBase.findOne().and([
             { _id: groupIdParams },
             {
                 $or: [
@@ -312,11 +314,11 @@ router.delete('/delete/:groupid', auth, async (req: Request, res: Response) => {
     // TODO Delete all associated list items and messages
     try {
         if (!LIST_GROUP_PARENT_VARIANTS.includes(foundGroup.groupVariant)) {
-            await ListGroup.deleteOne({ _id: groupIdParams });
+            await ListGroupBase.deleteOne({ _id: groupIdParams });
             return res.status(200).json({ msg: 'Group deleted' });
         } else {
-            await ListGroup.deleteMany({ parentGroupId: groupIdParams });
-            await ListGroup.deleteOne({ _id: groupIdParams });
+            await ListGroupChild.deleteMany({ parentGroupId: groupIdParams });
+            await ListGroupParent.deleteOne({ _id: groupIdParams });
             return res.status(200).json({ msg: 'Parent group and all child groups deleted' });
         }
     } catch (err) {
