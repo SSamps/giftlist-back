@@ -1,12 +1,7 @@
 import express, { Router, Request, Response } from 'express';
 import auth from '../middleware/auth';
 import { check, Result, ValidationError, validationResult } from 'express-validator';
-import ListGroup, {
-    IgroupMemberBase,
-    SINGLE_GROUP_TYPES,
-    TlistGroupAny,
-    TlistGroupSingleBase,
-} from '../models/listGroups/ListGroup';
+import ListGroup, { IgroupMemberBase, TlistGroupAny } from '../models/listGroups/ListGroup';
 import {
     PERM_CHILD_GROUP_CREATE,
     PERM_GROUP_ADMIN,
@@ -23,6 +18,11 @@ import ListGroupParent, {
     LIST_PARENT_GROUP_TYPES,
     TlistGroupParentBase,
 } from '../models/listGroups/ListGroupParent';
+import ListGroupSingle, {
+    IgroupMemberSingle,
+    LIST_SINGLE_GROUP_TYPES,
+    TlistGroupSingleBase,
+} from '../models/listGroups/ListGroupSingle';
 
 const router: Router = express.Router();
 
@@ -43,6 +43,7 @@ router.get('/user/:userid', auth, async (req: Request, res: Response) => {
         let foundMemberGroups = await ListGroup.find({
             $or: [{ 'owner.userId': userIdParams }, { 'members.userId': userIdParams }],
         });
+        console.log(foundMemberGroups);
         let foundOwnedGroups: TlistGroupAny[] = [];
 
         for (var i = foundMemberGroups.length - 1; i >= 0; i--) {
@@ -72,7 +73,7 @@ router.post(
     auth,
     check('groupName', 'groupName is required').not().isEmpty(),
     check('groupType', 'groupType is required').not().isEmpty(),
-    check('groupType', 'groupType is not a valid single group type').isIn(SINGLE_GROUP_TYPES),
+    check('groupType', 'groupType is not a valid single group type').isIn(LIST_SINGLE_GROUP_TYPES),
     async (req: Request, res: Response) => {
         console.log('POST /api/groups/single hit');
 
@@ -83,7 +84,7 @@ router.post(
 
         const userIdToken = req.user._id;
         const { groupType, groupName } = req.body;
-        const owner: IgroupMemberBase = {
+        const owner: IgroupMemberSingle = {
             userId: userIdToken,
             permissions: [PERM_GROUP_DELETE, PERM_GROUP_INVITE, PERM_GROUP_ADMIN],
         };
@@ -91,7 +92,7 @@ router.post(
         const newListGroupData: TlistGroupSingleBase = { owner, groupType, groupName };
 
         try {
-            const newListGroup: TlistGroupAny = new ListGroup(newListGroupData);
+            const newListGroup = new ListGroupSingle(newListGroupData);
             await newListGroup.save();
             return res.status(200).json(newListGroup);
         } catch (err) {
@@ -309,7 +310,7 @@ router.delete('/delete/:groupid', auth, async (req: Request, res: Response) => {
 
     // TODO Delete all associated list items and messages
     try {
-        if (!PARENT_GROUP_TYPES.includes(foundGroup.groupType)) {
+        if (!LIST_PARENT_GROUP_TYPES.includes(foundGroup.groupType)) {
             await ListGroup.deleteOne({ _id: groupIdParams });
             return res.status(200).json({ msg: 'Group deleted' });
         } else {
