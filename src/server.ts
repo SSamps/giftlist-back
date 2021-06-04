@@ -25,6 +25,7 @@ app.use('/api/users', require('./routes/users'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/test', require('./routes/test'));
 app.use('/api/groups', require('./routes/groups'));
+app.use('/api/invite', require('./routes/invite'));
 
 // Start app
 app.listen(PORT, () => {

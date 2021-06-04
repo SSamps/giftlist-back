@@ -2,7 +2,7 @@ import jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
 import User, { IUserCensoredProps } from '../models/User';
 
-interface IToken {
+interface IauthToken {
     alg: string;
     typ: string;
     user: { id: string };
@@ -13,15 +13,15 @@ interface IToken {
 async function authMiddleware(req: Request, res: Response, next: NextFunction) {
     // Get token from header
     const token = req.header('x-auth-token');
-
     // Check if not token
     if (!token) {
-        return res.status(401).json({ msg: 'Unauthorized' });
+        console.log('no token');
+        return res.status(401).json({ msg: 'Unauthorized: missing x-auth-token' });
     }
 
     // Verify token
     try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET) as IToken;
+        const decoded = jwt.verify(token, process.env.JWT_SECRET) as IauthToken;
 
         // Check whether the token was issued before oldestValidJWT was last set. This could be used to invalidate user tokens if required. Also protects against tokens being used after user deletion.
         try {
@@ -40,6 +40,7 @@ async function authMiddleware(req: Request, res: Response, next: NextFunction) {
         const tokenDate = new Date((decoded.iat + 1) * 1000);
 
         if (tokenDate < (oldestValidJWT as Date)) {
+            console.log('invalidated token');
             return res.status(401).json({ msg: 'Unauthorized' });
         }
 

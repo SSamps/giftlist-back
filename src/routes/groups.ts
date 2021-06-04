@@ -43,7 +43,6 @@ router.get('/user/:userid', auth, async (req: Request, res: Response) => {
         let foundMemberGroups = await ListGroupBase.find({
             $or: [{ 'owner.userId': userIdParams }, { 'members.userId': userIdParams }],
         });
-        console.log(foundMemberGroups);
         let foundOwnedGroups: TlistGroupAny[] = [];
 
         for (var i = foundMemberGroups.length - 1; i >= 0; i--) {
