@@ -3,6 +3,13 @@ import { TlistGroupChildBase } from './ListGroupChild';
 import { TlistGroupParentBase } from './ListGroupParent';
 import { TlistGroupSingleBase } from './ListGroupSingle';
 
+export class invalidGroupVariantError extends Error {
+    constructor(variant: string) {
+        super(variant + ' is an invalid groupVariant');
+        this.name = 'invalidGroupVariantError';
+    }
+}
+
 export interface IgroupMemberBase {
     userId: Schema.Types.ObjectId | string;
     oldestReadMessage?: Date | undefined;

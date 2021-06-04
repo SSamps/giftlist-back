@@ -3,7 +3,7 @@ import ListGroupSchemaBase, { IgroupMemberBase, TlistGroupBase } from './ListGro
 import { PERM_LIST_GROUP_CHILD, TYPE_PERM_LIST_GROUP_CHILD } from './permissions/ListGroupPermissions';
 
 // Define groupTypes which are child groups
-const CHILD_GIFT_LIST = 'childGiftList';
+export const CHILD_GIFT_LIST = 'childGiftList';
 
 export const LIST_GROUP_CHILD_VARIANTS = [CHILD_GIFT_LIST];
 type TYPE_LIST_GROUP_CHILD_VARIANTS = typeof CHILD_GIFT_LIST;

@@ -3,8 +3,8 @@ import ListGroupSchemaBase, { IgroupMemberBase, TlistGroupBase } from './ListGro
 import { PERM_LIST_GROUP_SINGLE, TYPE_PERM_LIST_GROUP_SINGLE } from './permissions/ListGroupPermissions';
 
 // Define groupTypes which are single groups
-const BASIC_LIST = 'basicList';
-const GIFT_LIST = 'giftList';
+export const BASIC_LIST = 'basicList';
+export const GIFT_LIST = 'giftList';
 
 export const LIST_GROUP_SINGLE_VARIANTS = [BASIC_LIST, GIFT_LIST];
 type TYPE_LIST_GROUP_SINGLE_VARIANTS = typeof BASIC_LIST | typeof GIFT_LIST;

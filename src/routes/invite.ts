@@ -3,8 +3,16 @@ import auth from '../middleware/auth';
 import jwt from 'jsonwebtoken';
 import sendgrid from '@sendgrid/mail';
 import { check, Result, ValidationError, validationResult } from 'express-validator';
-import ListGroupBase, { IgroupMemberBase } from '../models/listGroups/ListGroup';
-import { PERM_GROUP_INVITE } from '../models/listGroups/permissions/ListGroupPermissions';
+import ListGroupBase, { IgroupMemberBase, invalidGroupVariantError } from '../models/listGroups/ListGroup';
+import {
+    listGroupChildBaseMemberPerms,
+    listGroupParentBaseMemberPerms,
+    listGroupSingleBaseMemberPerms,
+    PERM_GROUP_INVITE,
+} from '../models/listGroups/permissions/ListGroupPermissions';
+import ListGroupSingle, { BASIC_LIST, GIFT_LIST, IgroupMemberSingle } from '../models/listGroups/ListGroupSingle';
+import ListGroupChild, { CHILD_GIFT_LIST, IgroupMemberChild } from '../models/listGroups/ListGroupChild';
+import ListGroupParent, { IgroupMemberParent, PARENT_GIFT_GROUP } from '../models/listGroups/ListGroupParent';
 
 const router: Router = express.Router();
 sendgrid.setApiKey(process.env.SENDGRID_API_KEY);
@@ -182,11 +190,39 @@ router.post('/accept/:groupToken', auth, async (req: Request, res: Response) => 
             return res.status(400).send('Invalid groupId or user already in group');
         }
 
-        const newMember: IgroupMemberBase = { userId: userIdToken, permissions: [] };
-        await ListGroupBase.findOneAndUpdate({ _id: groupId }, { $push: { members: newMember } });
+        const { groupVariant } = foundGroup;
+
+        switch (groupVariant) {
+            case BASIC_LIST:
+            case GIFT_LIST: {
+                let newMember: IgroupMemberSingle = {
+                    userId: userIdToken,
+                    permissions: listGroupSingleBaseMemberPerms,
+                };
+                await ListGroupSingle.findOneAndUpdate({ _id: groupId }, { $push: { members: newMember } });
+                break;
+            }
+            case CHILD_GIFT_LIST: {
+                let newMember: IgroupMemberChild = { userId: userIdToken, permissions: listGroupChildBaseMemberPerms };
+                await ListGroupChild.findOneAndUpdate({ _id: groupId }, { $push: { members: newMember } });
+                break;
+            }
+            case PARENT_GIFT_GROUP: {
+                let newMember: IgroupMemberParent = {
+                    userId: userIdToken,
+                    permissions: listGroupParentBaseMemberPerms,
+                };
+                await ListGroupParent.findOneAndUpdate({ _id: groupId }, { $push: { members: newMember } });
+                break;
+            }
+            default:
+                throw new invalidGroupVariantError(groupVariant);
+        }
+
         return res.send(200);
     } catch (err) {
         console.log(err.message);
+        console.log(err);
         return res.status(500).send('Server error');
     }
 });

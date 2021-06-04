@@ -3,10 +3,10 @@ import ListGroupSchemaBase, { IgroupMemberBase, TlistGroupBase } from './ListGro
 import { PERM_LIST_GROUP_PARENT, TYPE_PERM_LIST_GROUP_PARENT } from './permissions/ListGroupPermissions';
 
 // Define groupTypes which are parent groups
-const GIFT_GROUP = 'parentGiftGroup';
+export const PARENT_GIFT_GROUP = 'parentGiftGroup';
 
-export const LIST_GROUP_PARENT_VARIANTS = [GIFT_GROUP];
-type TYPE_LIST_GROUP_PARENT_VARIANTS = typeof GIFT_GROUP;
+export const LIST_GROUP_PARENT_VARIANTS = [PARENT_GIFT_GROUP];
+type TYPE_LIST_GROUP_PARENT_VARIANTS = typeof PARENT_GIFT_GROUP;
 
 // Define other types and interfaces
 
