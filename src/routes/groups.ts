@@ -14,13 +14,14 @@ import {
     giftListOwnerBasePerms,
     PERM_CHILD_GROUP_CREATE,
     PERM_GROUP_DELETE,
+    giftGroupOwnerBasePerms,
 } from '../models/listGroups/permissions/ListGroupPermissions';
 import GiftGroupChildModel, {
     GIFT_GROUP_CHILD,
     IgiftGroupChildMember,
     TgiftGroupChildFields,
 } from '../models/listGroups/child/GiftGroupChild';
-import GiftGroupModel, { GIFT_GROUP, TgiftGroupFields } from '../models/listGroups/parent/GiftGroup';
+import GiftGroupModel, { GIFT_GROUP, IgiftGroupMember, TgiftGroupFields } from '../models/listGroups/parent/GiftGroup';
 import {
     BASIC_LIST,
     IbasicListMember,
@@ -160,6 +161,7 @@ router.post(
             ]);
 
             if (!foundParentGroup) {
+                console.log(foundParentGroup);
                 return res.status(400).send('Invalid parentGroupId or unauthorized');
             }
 
@@ -212,9 +214,9 @@ router.post(
         try {
             switch (groupVariant) {
                 case GIFT_GROUP: {
-                    const owner: IgiftGroupChildMember = {
+                    const owner: IgiftGroupMember = {
                         userId: userIdToken,
-                        permissions: giftGroupChildOwnerBasePerms,
+                        permissions: giftGroupOwnerBasePerms,
                     };
                     const newGroupData: TgiftGroupFields = { owner, groupName };
                     const newGroup = new GiftGroupModel(newGroupData);

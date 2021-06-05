@@ -2,7 +2,7 @@ import { Schema } from 'mongoose';
 import { IgroupMemberBase, listGroupBaseModel, TlistGroupBaseFields } from '../ListGroupBase';
 import { PERM_GIFT_LIST_ALL, TYPE_PERM_GIFT_LIST_ALL } from '../permissions/ListGroupPermissions';
 
-export const GIFT_LIST = 'giftList';
+export const GIFT_LIST = 'GIFT_LIST';
 
 export interface IgiftListMember extends IgroupMemberBase {
     permissions: TYPE_PERM_GIFT_LIST_ALL[];

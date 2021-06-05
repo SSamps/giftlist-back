@@ -2,7 +2,7 @@ import { Schema } from 'mongoose';
 import { IgroupMemberBase, listGroupBaseModel, TlistGroupBaseFields } from '../ListGroupBase';
 import { PERM_BASIC_LIST_ALL, TYPE_PERM_BASIC_LIST_ALL } from '../permissions/ListGroupPermissions';
 
-export const BASIC_LIST = 'basicList';
+export const BASIC_LIST = 'BASIC_LIST';
 
 export interface IbasicListMember extends IgroupMemberBase {
     permissions: TYPE_PERM_BASIC_LIST_ALL[];
