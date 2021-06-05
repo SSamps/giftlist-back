@@ -1,6 +1,6 @@
 import { Document, Schema, model } from 'mongoose';
-import { TlistGroupChildBase } from './child/ListGroupChild';
-import { TlistGroupParentBase } from './parent/ListGroupParent';
+import { TlistGroupChildFields } from './child/GiftGroupChild';
+import { TgiftGroupFields } from './parent/GiftGroup';
 import { TbasicListFields } from './singular/BasicList';
 import { TYPE_PERM_ALL_LIST_GROUP } from './permissions/ListGroupPermissions';
 import { TgiftListFields } from './singular/GiftList';
@@ -18,7 +18,7 @@ export interface IgroupMemberBase {
     permissions: TYPE_PERM_ALL_LIST_GROUP[];
 }
 
-export type TlistGroupBase = {
+export type TlistGroupBaseFields = {
     groupName: string;
     creationDate?: Date;
 };
@@ -27,12 +27,12 @@ export type TlistGroupDiscriminatorKey = {
     groupVariant: string;
 };
 
-export type TlistGroupAnyBase = TbasicListFields | TgiftListFields | TlistGroupChildBase | TlistGroupParentBase;
+export type TlistGroupAnyBase = TbasicListFields | TgiftListFields | TlistGroupChildFields | TgiftGroupFields;
 export type TlistGroupAny = Document & TlistGroupAnyBase & TlistGroupDiscriminatorKey;
 
 const options = { discriminatorKey: 'groupVariant' };
 
-export const ListGroupSchemaBase = new Schema(
+export const ListGroupBaseSchema = new Schema(
     {
         owner: {
             userId: { type: Schema.Types.ObjectId },
@@ -56,5 +56,4 @@ export const ListGroupSchemaBase = new Schema(
     options
 );
 
-const ListGroupBase = model<TlistGroupAny>('ListGroup', ListGroupSchemaBase);
-export default ListGroupBase;
+export const listGroupBaseModel = model<TlistGroupAny>('ListGroup', ListGroupBaseSchema);

@@ -1,22 +1,22 @@
 import { Schema } from 'mongoose';
-import ListGroupSchemaBase, { IgroupMemberBase, TlistGroupBase } from '../ListGroupBase';
+import { IgroupMemberBase, listGroupBaseModel, TlistGroupBaseFields } from '../ListGroupBase';
 import { PERM_BASIC_LIST_ALL, TYPE_PERM_BASIC_LIST_ALL } from '../permissions/ListGroupPermissions';
 
 export const BASIC_LIST = 'basicList';
 
-export interface IgroupMemberBasicList extends IgroupMemberBase {
+export interface IbasicListMember extends IgroupMemberBase {
     permissions: TYPE_PERM_BASIC_LIST_ALL[];
 }
 
-export type TbasicListExtensionFields = {
-    owner: IgroupMemberBasicList;
-    members?: [IgroupMemberBasicList];
+export type TbasicListExtraFields = {
+    owner: IbasicListMember;
+    members?: [IbasicListMember];
     maxListItems?: Number;
 };
 
-export type TbasicListFields = TlistGroupBase & TbasicListExtensionFields;
+export type TbasicListFields = TlistGroupBaseFields & TbasicListExtraFields;
 
-export const BasicListSchema = new Schema({
+export const basicListSchema = new Schema({
     owner: {
         userId: { type: Schema.Types.ObjectId, required: true },
         permissions: [{ type: String, required: true, enum: PERM_BASIC_LIST_ALL }],
@@ -32,4 +32,4 @@ export const BasicListSchema = new Schema({
     ],
     maxListItems: { type: Number, required: true, default: 50 },
 });
-export const basicListModel = ListGroupSchemaBase.discriminator(BASIC_LIST, BasicListSchema);
+export const BasicListModel = listGroupBaseModel.discriminator(BASIC_LIST, basicListSchema);

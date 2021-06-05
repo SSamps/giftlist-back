@@ -1,21 +1,21 @@
 import { Schema } from 'mongoose';
-import ListGroupSchemaBase, { IgroupMemberBase, TlistGroupBase } from '../ListGroupBase';
+import { IgroupMemberBase, listGroupBaseModel, TlistGroupBaseFields } from '../ListGroupBase';
 import { PERM_GIFT_LIST_ALL, TYPE_PERM_GIFT_LIST_ALL } from '../permissions/ListGroupPermissions';
 
 export const GIFT_LIST = 'giftList';
 
-export interface IgroupMemberGiftList extends IgroupMemberBase {
+export interface IgiftListMember extends IgroupMemberBase {
     permissions: TYPE_PERM_GIFT_LIST_ALL[];
 }
 
-export type TgiftListExtensionFields = {
-    owner: IgroupMemberGiftList;
-    members?: [IgroupMemberGiftList];
+export type TgiftListExtraFields = {
+    owner: IgiftListMember;
+    members?: [IgiftListMember];
     maxListItems?: Number;
     maxSecretListItemsEach?: Number;
 };
 
-export type TgiftListFields = TlistGroupBase & TgiftListExtensionFields;
+export type TgiftListFields = TlistGroupBaseFields & TgiftListExtraFields;
 
 export const giftListSchema = new Schema({
     owner: {
@@ -34,4 +34,4 @@ export const giftListSchema = new Schema({
     maxListItems: { type: Number, required: true, default: 20 },
     maxSecretListItemsEach: { type: Number, required: true, default: 5 },
 });
-export const giftListModel = ListGroupSchemaBase.discriminator(GIFT_LIST, giftListSchema);
+export const GiftListModel = listGroupBaseModel.discriminator(GIFT_LIST, giftListSchema);

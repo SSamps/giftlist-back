@@ -1,5 +1,5 @@
-import { GIFT_GROUP_CHILD } from '../child/ListGroupChild';
-import { GIFT_GROUP } from '../parent/ListGroupParent';
+import { GIFT_GROUP_CHILD } from '../child/GiftGroupChild';
+import { GIFT_GROUP } from '../parent/GiftGroup';
 import { BASIC_LIST } from '../singular/BasicList';
 import { GIFT_LIST } from '../singular/GiftList';
 

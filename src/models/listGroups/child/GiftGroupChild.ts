@@ -1,31 +1,22 @@
-import { Document, Schema } from 'mongoose';
-import ListGroupSchemaBase, { IgroupMemberBase, TlistGroupBase } from '../ListGroupBase';
+import { Schema } from 'mongoose';
+import { IgroupMemberBase, listGroupBaseModel, TlistGroupBaseFields } from '../ListGroupBase';
 import { PERM_GIFT_GROUP_CHILD_ALL, TYPE_PERM_GIFT_GROUP_CHILD_ALL } from '../permissions/ListGroupPermissions';
 
-// Define groupTypes which are child groups
 export const GIFT_GROUP_CHILD = 'GIFT_GROUP_CHILD';
 
-type TYPE_LIST_GROUP_CHILD_VARIANTS = typeof GIFT_GROUP_CHILD;
-
-// Define other types and interfaces
-
-export interface IgroupMemberChild extends IgroupMemberBase {
+export interface IgiftGroupChildMember extends IgroupMemberBase {
     permissions: TYPE_PERM_GIFT_GROUP_CHILD_ALL[];
 }
 
-export type TlistGroupBaseExtensionChild = {
-    owner: IgroupMemberChild;
-    members?: [IgroupMemberChild];
-    groupVariant: TYPE_LIST_GROUP_CHILD_VARIANTS;
+export type TgiftGroupChildExtraFields = {
+    owner: IgiftGroupChildMember;
+    members?: [IgiftGroupChildMember];
     parentGroupId: Schema.Types.ObjectId | string;
 };
 
-export type TlistGroupChildBase = TlistGroupBase & TlistGroupBaseExtensionChild;
-export type TlistGroupChild = Document & TlistGroupChildBase;
+export type TlistGroupChildFields = TlistGroupBaseFields & TgiftGroupChildExtraFields;
 
-// Define schema
-
-const ListGroupSchemaExtensionChild = new Schema({
+const giftGroupChildSchema = new Schema({
     owner: {
         userId: { type: Schema.Types.ObjectId, required: true },
         permissions: [{ type: String, required: true, enum: PERM_GIFT_GROUP_CHILD_ALL }],
@@ -45,6 +36,6 @@ const ListGroupSchemaExtensionChild = new Schema({
     },
 });
 
-const ListGroupChild = ListGroupSchemaBase.discriminator(GIFT_GROUP_CHILD, ListGroupSchemaExtensionChild);
+const GiftGroupChildModel = listGroupBaseModel.discriminator(GIFT_GROUP_CHILD, giftGroupChildSchema);
 
-export default ListGroupChild;
+export default GiftGroupChildModel;

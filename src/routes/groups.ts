@@ -1,9 +1,10 @@
 import express, { Router, Request, Response } from 'express';
 import auth from '../middleware/auth';
 import { check, Result, ValidationError, validationResult } from 'express-validator';
-import ListGroupBase, {
+import {
     IgroupMemberBase,
     invalidGroupVariantError,
+    listGroupBaseModel,
     TlistGroupAny,
 } from '../models/listGroups/ListGroupBase';
 import {
@@ -13,12 +14,15 @@ import {
     PERM_CHILD_GROUP_CREATE,
     PERM_GROUP_DELETE,
 } from '../models/listGroups/permissions/ListGroupPermissions';
-import ListGroupChild, { IgroupMemberChild, TlistGroupChildBase } from '../models/listGroups/child/ListGroupChild';
-import ListGroupParent, { IgroupMemberParent, TlistGroupParentBase } from '../models/listGroups/parent/ListGroupParent';
+import GiftGroupChildModel, {
+    IgiftGroupChildMember,
+    TlistGroupChildFields,
+} from '../models/listGroups/child/GiftGroupChild';
+import GiftGroupModel, { TgiftGroupFields } from '../models/listGroups/parent/GiftGroup';
 import {
     BASIC_LIST,
-    IgroupMemberBasicList,
-    basicListModel,
+    IbasicListMember,
+    BasicListModel,
     TbasicListFields,
 } from '../models/listGroups/singular/BasicList';
 import {
@@ -26,12 +30,7 @@ import {
     LIST_GROUP_PARENT_VARIANTS,
     LIST_GROUP_SINGLE_VARIANTS,
 } from '../models/listGroups/variants/ListGroupVariants';
-import {
-    giftListModel,
-    GIFT_LIST,
-    IgroupMemberGiftList,
-    TgiftListFields,
-} from '../models/listGroups/singular/GiftList';
+import { GiftListModel, GIFT_LIST, IgiftListMember, TgiftListFields } from '../models/listGroups/singular/GiftList';
 
 const router: Router = express.Router();
 
@@ -49,7 +48,7 @@ router.get('/user/:userid', auth, async (req: Request, res: Response) => {
     }
 
     try {
-        let foundMemberGroups = await ListGroupBase.find({
+        let foundMemberGroups = await listGroupBaseModel.find({
             $or: [{ 'owner.userId': userIdParams }, { 'members.userId': userIdParams }],
         });
         let foundOwnedGroups: TlistGroupAny[] = [];
@@ -96,22 +95,22 @@ router.post(
         try {
             switch (groupVariant) {
                 case BASIC_LIST: {
-                    const owner: IgroupMemberBasicList = {
+                    const owner: IbasicListMember = {
                         userId: userIdToken,
                         permissions: basicListOwnerBasePerms,
                     };
                     const newListGroupData: TbasicListFields = { owner, groupName };
-                    const newListGroup = new basicListModel(newListGroupData);
+                    const newListGroup = new BasicListModel(newListGroupData);
                     await newListGroup.save();
                     return res.status(200).json(newListGroup);
                 }
                 case GIFT_LIST: {
-                    const owner: IgroupMemberGiftList = {
+                    const owner: IgiftListMember = {
                         userId: userIdToken,
                         permissions: giftListOwnerBasePerms,
                     };
                     const newListGroupData: TgiftListFields = { owner, groupName };
-                    const newListGroup = new giftListModel(newListGroupData);
+                    const newListGroup = new GiftListModel(newListGroupData);
                     await newListGroup.save();
                     return res.status(200).json(newListGroup);
                 }
@@ -148,7 +147,7 @@ router.post(
 
         // Validation
         try {
-            const foundParentGroup = await ListGroupParent.findOne().and([
+            const foundParentGroup = await GiftGroupModel.findOne().and([
                 { _id: parentGroupId },
                 {
                     $or: [
@@ -168,14 +167,14 @@ router.post(
 
         // TODO The user hasn't exceeded max number of allowable children
 
-        const owner: IgroupMemberChild = {
+        const owner: IgiftGroupChildMember = {
             userId: userIdToken,
             permissions: giftGroupChildOwnerBasePerms,
         };
-        const newListGroupData: TlistGroupChildBase = { owner, groupVariant, groupName, parentGroupId };
+        const newListGroupData: TlistGroupChildFields = { owner, groupName, parentGroupId };
 
         try {
-            const newListGroup = new ListGroupChild(newListGroupData);
+            const newListGroup = new GiftGroupChildModel(newListGroupData);
             await newListGroup.save();
             return res.status(200).json(newListGroup);
         } catch (err) {
@@ -204,15 +203,15 @@ router.post(
 
         const userIdToken = req.user._id;
         const { groupVariant, groupName } = req.body;
-        const owner: IgroupMemberParent = {
+        const owner: IgiftGroupChildMember = {
             userId: userIdToken,
             permissions: giftGroupChildOwnerBasePerms,
         };
 
-        const newListGroupData: TlistGroupParentBase = { owner, groupVariant, groupName };
+        const newListGroupData: TgiftGroupFields = { owner, groupName };
 
         try {
-            const newListGroup = new ListGroupParent(newListGroupData);
+            const newListGroup = new GiftGroupModel(newListGroupData);
             await newListGroup.save();
             return res.status(200).json(newListGroup);
         } catch (err) {
@@ -234,7 +233,7 @@ router.put('/join/:groupid', auth, async (req: Request, res: Response) => {
 
     // Validation group must exist and must not already be a member or owner
     try {
-        const foundGroup = await ListGroupBase.findOne().and([
+        const foundGroup = await listGroupBaseModel.findOne().and([
             { _id: groupIdParams },
             {
                 $nor: [{ 'owner.userId': userIdToken }, { 'members.userId': userIdToken }],
@@ -254,7 +253,7 @@ router.put('/join/:groupid', auth, async (req: Request, res: Response) => {
     const newMember: IgroupMemberBase = { userId: userIdToken, permissions: [] };
 
     try {
-        const updatedGroup = await ListGroupBase.findOneAndUpdate(
+        const updatedGroup = await listGroupBaseModel.findOneAndUpdate(
             { _id: groupIdParams },
             { $push: { members: newMember } },
             { new: true }
@@ -276,10 +275,9 @@ router.put('/leave/:groupid', auth, async (req: Request, res: Response) => {
     const groupIdParams = req.params.groupid;
 
     try {
-        const foundGroup = await ListGroupBase.findOne().and([
-            { _id: groupIdParams },
-            { 'members.userId': userIdToken },
-        ]);
+        const foundGroup = await listGroupBaseModel
+            .findOne()
+            .and([{ _id: groupIdParams }, { 'members.userId': userIdToken }]);
 
         if (!foundGroup) {
             return res.status(400).send('Invalid groupId or not a member');
@@ -290,7 +288,7 @@ router.put('/leave/:groupid', auth, async (req: Request, res: Response) => {
     }
 
     try {
-        const updatedGroup = await ListGroupBase.findOneAndUpdate(
+        const updatedGroup = await listGroupBaseModel.findOneAndUpdate(
             { _id: groupIdParams },
             { $pull: { members: { userId: userIdToken } } },
             { new: true }
@@ -314,7 +312,7 @@ router.delete('/delete/:groupid', auth, async (req: Request, res: Response) => {
 
     // Group must exist and user must have delete permissions
     try {
-        var foundGroup = await ListGroupBase.findOne().and([
+        var foundGroup = await listGroupBaseModel.findOne().and([
             { _id: groupIdParams },
             {
                 $or: [
@@ -335,11 +333,11 @@ router.delete('/delete/:groupid', auth, async (req: Request, res: Response) => {
     // TODO Delete all associated list items and messages
     try {
         if (!LIST_GROUP_PARENT_VARIANTS.includes(foundGroup.groupVariant)) {
-            await ListGroupBase.deleteOne({ _id: groupIdParams });
+            await listGroupBaseModel.deleteOne({ _id: groupIdParams });
             return res.status(200).json({ msg: 'Group deleted' });
         } else {
-            await ListGroupChild.deleteMany({ parentGroupId: groupIdParams });
-            await ListGroupParent.deleteOne({ _id: groupIdParams });
+            await GiftGroupChildModel.deleteMany({ parentGroupId: groupIdParams });
+            await GiftGroupModel.deleteOne({ _id: groupIdParams });
             return res.status(200).json({ msg: 'Parent group and all child groups deleted' });
         }
     } catch (err) {
