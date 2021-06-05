@@ -27,7 +27,6 @@ export type TlistGroupChild = Document & TlistGroupChildBase;
 // Define schema
 
 const ListGroupSchemaExtensionChild = new Schema({
-    groupVariant: { type: String, required: true, enum: LIST_GROUP_CHILD_VARIANTS },
     owner: {
         userId: { type: Schema.Types.ObjectId, required: true },
         permissions: [{ type: String, required: true, enum: PERM_LIST_GROUP_CHILD }],

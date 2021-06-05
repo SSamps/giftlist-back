@@ -1,48 +1,78 @@
-import { Document, Schema } from 'mongoose';
+import { Schema } from 'mongoose';
 import ListGroupSchemaBase, { IgroupMemberBase, TlistGroupBase } from './ListGroup';
-import { PERM_LIST_GROUP_SINGLE, TYPE_PERM_LIST_GROUP_SINGLE } from './permissions/ListGroupPermissions';
+import {
+    PERM_LIST_GROUP_SINGLE_BASIC_LIST as PERM_BASIC_LIST_ALL,
+    PERM_LIST_GROUP_SINGLE_GIFT_LIST as PERM_GIFT_LIST_ALL,
+    TYPE_PERM_LIST_GROUP_SINGLE_BASIC_LIST as TYPE_PERM_BASIC_LIST_ALL,
+    TYPE_PERM_LIST_GROUP_SINGLE_GIFT_LIST as TYPE_PERM_GIFT_LIST_ALL,
+} from './permissions/ListGroupPermissions';
 
 // Define groupTypes which are single groups
 export const BASIC_LIST = 'basicList';
 export const GIFT_LIST = 'giftList';
 
 export const LIST_GROUP_SINGLE_VARIANTS = [BASIC_LIST, GIFT_LIST];
-type TYPE_LIST_GROUP_SINGLE_VARIANTS = typeof BASIC_LIST | typeof GIFT_LIST;
 
-// Define other types and interfaces
-
-export interface IgroupMemberSingle extends IgroupMemberBase {
-    permissions: TYPE_PERM_LIST_GROUP_SINGLE[];
+// Basic Lists
+export interface IgroupMemberBasicList extends IgroupMemberBase {
+    permissions: TYPE_PERM_BASIC_LIST_ALL[];
 }
 
-export type TlistGroupBaseExtensionSingle = {
-    owner: IgroupMemberSingle;
-    members?: [IgroupMemberSingle];
-    groupVariant: TYPE_LIST_GROUP_SINGLE_VARIANTS;
+export type TbasicListExtensionFields = {
+    owner: IgroupMemberBasicList;
+    members?: [IgroupMemberBasicList];
+    maxListItems?: Number;
 };
 
-export type TlistGroupSingleBase = TlistGroupBase & TlistGroupBaseExtensionSingle;
-export type TlistGroupSingle = Document & TlistGroupSingleBase;
+export type TbasicListFields = TlistGroupBase & TbasicListExtensionFields;
 
-// Define schema
-
-const ListGroupSchemaExtensionSingle = new Schema({
-    groupVariant: { type: String, required: true, enum: LIST_GROUP_SINGLE_VARIANTS },
+export const BasicListSchema = new Schema({
     owner: {
         userId: { type: Schema.Types.ObjectId, required: true },
-        permissions: [{ type: String, required: true, enum: PERM_LIST_GROUP_SINGLE }],
+        permissions: [{ type: String, required: true, enum: PERM_BASIC_LIST_ALL }],
         oldestUnreadMsg: { type: Date },
     },
     members: [
         {
             userId: { type: Schema.Types.ObjectId, required: true },
-            permissions: [{ type: String, required: true, enum: PERM_LIST_GROUP_SINGLE }],
+            permissions: [{ type: String, required: true, enum: PERM_BASIC_LIST_ALL }],
             oldestUnreadMsg: { type: Date },
             _id: false,
         },
     ],
+    maxListItems: { type: Number, required: true, default: 50 },
 });
+export const basicListModel = ListGroupSchemaBase.discriminator('basicList', BasicListSchema);
 
-const ListGroupSingle = ListGroupSchemaBase.discriminator('ListGroupSingle', ListGroupSchemaExtensionSingle);
+// Gift Lists
+export interface IgroupMemberGiftList extends IgroupMemberBase {
+    permissions: TYPE_PERM_GIFT_LIST_ALL[];
+}
 
-export default ListGroupSingle;
+export type TgiftListExtensionFields = {
+    owner: IgroupMemberGiftList;
+    members?: [IgroupMemberGiftList];
+    maxListItems?: Number;
+    maxSecretListItemsEach?: Number;
+};
+
+export type TgiftListFields = TlistGroupBase & TgiftListExtensionFields;
+
+export const giftListSchema = new Schema({
+    owner: {
+        userId: { type: Schema.Types.ObjectId, required: true },
+        permissions: [{ type: String, required: true, enum: PERM_GIFT_LIST_ALL }],
+        oldestUnreadMsg: { type: Date },
+    },
+    members: [
+        {
+            userId: { type: Schema.Types.ObjectId, required: true },
+            permissions: [{ type: String, required: true, enum: PERM_GIFT_LIST_ALL }],
+            oldestUnreadMsg: { type: Date },
+            _id: false,
+        },
+    ],
+    maxListItems: { type: Number, required: true, default: 20 },
+    maxSecretListItemsEach: { type: Number, required: true, default: 5 },
+});
+export const giftListModel = ListGroupSchemaBase.discriminator('giftList', giftListSchema);

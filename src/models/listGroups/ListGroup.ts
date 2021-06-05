@@ -27,27 +27,31 @@ export type TlistGroupSingle = Document & TlistGroupSingleBase;
 export type TlistGroupParent = Document & TlistGroupParentBase;
 export type TlistGroupAny = Document & TlistGroupAnyBase;
 
-export const ListGroupSchemaBase = new Schema({
-    groupVariant: { type: String },
-    owner: {
-        userId: { type: Schema.Types.ObjectId },
-        permissions: [{ type: String }],
-        oldestUnreadMsg: { type: Date },
-    },
-    members: [
-        {
+const options = { discriminatorKey: 'groupVariant' };
+
+export const ListGroupSchemaBase = new Schema(
+    {
+        owner: {
             userId: { type: Schema.Types.ObjectId },
             permissions: [{ type: String }],
             oldestUnreadMsg: { type: Date },
-            _id: false,
         },
-    ],
-    parentGroupId: {
-        type: Schema.Types.ObjectId,
+        members: [
+            {
+                userId: { type: Schema.Types.ObjectId },
+                permissions: [{ type: String }],
+                oldestUnreadMsg: { type: Date },
+                _id: false,
+            },
+        ],
+        parentGroupId: {
+            type: Schema.Types.ObjectId,
+        },
+        groupName: { type: String },
+        creationDate: { type: Date, default: Date.now },
     },
-    groupName: { type: String },
-    creationDate: { type: Date, default: Date.now },
-});
+    options
+);
 
 const ListGroupBase = model<TlistGroupAny>('ListGroup', ListGroupSchemaBase);
 export default ListGroupBase;

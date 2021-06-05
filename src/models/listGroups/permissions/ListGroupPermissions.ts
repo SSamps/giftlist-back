@@ -1,7 +1,7 @@
 export const PERM_CHILD_GROUP_CREATE = 'CHILD_GROUP_CREATE'; // Allowed to create child groups in this parent group
 export const PERM_GROUP_DELETE = 'GROUP_DELETE'; // Allowed to delete the group
 export const PERM_GROUP_INVITE = 'GROUP_INVITE'; // Allowed to invite others to the group
-export const PERM_GROUP_ADMIN = 'GROUP_ADMIN'; // Allowed to kick members from the group
+export const PERM_GROUP_ADMIN = 'GROUP_ADMIN'; // Allowed to kick members from the group and manage permissions (just invite for now) of other users in the group
 
 export const PERM_GROUP_RW_MESSAGES = 'GROUP_RW_MESSAGES'; // Allowed to read an write messages in the group
 export const PERM_GROUP_RW_LIST_EVENTS = 'GROUP_RW_LIST_EVENTS'; // Allowed to select and unselect list items and see when others do so.
@@ -112,7 +112,42 @@ export const listGroupParentBaseOwnerPerms: TYPE_PERM_LIST_GROUP_PARENT[] = [
 
 // Single Group permissions
 
-export const PERM_LIST_GROUP_SINGLE = [
+// BASIC_LIST
+
+export const PERM_LIST_GROUP_SINGLE_BASIC_LIST = [
+    PERM_GROUP_DELETE,
+    PERM_GROUP_INVITE,
+    PERM_GROUP_ADMIN,
+    PERM_GROUP_RW_MESSAGES,
+    PERM_GROUP_RW_LIST_EVENTS,
+    PERM_GROUP_RW_LIST_ITEMS,
+];
+export type TYPE_PERM_LIST_GROUP_SINGLE_BASIC_LIST =
+    | typeof PERM_GROUP_DELETE
+    | typeof PERM_GROUP_INVITE
+    | typeof PERM_GROUP_ADMIN
+    | typeof PERM_GROUP_RW_MESSAGES
+    | typeof PERM_GROUP_RW_LIST_EVENTS
+    | typeof PERM_GROUP_RW_LIST_ITEMS;
+
+export const listGroupSingleBasicListMemberPerms: TYPE_PERM_LIST_GROUP_SINGLE_BASIC_LIST[] = [
+    PERM_GROUP_RW_MESSAGES,
+    PERM_GROUP_RW_LIST_EVENTS,
+    PERM_GROUP_RW_LIST_ITEMS,
+];
+
+export const listGroupSingleBasicListOwnerPerms: TYPE_PERM_LIST_GROUP_SINGLE_BASIC_LIST[] = [
+    PERM_GROUP_DELETE,
+    PERM_GROUP_INVITE,
+    PERM_GROUP_ADMIN,
+    PERM_GROUP_RW_MESSAGES,
+    PERM_GROUP_RW_LIST_EVENTS,
+    PERM_GROUP_RW_LIST_ITEMS,
+];
+
+// GIFT_LIST
+
+export const PERM_LIST_GROUP_SINGLE_GIFT_LIST = [
     PERM_GROUP_DELETE,
     PERM_GROUP_INVITE,
     PERM_GROUP_ADMIN,
@@ -122,7 +157,7 @@ export const PERM_LIST_GROUP_SINGLE = [
     PERM_GROUP_R_LIST_ITEMS,
     PERM_GROUP_RW_SECRET_LIST_ITEMS,
 ];
-export type TYPE_PERM_LIST_GROUP_SINGLE =
+export type TYPE_PERM_LIST_GROUP_SINGLE_GIFT_LIST =
     | typeof PERM_GROUP_DELETE
     | typeof PERM_GROUP_INVITE
     | typeof PERM_GROUP_ADMIN
@@ -132,14 +167,14 @@ export type TYPE_PERM_LIST_GROUP_SINGLE =
     | typeof PERM_GROUP_R_LIST_ITEMS
     | typeof PERM_GROUP_RW_SECRET_LIST_ITEMS;
 
-export const listGroupSingleBaseMemberPerms: TYPE_PERM_LIST_GROUP_SINGLE[] = [
+export const listGroupSingleGiftListMemberPerms: TYPE_PERM_LIST_GROUP_SINGLE_GIFT_LIST[] = [
     PERM_GROUP_RW_MESSAGES,
     PERM_GROUP_RW_LIST_EVENTS,
     PERM_GROUP_R_LIST_ITEMS,
     PERM_GROUP_RW_SECRET_LIST_ITEMS,
 ];
 
-export const listGroupSingleBaseOwnerPerms: TYPE_PERM_LIST_GROUP_SINGLE[] = [
+export const listGroupSingleGiftListOwnerPerms: TYPE_PERM_LIST_GROUP_SINGLE_GIFT_LIST[] = [
     PERM_GROUP_DELETE,
     PERM_GROUP_ADMIN,
     PERM_GROUP_INVITE,

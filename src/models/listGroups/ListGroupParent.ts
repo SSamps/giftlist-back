@@ -26,7 +26,6 @@ export type TlistGroupParent = Document & TlistGroupParentBase;
 // Define schema
 
 const ListGroupSchemaExtensionParent = new Schema({
-    groupVariant: { type: String, required: true, enum: LIST_GROUP_PARENT_VARIANTS },
     owner: {
         userId: { type: Schema.Types.ObjectId, required: true },
         permissions: [{ type: String, required: true, enum: PERM_LIST_GROUP_PARENT }],

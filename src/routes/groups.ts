@@ -1,14 +1,17 @@
 import express, { Router, Request, Response } from 'express';
 import auth from '../middleware/auth';
 import { check, Result, ValidationError, validationResult } from 'express-validator';
-import ListGroupBase, { IgroupMemberBase, TlistGroupAny } from '../models/listGroups/ListGroup';
+import ListGroupBase, {
+    IgroupMemberBase,
+    invalidGroupVariantError,
+    TlistGroupAny,
+} from '../models/listGroups/ListGroup';
 import {
     listGroupChildBaseOwnerPerms,
-    listGroupSingleBaseOwnerPerms,
+    listGroupSingleBasicListOwnerPerms,
+    listGroupSingleGiftListOwnerPerms,
     PERM_CHILD_GROUP_CREATE,
-    PERM_GROUP_ADMIN,
     PERM_GROUP_DELETE,
-    PERM_GROUP_INVITE,
 } from '../models/listGroups/permissions/ListGroupPermissions';
 import ListGroupChild, {
     LIST_GROUP_CHILD_VARIANTS,
@@ -20,10 +23,16 @@ import ListGroupParent, {
     LIST_GROUP_PARENT_VARIANTS,
     TlistGroupParentBase,
 } from '../models/listGroups/ListGroupParent';
-import ListGroupSingle, {
-    IgroupMemberSingle,
+import {
+    BASIC_LIST,
+    GIFT_LIST,
+    IgroupMemberBasicList,
+    IgroupMemberGiftList,
+    basicListModel,
+    giftListModel,
     LIST_GROUP_SINGLE_VARIANTS,
-    TlistGroupSingleBase,
+    TbasicListFields,
+    TgiftListFields,
 } from '../models/listGroups/ListGroupSingle';
 
 const router: Router = express.Router();
@@ -85,17 +94,32 @@ router.post(
 
         const userIdToken = req.user._id;
         const { groupVariant, groupName } = req.body;
-        const owner: IgroupMemberSingle = {
-            userId: userIdToken,
-            permissions: listGroupSingleBaseOwnerPerms,
-        };
-
-        const newListGroupData: TlistGroupSingleBase = { owner, groupVariant, groupName };
 
         try {
-            const newListGroup = new ListGroupSingle(newListGroupData);
-            await newListGroup.save();
-            return res.status(200).json(newListGroup);
+            switch (groupVariant) {
+                case BASIC_LIST: {
+                    const owner: IgroupMemberBasicList = {
+                        userId: userIdToken,
+                        permissions: listGroupSingleBasicListOwnerPerms,
+                    };
+                    const newListGroupData: TbasicListFields = { owner, groupName };
+                    const newListGroup = new basicListModel(newListGroupData);
+                    await newListGroup.save();
+                    return res.status(200).json(newListGroup);
+                }
+                case GIFT_LIST: {
+                    const owner: IgroupMemberGiftList = {
+                        userId: userIdToken,
+                        permissions: listGroupSingleGiftListOwnerPerms,
+                    };
+                    const newListGroupData: TgiftListFields = { owner, groupName };
+                    const newListGroup = new giftListModel(newListGroupData);
+                    await newListGroup.save();
+                    return res.status(200).json(newListGroup);
+                }
+                default:
+                    throw new invalidGroupVariantError(groupVariant);
+            }
         } catch (err) {
             console.log(err.message);
             return res.status(500).send('Server error');

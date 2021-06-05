@@ -10,7 +10,7 @@ import {
     listGroupSingleBaseMemberPerms,
     PERM_GROUP_INVITE,
 } from '../models/listGroups/permissions/ListGroupPermissions';
-import ListGroupSingle, { BASIC_LIST, GIFT_LIST, IgroupMemberSingle } from '../models/listGroups/ListGroupSingle';
+import { BASIC_LIST, GIFT_LIST, IgroupMemberSingle } from '../models/listGroups/ListGroupSingle';
 import ListGroupChild, { CHILD_GIFT_LIST, IgroupMemberChild } from '../models/listGroups/ListGroupChild';
 import ListGroupParent, { IgroupMemberParent, PARENT_GIFT_GROUP } from '../models/listGroups/ListGroupParent';
 
@@ -74,7 +74,6 @@ router.post(
         const groupIdParams = req.params.groupid;
 
         try {
-            // TODO check whether this works for members as well as the owner.
             var foundGroup = await ListGroupBase.findOne().and([
                 { _id: groupIdParams },
                 {
