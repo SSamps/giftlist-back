@@ -1,8 +1,9 @@
 import { Document, Schema, model } from 'mongoose';
-import { TlistGroupChildBase } from './ListGroupChild';
-import { TlistGroupParentBase } from './ListGroupParent';
-import { TlistGroupSingleBase } from './ListGroupSingle';
+import { TlistGroupChildBase } from './child/ListGroupChild';
+import { TlistGroupParentBase } from './parent/ListGroupParent';
+import { TbasicListFields } from './singular/BasicList';
 import { TYPE_PERM_ALL_LIST_GROUP } from './permissions/ListGroupPermissions';
+import { TgiftListFields } from './singular/GiftList';
 
 export class invalidGroupVariantError extends Error {
     constructor(variant: string) {
@@ -22,10 +23,12 @@ export type TlistGroupBase = {
     creationDate?: Date;
 };
 
-export type TlistGroupAnyBase = TlistGroupSingleBase | TlistGroupChildBase | TlistGroupParentBase;
-export type TlistGroupSingle = Document & TlistGroupSingleBase;
-export type TlistGroupParent = Document & TlistGroupParentBase;
-export type TlistGroupAny = Document & TlistGroupAnyBase;
+export type TlistGroupDiscriminatorKey = {
+    groupVariant: string;
+};
+
+export type TlistGroupAnyBase = TbasicListFields | TgiftListFields | TlistGroupChildBase | TlistGroupParentBase;
+export type TlistGroupAny = Document & TlistGroupAnyBase & TlistGroupDiscriminatorKey;
 
 const options = { discriminatorKey: 'groupVariant' };
 

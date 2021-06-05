@@ -5,35 +5,33 @@ import ListGroupBase, {
     IgroupMemberBase,
     invalidGroupVariantError,
     TlistGroupAny,
-} from '../models/listGroups/ListGroup';
+} from '../models/listGroups/ListGroupBase';
 import {
-    listGroupChildBaseOwnerPerms,
-    listGroupSingleBasicListOwnerPerms,
-    listGroupSingleGiftListOwnerPerms,
+    giftGroupChildOwnerBasePerms,
+    basicListOwnerBasePerms,
+    giftListOwnerBasePerms,
     PERM_CHILD_GROUP_CREATE,
     PERM_GROUP_DELETE,
 } from '../models/listGroups/permissions/ListGroupPermissions';
-import ListGroupChild, {
-    LIST_GROUP_CHILD_VARIANTS,
-    IgroupMemberChild,
-    TlistGroupChildBase,
-} from '../models/listGroups/ListGroupChild';
-import ListGroupParent, {
-    IgroupMemberParent,
-    LIST_GROUP_PARENT_VARIANTS,
-    TlistGroupParentBase,
-} from '../models/listGroups/ListGroupParent';
+import ListGroupChild, { IgroupMemberChild, TlistGroupChildBase } from '../models/listGroups/child/ListGroupChild';
+import ListGroupParent, { IgroupMemberParent, TlistGroupParentBase } from '../models/listGroups/parent/ListGroupParent';
 import {
     BASIC_LIST,
-    GIFT_LIST,
     IgroupMemberBasicList,
-    IgroupMemberGiftList,
     basicListModel,
-    giftListModel,
-    LIST_GROUP_SINGLE_VARIANTS,
     TbasicListFields,
+} from '../models/listGroups/singular/BasicList';
+import {
+    LIST_GROUP_CHILD_VARIANTS,
+    LIST_GROUP_PARENT_VARIANTS,
+    LIST_GROUP_SINGLE_VARIANTS,
+} from '../models/listGroups/variants/ListGroupVariants';
+import {
+    giftListModel,
+    GIFT_LIST,
+    IgroupMemberGiftList,
     TgiftListFields,
-} from '../models/listGroups/ListGroupSingle';
+} from '../models/listGroups/singular/GiftList';
 
 const router: Router = express.Router();
 
@@ -100,7 +98,7 @@ router.post(
                 case BASIC_LIST: {
                     const owner: IgroupMemberBasicList = {
                         userId: userIdToken,
-                        permissions: listGroupSingleBasicListOwnerPerms,
+                        permissions: basicListOwnerBasePerms,
                     };
                     const newListGroupData: TbasicListFields = { owner, groupName };
                     const newListGroup = new basicListModel(newListGroupData);
@@ -110,7 +108,7 @@ router.post(
                 case GIFT_LIST: {
                     const owner: IgroupMemberGiftList = {
                         userId: userIdToken,
-                        permissions: listGroupSingleGiftListOwnerPerms,
+                        permissions: giftListOwnerBasePerms,
                     };
                     const newListGroupData: TgiftListFields = { owner, groupName };
                     const newListGroup = new giftListModel(newListGroupData);
@@ -172,7 +170,7 @@ router.post(
 
         const owner: IgroupMemberChild = {
             userId: userIdToken,
-            permissions: listGroupChildBaseOwnerPerms,
+            permissions: giftGroupChildOwnerBasePerms,
         };
         const newListGroupData: TlistGroupChildBase = { owner, groupVariant, groupName, parentGroupId };
 
@@ -208,7 +206,7 @@ router.post(
         const { groupVariant, groupName } = req.body;
         const owner: IgroupMemberParent = {
             userId: userIdToken,
-            permissions: listGroupChildBaseOwnerPerms,
+            permissions: giftGroupChildOwnerBasePerms,
         };
 
         const newListGroupData: TlistGroupParentBase = { owner, groupVariant, groupName };

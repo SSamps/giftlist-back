@@ -1,17 +1,16 @@
 import { Document, Schema } from 'mongoose';
-import ListGroupSchemaBase, { IgroupMemberBase, TlistGroupBase } from './ListGroup';
-import { PERM_LIST_GROUP_CHILD, TYPE_PERM_LIST_GROUP_CHILD } from './permissions/ListGroupPermissions';
+import ListGroupSchemaBase, { IgroupMemberBase, TlistGroupBase } from '../ListGroupBase';
+import { PERM_GIFT_GROUP_CHILD_ALL, TYPE_PERM_GIFT_GROUP_CHILD_ALL } from '../permissions/ListGroupPermissions';
 
 // Define groupTypes which are child groups
-export const CHILD_GIFT_LIST = 'childGiftList';
+export const GIFT_GROUP_CHILD = 'GIFT_GROUP_CHILD';
 
-export const LIST_GROUP_CHILD_VARIANTS = [CHILD_GIFT_LIST];
-type TYPE_LIST_GROUP_CHILD_VARIANTS = typeof CHILD_GIFT_LIST;
+type TYPE_LIST_GROUP_CHILD_VARIANTS = typeof GIFT_GROUP_CHILD;
 
 // Define other types and interfaces
 
 export interface IgroupMemberChild extends IgroupMemberBase {
-    permissions: TYPE_PERM_LIST_GROUP_CHILD[];
+    permissions: TYPE_PERM_GIFT_GROUP_CHILD_ALL[];
 }
 
 export type TlistGroupBaseExtensionChild = {
@@ -29,13 +28,13 @@ export type TlistGroupChild = Document & TlistGroupChildBase;
 const ListGroupSchemaExtensionChild = new Schema({
     owner: {
         userId: { type: Schema.Types.ObjectId, required: true },
-        permissions: [{ type: String, required: true, enum: PERM_LIST_GROUP_CHILD }],
+        permissions: [{ type: String, required: true, enum: PERM_GIFT_GROUP_CHILD_ALL }],
         oldestUnreadMsg: { type: Date },
     },
     members: [
         {
             userId: { type: Schema.Types.ObjectId, required: true },
-            permissions: [{ type: String, required: true, enum: PERM_LIST_GROUP_CHILD }],
+            permissions: [{ type: String, required: true, enum: PERM_GIFT_GROUP_CHILD_ALL }],
             oldestUnreadMsg: { type: Date },
             _id: false,
         },
@@ -46,6 +45,6 @@ const ListGroupSchemaExtensionChild = new Schema({
     },
 });
 
-const ListGroupChild = ListGroupSchemaBase.discriminator('ListGroupChild', ListGroupSchemaExtensionChild);
+const ListGroupChild = ListGroupSchemaBase.discriminator(GIFT_GROUP_CHILD, ListGroupSchemaExtensionChild);
 
 export default ListGroupChild;

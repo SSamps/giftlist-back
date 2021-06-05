@@ -3,16 +3,18 @@ import auth from '../middleware/auth';
 import jwt from 'jsonwebtoken';
 import sendgrid from '@sendgrid/mail';
 import { check, Result, ValidationError, validationResult } from 'express-validator';
-import ListGroupBase, { IgroupMemberBase, invalidGroupVariantError } from '../models/listGroups/ListGroup';
+import ListGroupBase, { invalidGroupVariantError } from '../models/listGroups/ListGroupBase';
 import {
-    listGroupChildBaseMemberPerms,
-    listGroupParentBaseMemberPerms,
-    listGroupSingleBaseMemberPerms,
+    giftGroupChildMemberBasePerms,
+    giftGroupMemberBasePerms,
+    basicListMemberBasePerms,
+    giftListMemberBasePerms,
     PERM_GROUP_INVITE,
 } from '../models/listGroups/permissions/ListGroupPermissions';
-import { BASIC_LIST, GIFT_LIST, IgroupMemberSingle } from '../models/listGroups/ListGroupSingle';
-import ListGroupChild, { CHILD_GIFT_LIST, IgroupMemberChild } from '../models/listGroups/ListGroupChild';
-import ListGroupParent, { IgroupMemberParent, PARENT_GIFT_GROUP } from '../models/listGroups/ListGroupParent';
+import { basicListModel, BASIC_LIST, IgroupMemberBasicList } from '../models/listGroups/singular/BasicList';
+import ListGroupChild, { GIFT_GROUP_CHILD, IgroupMemberChild } from '../models/listGroups/child/ListGroupChild';
+import ListGroupParent, { IgroupMemberParent, GIFT_GROUP } from '../models/listGroups/parent/ListGroupParent';
+import { giftListModel, GIFT_LIST, IgroupMemberGiftList } from '../models/listGroups/singular/GiftList';
 
 const router: Router = express.Router();
 sendgrid.setApiKey(process.env.SENDGRID_API_KEY);
@@ -192,24 +194,31 @@ router.post('/accept/:groupToken', auth, async (req: Request, res: Response) => 
         const { groupVariant } = foundGroup;
 
         switch (groupVariant) {
-            case BASIC_LIST:
-            case GIFT_LIST: {
-                let newMember: IgroupMemberSingle = {
+            case BASIC_LIST: {
+                let newMember: IgroupMemberBasicList = {
                     userId: userIdToken,
-                    permissions: listGroupSingleBaseMemberPerms,
+                    permissions: basicListMemberBasePerms,
                 };
-                await ListGroupSingle.findOneAndUpdate({ _id: groupId }, { $push: { members: newMember } });
+                await basicListModel.findOneAndUpdate({ _id: groupId }, { $push: { members: newMember } });
                 break;
             }
-            case CHILD_GIFT_LIST: {
-                let newMember: IgroupMemberChild = { userId: userIdToken, permissions: listGroupChildBaseMemberPerms };
+            case GIFT_LIST: {
+                let newMember: IgroupMemberGiftList = {
+                    userId: userIdToken,
+                    permissions: giftListMemberBasePerms,
+                };
+                await giftListModel.findOneAndUpdate({ _id: groupId }, { $push: { members: newMember } });
+                break;
+            }
+            case GIFT_GROUP_CHILD: {
+                let newMember: IgroupMemberChild = { userId: userIdToken, permissions: giftGroupChildMemberBasePerms };
                 await ListGroupChild.findOneAndUpdate({ _id: groupId }, { $push: { members: newMember } });
                 break;
             }
-            case PARENT_GIFT_GROUP: {
+            case GIFT_GROUP: {
                 let newMember: IgroupMemberParent = {
                     userId: userIdToken,
-                    permissions: listGroupParentBaseMemberPerms,
+                    permissions: giftGroupMemberBasePerms,
                 };
                 await ListGroupParent.findOneAndUpdate({ _id: groupId }, { $push: { members: newMember } });
                 break;
