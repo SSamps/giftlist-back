@@ -4,6 +4,7 @@ import { check, Result, ValidationError, validationResult } from 'express-valida
 import {
     IgroupMemberBase,
     invalidGroupVariantError,
+    invalidParentVariantError,
     listGroupBaseModel,
     TlistGroupAny,
 } from '../models/listGroups/ListGroupBase';
@@ -15,10 +16,11 @@ import {
     PERM_GROUP_DELETE,
 } from '../models/listGroups/permissions/ListGroupPermissions';
 import GiftGroupChildModel, {
+    GIFT_GROUP_CHILD,
     IgiftGroupChildMember,
-    TlistGroupChildFields,
+    TgiftGroupChildFields,
 } from '../models/listGroups/child/GiftGroupChild';
-import GiftGroupModel, { TgiftGroupFields } from '../models/listGroups/parent/GiftGroup';
+import GiftGroupModel, { GIFT_GROUP, TgiftGroupFields } from '../models/listGroups/parent/GiftGroup';
 import {
     BASIC_LIST,
     IbasicListMember,
@@ -147,7 +149,7 @@ router.post(
 
         // Validation
         try {
-            const foundParentGroup = await GiftGroupModel.findOne().and([
+            const foundParentGroup = await listGroupBaseModel.findOne().and([
                 { _id: parentGroupId },
                 {
                     $or: [
@@ -160,23 +162,26 @@ router.post(
             if (!foundParentGroup) {
                 return res.status(400).send('Invalid parentGroupId or unauthorized');
             }
-        } catch (err) {
-            console.log(err.message);
-            return res.status(500).send('Server error');
-        }
 
-        // TODO The user hasn't exceeded max number of allowable children
+            const parentVariant = foundParentGroup.groupVariant;
 
-        const owner: IgiftGroupChildMember = {
-            userId: userIdToken,
-            permissions: giftGroupChildOwnerBasePerms,
-        };
-        const newListGroupData: TlistGroupChildFields = { owner, groupName, parentGroupId };
-
-        try {
-            const newListGroup = new GiftGroupChildModel(newListGroupData);
-            await newListGroup.save();
-            return res.status(200).json(newListGroup);
+            switch (groupVariant) {
+                case GIFT_GROUP_CHILD: {
+                    if (parentVariant !== GIFT_GROUP) {
+                        throw new invalidParentVariantError(groupVariant, parentVariant);
+                    }
+                    const owner: IgiftGroupChildMember = {
+                        userId: userIdToken,
+                        permissions: giftGroupChildOwnerBasePerms,
+                    };
+                    const newListGroupData: TgiftGroupChildFields = { owner, groupName, parentGroupId };
+                    const newListGroup = new GiftGroupChildModel(newListGroupData);
+                    await newListGroup.save();
+                    return res.status(200).json(newListGroup);
+                }
+                default:
+                    throw new invalidGroupVariantError(groupVariant);
+            }
         } catch (err) {
             console.log(err.message);
             return res.status(500).send('Server error');
@@ -203,17 +208,22 @@ router.post(
 
         const userIdToken = req.user._id;
         const { groupVariant, groupName } = req.body;
-        const owner: IgiftGroupChildMember = {
-            userId: userIdToken,
-            permissions: giftGroupChildOwnerBasePerms,
-        };
-
-        const newListGroupData: TgiftGroupFields = { owner, groupName };
 
         try {
-            const newListGroup = new GiftGroupModel(newListGroupData);
-            await newListGroup.save();
-            return res.status(200).json(newListGroup);
+            switch (groupVariant) {
+                case GIFT_GROUP: {
+                    const owner: IgiftGroupChildMember = {
+                        userId: userIdToken,
+                        permissions: giftGroupChildOwnerBasePerms,
+                    };
+                    const newGroupData: TgiftGroupFields = { owner, groupName };
+                    const newGroup = new GiftGroupModel(newGroupData);
+                    await newGroup.save();
+                    return res.status(200).json(newGroup);
+                }
+                default:
+                    throw new invalidGroupVariantError(groupVariant);
+            }
         } catch (err) {
             console.log(err.message);
             return res.status(500).send('Server error');

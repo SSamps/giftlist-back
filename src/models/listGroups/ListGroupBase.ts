@@ -1,5 +1,5 @@
 import { Document, Schema, model } from 'mongoose';
-import { TlistGroupChildFields } from './child/GiftGroupChild';
+import { TgiftGroupChildFields } from './child/GiftGroupChild';
 import { TgiftGroupFields } from './parent/GiftGroup';
 import { TbasicListFields } from './singular/BasicList';
 import { TYPE_PERM_ALL_LIST_GROUP } from './permissions/ListGroupPermissions';
@@ -9,6 +9,13 @@ export class invalidGroupVariantError extends Error {
     constructor(variant: string) {
         super(variant + ' is an invalid groupVariant');
         this.name = 'invalidGroupVariantError';
+    }
+}
+
+export class invalidParentVariantError extends Error {
+    constructor(childVariant: string, parentVariant: string) {
+        super(childVariant + ' is an invalid child for the provided parent variant' + parentVariant);
+        this.name = 'invalidParentVariantError';
     }
 }
 
@@ -27,7 +34,7 @@ export type TlistGroupDiscriminatorKey = {
     groupVariant: string;
 };
 
-export type TlistGroupAnyBase = TbasicListFields | TgiftListFields | TlistGroupChildFields | TgiftGroupFields;
+export type TlistGroupAnyBase = TbasicListFields | TgiftListFields | TgiftGroupChildFields | TgiftGroupFields;
 export type TlistGroupAny = Document & TlistGroupAnyBase & TlistGroupDiscriminatorKey;
 
 const options = { discriminatorKey: 'groupVariant' };

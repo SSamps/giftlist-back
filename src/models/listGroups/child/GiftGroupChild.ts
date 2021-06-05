@@ -14,7 +14,7 @@ export type TgiftGroupChildExtraFields = {
     parentGroupId: Schema.Types.ObjectId | string;
 };
 
-export type TlistGroupChildFields = TlistGroupBaseFields & TgiftGroupChildExtraFields;
+export type TgiftGroupChildFields = TlistGroupBaseFields & TgiftGroupChildExtraFields;
 
 const giftGroupChildSchema = new Schema({
     owner: {
