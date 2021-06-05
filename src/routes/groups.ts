@@ -3,6 +3,8 @@ import auth from '../middleware/auth';
 import { check, Result, ValidationError, validationResult } from 'express-validator';
 import ListGroupBase, { IgroupMemberBase, TlistGroupAny } from '../models/listGroups/ListGroup';
 import {
+    listGroupChildBaseOwnerPerms,
+    listGroupSingleBaseOwnerPerms,
     PERM_CHILD_GROUP_CREATE,
     PERM_GROUP_ADMIN,
     PERM_GROUP_DELETE,
@@ -85,7 +87,7 @@ router.post(
         const { groupVariant, groupName } = req.body;
         const owner: IgroupMemberSingle = {
             userId: userIdToken,
-            permissions: [PERM_GROUP_DELETE, PERM_GROUP_INVITE, PERM_GROUP_ADMIN],
+            permissions: listGroupSingleBaseOwnerPerms,
         };
 
         const newListGroupData: TlistGroupSingleBase = { owner, groupVariant, groupName };
@@ -144,11 +146,9 @@ router.post(
 
         // TODO The user hasn't exceeded max number of allowable children
 
-        // Create child group
-
         const owner: IgroupMemberChild = {
             userId: userIdToken,
-            permissions: [PERM_GROUP_DELETE, PERM_GROUP_INVITE, PERM_GROUP_ADMIN],
+            permissions: listGroupChildBaseOwnerPerms,
         };
         const newListGroupData: TlistGroupChildBase = { owner, groupVariant, groupName, parentGroupId };
 
@@ -184,7 +184,7 @@ router.post(
         const { groupVariant, groupName } = req.body;
         const owner: IgroupMemberParent = {
             userId: userIdToken,
-            permissions: [PERM_CHILD_GROUP_CREATE, PERM_GROUP_DELETE, PERM_GROUP_INVITE, PERM_GROUP_ADMIN],
+            permissions: listGroupChildBaseOwnerPerms,
         };
 
         const newListGroupData: TlistGroupParentBase = { owner, groupVariant, groupName };
@@ -200,6 +200,7 @@ router.post(
     }
 );
 
+// TODO potentially remove this route after no longer needed for testing.
 // @route PUT api/groups/join/groupid
 // @desc Join a group
 // @access Private
@@ -252,7 +253,6 @@ router.put('/leave/:groupid', auth, async (req: Request, res: Response) => {
     const userIdToken = req.user._id;
     const groupIdParams = req.params.groupid;
 
-    // Validation group must exist and user must be a member
     try {
         const foundGroup = await ListGroupBase.findOne().and([
             { _id: groupIdParams },

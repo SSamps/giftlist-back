@@ -2,6 +2,7 @@ import { Document, Schema, model } from 'mongoose';
 import { TlistGroupChildBase } from './ListGroupChild';
 import { TlistGroupParentBase } from './ListGroupParent';
 import { TlistGroupSingleBase } from './ListGroupSingle';
+import { TYPE_PERM_ALL_LIST_GROUP } from './permissions/ListGroupPermissions';
 
 export class invalidGroupVariantError extends Error {
     constructor(variant: string) {
@@ -13,7 +14,7 @@ export class invalidGroupVariantError extends Error {
 export interface IgroupMemberBase {
     userId: Schema.Types.ObjectId | string;
     oldestReadMessage?: Date | undefined;
-    permissions: string[];
+    permissions: TYPE_PERM_ALL_LIST_GROUP[];
 }
 
 export type TlistGroupBase = {
