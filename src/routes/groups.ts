@@ -385,8 +385,6 @@ router.put(
         const { targetUserId, targetPermission, modification } = req.body;
 
         try {
-            // Verify the target group exists and the user has the correct permissions
-            // TODO Verify the target user is a member of the group
             var foundGroup = await listGroupBaseModel.findOne({
                 $and: [
                     { _id: groupIdParams },
@@ -422,6 +420,57 @@ router.put(
             }
 
             return res.status(200).json({ msg: 'Permissions updated' });
+        } catch (err) {
+            console.log(err.message);
+            return res.status(500).send('Server error');
+        }
+    }
+);
+
+// @route PUT api/groups/kick/groupid
+// @desc Kick a user from a group
+// @access Private
+router.put(
+    '/kick/:groupid',
+    auth,
+    check('targetUserId', 'targetUserId is required').not().isEmpty(),
+    async (req: Request, res: Response) => {
+        console.log('put /api/groups/kick:groupid hit');
+
+        const errors: Result<ValidationError> = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        const userIdToken = req.user._id;
+        const groupIdParams = req.params.groupid;
+        const { targetUserId } = req.body;
+
+        try {
+            var foundGroup = await listGroupBaseModel.findOne({
+                $and: [
+                    { _id: groupIdParams },
+                    {
+                        $or: [
+                            { 'owner.userId': userIdToken, 'owner.permissions': PERM_GROUP_ADMIN },
+                            { 'members.userId': userIdToken, 'owner.permissions': PERM_GROUP_ADMIN },
+                        ],
+                    },
+                    { 'members.userId': targetUserId },
+                ],
+            });
+            if (!foundGroup) {
+                return res
+                    .status(400)
+                    .send(
+                        'Invalid groupId, target user not in the group or requesting user is not authorised to kick users from this group'
+                    );
+            } else if (LIST_GROUP_CHILD_VARIANTS.includes(foundGroup.groupVariant)) {
+                return res.status(400).send('Invalid permission: users cannot be kicked from child groups');
+            }
+
+            await foundGroup.update({ $pull: { members: { userId: targetUserId } } });
+            return res.status(200).json({ msg: 'User kicked' });
         } catch (err) {
             console.log(err.message);
             return res.status(500).send('Server error');
