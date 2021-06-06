@@ -8,7 +8,7 @@ export interface IgiftGroupChildMember extends IgroupMemberBase {
     permissions: TYPE_PERM_GIFT_GROUP_CHILD_ALL[];
 }
 
-export type TgiftGroupChildExtraFields = {
+type TgiftGroupChildExtraFields = {
     owner: IgiftGroupChildMember;
     members?: [IgiftGroupChildMember];
     parentGroupId: Schema.Types.ObjectId | string;
@@ -36,6 +36,4 @@ const giftGroupChildSchema = new Schema({
     },
 });
 
-const GiftGroupChildModel = listGroupBaseModel.discriminator(GIFT_GROUP_CHILD, giftGroupChildSchema);
-
-export default GiftGroupChildModel;
+export const GiftGroupChildModel = listGroupBaseModel.discriminator(GIFT_GROUP_CHILD, giftGroupChildSchema);

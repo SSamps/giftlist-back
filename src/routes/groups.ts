@@ -21,12 +21,13 @@ import {
     PERM_MODIFIER_ADD,
     PERM_MODIFIER_REMOVE,
 } from '../models/listGroups/permissions/ListGroupPermissions';
-import GiftGroupChildModel, {
+import {
+    GiftGroupChildModel,
     GIFT_GROUP_CHILD,
     IgiftGroupChildMember,
     TgiftGroupChildFields,
 } from '../models/listGroups/child/GiftGroupChild';
-import GiftGroupModel, { GIFT_GROUP, IgiftGroupMember, TgiftGroupFields } from '../models/listGroups/parent/GiftGroup';
+import { GiftGroupModel, GIFT_GROUP, IgiftGroupMember, TgiftGroupFields } from '../models/listGroups/parent/GiftGroup';
 import {
     BASIC_LIST,
     IbasicListMember,

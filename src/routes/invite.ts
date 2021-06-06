@@ -12,11 +12,12 @@ import {
     PERM_GROUP_INVITE,
 } from '../models/listGroups/permissions/ListGroupPermissions';
 import { BasicListModel, BASIC_LIST, IbasicListMember } from '../models/listGroups/singular/BasicList';
-import GiftGroupChildModel, {
+import {
+    GiftGroupChildModel,
     GIFT_GROUP_CHILD,
     IgiftGroupChildMember,
 } from '../models/listGroups/child/GiftGroupChild';
-import GiftGroupModel, { GIFT_GROUP, IgiftGroupMember } from '../models/listGroups/parent/GiftGroup';
+import { GiftGroupModel, GIFT_GROUP, IgiftGroupMember } from '../models/listGroups/parent/GiftGroup';
 import { GiftListModel, GIFT_LIST, IgiftListMember } from '../models/listGroups/singular/GiftList';
 
 const router: Router = express.Router();

@@ -8,7 +8,7 @@ export interface IgiftListMember extends IgroupMemberBase {
     permissions: TYPE_PERM_GIFT_LIST_ALL[];
 }
 
-export type TgiftListExtraFields = {
+type TgiftListExtraFields = {
     owner: IgiftListMember;
     members?: [IgiftListMember];
     maxListItems?: Number;
@@ -17,7 +17,7 @@ export type TgiftListExtraFields = {
 
 export type TgiftListFields = TlistGroupBaseFields & TgiftListExtraFields;
 
-export const giftListSchema = new Schema({
+const giftListSchema = new Schema({
     owner: {
         userId: { type: Schema.Types.ObjectId, required: true },
         permissions: [{ type: String, required: true, enum: PERM_GIFT_LIST_ALL }],
@@ -34,4 +34,5 @@ export const giftListSchema = new Schema({
     maxListItems: { type: Number, required: true, default: 20 },
     maxSecretListItemsEach: { type: Number, required: true, default: 5 },
 });
+
 export const GiftListModel = listGroupBaseModel.discriminator(GIFT_LIST, giftListSchema);

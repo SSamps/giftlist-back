@@ -8,7 +8,7 @@ export interface IbasicListMember extends IgroupMemberBase {
     permissions: TYPE_PERM_BASIC_LIST_ALL[];
 }
 
-export type TbasicListExtraFields = {
+type TbasicListExtraFields = {
     owner: IbasicListMember;
     members?: [IbasicListMember];
     maxListItems?: Number;
@@ -16,7 +16,7 @@ export type TbasicListExtraFields = {
 
 export type TbasicListFields = TlistGroupBaseFields & TbasicListExtraFields;
 
-export const basicListSchema = new Schema({
+const basicListSchema = new Schema({
     owner: {
         userId: { type: Schema.Types.ObjectId, required: true },
         permissions: [{ type: String, required: true, enum: PERM_BASIC_LIST_ALL }],
@@ -32,4 +32,5 @@ export const basicListSchema = new Schema({
     ],
     maxListItems: { type: Number, required: true, default: 50 },
 });
+
 export const BasicListModel = listGroupBaseModel.discriminator(BASIC_LIST, basicListSchema);

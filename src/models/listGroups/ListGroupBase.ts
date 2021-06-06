@@ -30,16 +30,16 @@ export type TlistGroupBaseFields = {
     creationDate?: Date;
 };
 
-export type TlistGroupDiscriminatorKey = {
+type TlistGroupDiscriminatorKey = {
     groupVariant: string;
 };
 
-export type TlistGroupAnyBase = TbasicListFields | TgiftListFields | TgiftGroupChildFields | TgiftGroupFields;
+type TlistGroupAnyBase = TbasicListFields | TgiftListFields | TgiftGroupChildFields | TgiftGroupFields;
 export type TlistGroupAny = Document & TlistGroupAnyBase & TlistGroupDiscriminatorKey;
 
 const options = { discriminatorKey: 'groupVariant' };
 
-export const ListGroupBaseSchema = new Schema(
+const ListGroupBaseSchema = new Schema(
     {
         owner: {
             userId: { type: Schema.Types.ObjectId },

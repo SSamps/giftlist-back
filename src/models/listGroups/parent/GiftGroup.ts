@@ -8,7 +8,7 @@ export interface IgiftGroupMember extends IgroupMemberBase {
     permissions: TYPE_PERM_GIFT_GROUP_ALL[];
 }
 
-export type TgiftGroupExtraFields = {
+type TgiftGroupExtraFields = {
     owner: IgiftGroupMember;
     members?: [IgiftGroupMember];
 };
@@ -31,6 +31,4 @@ const giftGroupSchema = new Schema({
     ],
 });
 
-const GiftGroupModel = listGroupBaseModel.discriminator(GIFT_GROUP, giftGroupSchema);
-
-export default GiftGroupModel;
+export const GiftGroupModel = listGroupBaseModel.discriminator(GIFT_GROUP, giftGroupSchema);
