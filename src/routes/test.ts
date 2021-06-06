@@ -1,5 +1,5 @@
 import express, { Router, Request, Response } from 'express';
-import auth from '../middleware/auth';
+import { authMiddleware } from '../middleware/auth';
 import { check, Result, ValidationError, validationResult } from 'express-validator';
 import Test, { ItestData } from '../models/Test';
 
@@ -8,7 +8,7 @@ const router: Router = express.Router();
 // @route GET api/test/:userid
 // @desc Get a user's test data
 // @access Private
-router.get('/:userid', auth, async (req: Request, res: Response) => {
+router.get('/:userid', authMiddleware, async (req: Request, res: Response) => {
     console.log('GET api/test hit');
 
     const userIdParams = req.params.userid;
@@ -35,7 +35,7 @@ router.get('/:userid', auth, async (req: Request, res: Response) => {
 // @access Private
 router.post(
     '/:userid',
-    auth,
+    authMiddleware,
     check('testVar', 'testVar is required').not().isEmpty(),
     async (req: Request, res: Response) => {
         console.log('POST api/test hit');
@@ -79,7 +79,7 @@ router.post(
 // @route DELETE api/test/:userid/:testid
 // @desc Delete some test data from a user
 // @access Private
-router.delete('/:userid/:testid', auth, async (req: Request, res: Response) => {
+router.delete('/:userid/:testid', authMiddleware, async (req: Request, res: Response) => {
     console.log('DELETE api/test/:userid/:testid hit');
 
     const userIdParams = req.params.userid;
@@ -109,7 +109,7 @@ router.delete('/:userid/:testid', auth, async (req: Request, res: Response) => {
 // @route DELETE api/test/:userid/
 // @desc Delete all test data from a user
 // @access Private
-router.delete('/:userid', auth, async (req: Request, res: Response) => {
+router.delete('/:userid', authMiddleware, async (req: Request, res: Response) => {
     console.log('DELETE api/test/:userid hit');
 
     const userIdParams = req.params.userid;

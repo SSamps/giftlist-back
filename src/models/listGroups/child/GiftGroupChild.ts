@@ -12,6 +12,8 @@ type TgiftGroupChildExtraFields = {
     owner: IgiftGroupChildMember;
     members?: [IgiftGroupChildMember];
     parentGroupId: Schema.Types.ObjectId | string;
+    maxListItems?: Number;
+    maxSecretListItemsEach?: Number;
 };
 
 export type TgiftGroupChildFields = TlistGroupBaseFields & TgiftGroupChildExtraFields;
@@ -34,6 +36,8 @@ const giftGroupChildSchema = new Schema({
         type: Schema.Types.ObjectId,
         required: true,
     },
+    maxListItems: { type: Number, required: true, default: 20 },
+    maxSecretListItemsEach: { type: Number, required: true, default: 5 },
 });
 
 export const GiftGroupChildModel = listGroupBaseModel.discriminator(GIFT_GROUP_CHILD, giftGroupChildSchema);

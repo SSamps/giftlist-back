@@ -1,5 +1,5 @@
 import express, { Router, Request, Response } from 'express';
-import auth from '../middleware/auth';
+import { authMiddleware } from '../middleware/auth';
 import { check, Result, ValidationError, validationResult } from 'express-validator';
 import {
     IgroupMemberBase,
@@ -46,7 +46,7 @@ const router: Router = express.Router();
 // @route GET api/groups/user/:userid
 // @desc Get a user's own groups
 // @access Private
-router.get('/user/:userid', auth, async (req: Request, res: Response) => {
+router.get('/user/:userid', authMiddleware, async (req: Request, res: Response) => {
     console.log('GET /api/groups/:userid hit');
 
     const userIdParams = req.params.userid;
@@ -86,7 +86,7 @@ router.get('/user/:userid', auth, async (req: Request, res: Response) => {
 // @access Private
 router.post(
     '/single',
-    auth,
+    authMiddleware,
     check('groupName', 'groupName is required').not().isEmpty(),
     check('groupVariant', 'groupVariant is required').not().isEmpty(),
     check('groupVariant', 'groupVariant is not a valid single group type').isIn(LIST_GROUP_SINGLE_VARIANTS),
@@ -138,7 +138,7 @@ router.post(
 // @access Private
 router.post(
     '/child',
-    auth,
+    authMiddleware,
     check('groupVariant', 'groupVariant is not a valid child group type').isIn(LIST_GROUP_CHILD_VARIANTS),
     check('groupName', 'groupName is required').not().isEmpty(),
     check('groupVariant', 'groupVariant is required').not().isEmpty(),
@@ -202,7 +202,7 @@ router.post(
 // @access Private
 router.post(
     '/parent',
-    auth,
+    authMiddleware,
     check('groupName', 'groupName is required').not().isEmpty(),
     check('groupVariant', 'groupVariant is required').not().isEmpty(),
     check('groupVariant', 'groupVariant is not a valid parent group type').isIn(LIST_GROUP_PARENT_VARIANTS),
@@ -243,7 +243,7 @@ router.post(
 // @route PUT api/groups/join/groupid
 // @desc Join a group
 // @access Private
-router.put('/join/:groupid', auth, async (req: Request, res: Response) => {
+router.put('/join/:groupid', authMiddleware, async (req: Request, res: Response) => {
     console.log('PUT /api/groups/leave hit');
 
     const userIdToken = req.user._id;
@@ -286,7 +286,7 @@ router.put('/join/:groupid', auth, async (req: Request, res: Response) => {
 // @route PUT api/groups/leave/groupid
 // @desc Leave a group if a member
 // @access Private
-router.put('/leave/:groupid', auth, async (req: Request, res: Response) => {
+router.put('/leave/:groupid', authMiddleware, async (req: Request, res: Response) => {
     console.log('PUT /api/groups/leave hit');
 
     const userIdToken = req.user._id;
@@ -321,7 +321,7 @@ router.put('/leave/:groupid', auth, async (req: Request, res: Response) => {
 // @route DELETE api/groups/delete/groupid
 // @desc Delete a group and all child groups if any
 // @access Private
-router.delete('/delete/:groupid', auth, async (req: Request, res: Response) => {
+router.delete('/delete/:groupid', authMiddleware, async (req: Request, res: Response) => {
     console.log('DELETE /api/groups/delete:groupid hit');
 
     const userIdToken = req.user._id;
@@ -367,7 +367,7 @@ router.delete('/delete/:groupid', auth, async (req: Request, res: Response) => {
 // @access Private
 router.put(
     '/permission/:groupid',
-    auth,
+    authMiddleware,
     check('targetUserId', 'targetUserId is required').not().isEmpty(),
     check('targetPermission', 'targetPermission is required').not().isEmpty(),
     check('targetPermission', 'targetPermission cannot be modified').isIn(PERM_MUTABLE_ALL),
@@ -433,7 +433,7 @@ router.put(
 // @access Private
 router.put(
     '/kick/:groupid',
-    auth,
+    authMiddleware,
     check('targetUserId', 'targetUserId is required').not().isEmpty(),
     async (req: Request, res: Response) => {
         console.log('put /api/groups/kick:groupid hit');

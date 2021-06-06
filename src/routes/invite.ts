@@ -1,5 +1,5 @@
 import express, { Router, Request, Response } from 'express';
-import auth from '../middleware/auth';
+import { authMiddleware } from '../middleware/auth';
 import jwt from 'jsonwebtoken';
 import sendgrid from '@sendgrid/mail';
 import { check, Result, ValidationError, validationResult } from 'express-validator';
@@ -65,7 +65,7 @@ router.post('/test', async (req: Request, res: Response) => {
 // @access Private
 router.post(
     '/send/:groupid',
-    auth,
+    authMiddleware,
     check('invitedEmail', 'invitedEmail is required').not().isEmpty(),
     check('invitedEmail', 'invitedEmail must be an email').isEmail(),
     async (req: Request, res: Response) => {
@@ -93,44 +93,37 @@ router.post(
             if (!foundGroup) {
                 return res.status(400).send('Invalid groupId or unauthorized');
             }
-        } catch (err) {
-            console.log(err.message);
-            return res.status(500).send('Server error');
-        }
 
-        const { groupName, _id } = foundGroup;
-        const senderName = req.user.displayName;
+            const { groupName, _id } = foundGroup;
+            const senderName = req.user.displayName;
 
-        const payload = {
-            senderName: senderName,
-            groupName: groupName,
-            groupId: _id,
-        };
+            const payload = {
+                senderName: senderName,
+                groupName: groupName,
+                groupId: _id,
+            };
 
-        try {
-            jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '3d' }, async (err, token) => {
-                if (err) throw err;
+            const token = await jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '3d' });
 
-                const inviteBaseLink = 'https://giftlist.sampsy.dev/invite/';
-                const inviteLink = inviteBaseLink + token;
+            const inviteBaseLink = 'https://giftlist.sampsy.dev/invite/';
+            const inviteLink = inviteBaseLink + token;
 
-                const msg = {
-                    to: req.body.invitedEmail,
-                    from: {
-                        name: 'GiftList',
-                        email: 'invites.giftlist@sampsy.dev',
-                    },
-                    templateId: 'd-cc51518222ad4be5b77288e51c7b02a3',
-                    dynamic_template_data: {
-                        groupName: groupName,
-                        senderName: senderName,
-                        inviteLink: inviteLink,
-                    },
-                };
+            const msg = {
+                to: req.body.invitedEmail,
+                from: {
+                    name: 'GiftList',
+                    email: 'invites.giftlist@sampsy.dev',
+                },
+                templateId: 'd-cc51518222ad4be5b77288e51c7b02a3',
+                dynamic_template_data: {
+                    groupName: groupName,
+                    senderName: senderName,
+                    inviteLink: inviteLink,
+                },
+            };
 
-                await sendgrid.send(msg);
-                return res.send(200);
-            });
+            await sendgrid.send(msg);
+            return res.send(200);
         } catch (err) {
             console.log(err);
             return res.send(500);
@@ -141,16 +134,16 @@ router.post(
 // @route POST api/invite/verify/:groupToken
 // @desc Verify an invite token
 // @access Private
-router.get('/verify/:groupToken', auth, async (req: Request, res: Response) => {
+router.get('/verify/:groupToken', authMiddleware, async (req: Request, res: Response) => {
     console.log('GET /api/invite/verify/:groupToken hit');
 
-    const groupTokenParams = req.params.groupToken;
+    const groupToken = req.params.groupToken;
 
     try {
-        const decodedGroupTokenParams = jwt.verify(groupTokenParams, process.env.JWT_SECRET) as IinviteToken;
+        const decodedGroupToken = jwt.verify(groupToken, process.env.JWT_SECRET) as IinviteToken;
 
         // TODO check the group also still exists
-        const { senderName, groupName } = decodedGroupTokenParams;
+        const { senderName, groupName } = decodedGroupToken;
         return res.json({ senderName: senderName, groupName: groupName });
     } catch (err) {
         if (err.message) {
@@ -164,16 +157,16 @@ router.get('/verify/:groupToken', auth, async (req: Request, res: Response) => {
 // @route POST api/invite/accept/:groupToken
 // @desc Accept an invite
 // @access Private
-router.post('/accept/:groupToken', auth, async (req: Request, res: Response) => {
+router.post('/accept/:groupToken', authMiddleware, async (req: Request, res: Response) => {
     console.log('POST /api/invite/accept/:groupid hit');
 
     const userIdToken = req.user._id;
-    const groupTokenParams = req.params.groupToken;
+    const groupToken = req.params.groupToken;
 
-    let decodedGroupTokenParams;
+    let decodedGroupToken;
 
     try {
-        decodedGroupTokenParams = jwt.verify(groupTokenParams, process.env.JWT_SECRET) as IinviteToken;
+        decodedGroupToken = jwt.verify(groupToken, process.env.JWT_SECRET) as IinviteToken;
     } catch (err) {
         if (err.message) {
             return res.status(400).send(err.message);
@@ -182,7 +175,7 @@ router.post('/accept/:groupToken', auth, async (req: Request, res: Response) => 
         }
     }
 
-    const { groupId } = decodedGroupTokenParams;
+    const { groupId } = decodedGroupToken;
 
     try {
         var foundGroup = await listGroupBaseModel.findOne().and([
