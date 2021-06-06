@@ -9,6 +9,14 @@ export const PERM_GROUP_RW_LIST_ITEMS = 'GROUP_RW_LIST_ITEMS'; // Allowed to add
 export const PERM_GROUP_R_LIST_ITEMS = 'GROUP_R_LIST_ITEMS'; // Allowed to see regular list items
 export const PERM_GROUP_RW_SECRET_LIST_ITEMS = 'GROUP_RW_SECRET_LIST_ITEMS'; // Allowed to see, add and remove secret list items
 
+// Permission Modifiers
+export const PERM_MODIFIER_ADD = 'PERM_MODIFIER_ADD';
+export const PERM_MODIFIER_REMOVE = 'PERM_MODIFIER_REMOVE';
+export const PERM_MODIFIERS_ALL = [PERM_MODIFIER_ADD, PERM_MODIFIER_REMOVE];
+
+// Permissions that can be modified by users
+export const PERM_MUTABLE_ALL = [PERM_GROUP_INVITE];
+
 // All group permissions
 
 export const PERM_ALL_LIST_GROUP = [
@@ -50,7 +58,6 @@ export const PERM_GIFT_GROUP_CHILD_ALL = [
 ];
 export type TYPE_PERM_GIFT_GROUP_CHILD_ALL =
     | typeof PERM_GROUP_DELETE
-    | typeof PERM_GROUP_INVITE
     | typeof PERM_GROUP_ADMIN
     | typeof PERM_GROUP_RW_MESSAGES
     | typeof PERM_GROUP_RW_LIST_EVENTS
@@ -68,7 +75,6 @@ export const giftGroupChildMemberBasePerms: TYPE_PERM_GIFT_GROUP_CHILD_ALL[] = [
 export const giftGroupChildOwnerBasePerms: TYPE_PERM_GIFT_GROUP_CHILD_ALL[] = [
     PERM_GROUP_DELETE,
     PERM_GROUP_ADMIN,
-    PERM_GROUP_INVITE,
     PERM_GROUP_RW_LIST_ITEMS,
 ];
 

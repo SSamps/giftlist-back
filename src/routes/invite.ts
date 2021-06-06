@@ -148,6 +148,7 @@ router.get('/verify/:groupToken', auth, async (req: Request, res: Response) => {
     try {
         const decodedGroupTokenParams = jwt.verify(groupTokenParams, process.env.JWT_SECRET) as IinviteToken;
 
+        // TODO check the group also still exists
         const { senderName, groupName } = decodedGroupTokenParams;
         return res.json({ senderName: senderName, groupName: groupName });
     } catch (err) {

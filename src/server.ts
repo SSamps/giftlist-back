@@ -31,3 +31,6 @@ app.use('/api/invite', require('./routes/invite'));
 app.listen(PORT, () => {
     console.log('Server started on port ' + PORT);
 });
+
+// TODO standardise error responses
+// TODO standardise logging

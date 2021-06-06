@@ -15,6 +15,11 @@ import {
     PERM_CHILD_GROUP_CREATE,
     PERM_GROUP_DELETE,
     giftGroupOwnerBasePerms,
+    PERM_GROUP_ADMIN,
+    PERM_MODIFIERS_ALL,
+    PERM_MUTABLE_ALL,
+    PERM_MODIFIER_ADD,
+    PERM_MODIFIER_REMOVE,
 } from '../models/listGroups/permissions/ListGroupPermissions';
 import GiftGroupChildModel, {
     GIFT_GROUP_CHILD,
@@ -315,14 +320,12 @@ router.put('/leave/:groupid', auth, async (req: Request, res: Response) => {
 // @route DELETE api/groups/delete/groupid
 // @desc Delete a group and all child groups if any
 // @access Private
-
 router.delete('/delete/:groupid', auth, async (req: Request, res: Response) => {
-    console.log('DELETE /api/groups/delete hit');
+    console.log('DELETE /api/groups/delete:groupid hit');
 
     const userIdToken = req.user._id;
     const groupIdParams = req.params.groupid;
 
-    // Group must exist and user must have delete permissions
     try {
         var foundGroup = await listGroupBaseModel.findOne().and([
             { _id: groupIdParams },
@@ -348,8 +351,8 @@ router.delete('/delete/:groupid', auth, async (req: Request, res: Response) => {
             await listGroupBaseModel.deleteOne({ _id: groupIdParams });
             return res.status(200).json({ msg: 'Group deleted' });
         } else {
-            await GiftGroupChildModel.deleteMany({ parentGroupId: groupIdParams });
             await GiftGroupModel.deleteOne({ _id: groupIdParams });
+            await GiftGroupChildModel.deleteMany({ parentGroupId: groupIdParams });
             return res.status(200).json({ msg: 'Parent group and all child groups deleted' });
         }
     } catch (err) {
@@ -358,6 +361,72 @@ router.delete('/delete/:groupid', auth, async (req: Request, res: Response) => {
     }
 });
 
-// TODO Routes to grant / revoke permissions?
+// @route PUT api/groups/permission/groupid
+// @desc Modify the permissions for users in a group
+// @access Private
+router.put(
+    '/permission/:groupid',
+    auth,
+    check('targetUserId', 'targetUserId is required').not().isEmpty(),
+    check('targetPermission', 'targetPermission is required').not().isEmpty(),
+    check('targetPermission', 'targetPermission cannot be modified').isIn(PERM_MUTABLE_ALL),
+    check('modification', 'modification is required').not().isEmpty(),
+    check('modification', 'Invalid permission modifier').isIn(PERM_MODIFIERS_ALL),
+    async (req: Request, res: Response) => {
+        console.log('put /api/groups/permission:groupid hit');
+
+        const errors: Result<ValidationError> = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        const userIdToken = req.user._id;
+        const groupIdParams = req.params.groupid;
+        const { targetUserId, targetPermission, modification } = req.body;
+
+        try {
+            // Verify the target group exists and the user has the correct permissions
+            // TODO Verify the target user is a member of the group
+            var foundGroup = await listGroupBaseModel.findOne({
+                $and: [
+                    { _id: groupIdParams },
+                    {
+                        $or: [
+                            { 'owner.userId': userIdToken, 'owner.permissions': PERM_GROUP_ADMIN },
+                            { 'members.userId': userIdToken, 'owner.permissions': PERM_GROUP_ADMIN },
+                        ],
+                    },
+                    { 'members.userId': targetUserId },
+                ],
+            });
+            if (!foundGroup) {
+                return res
+                    .status(400)
+                    .send(
+                        'Invalid groupId, target user not in the group or requesting user is not authorised to manage permissions on this group'
+                    );
+            } else if (LIST_GROUP_CHILD_VARIANTS.includes(foundGroup.groupVariant)) {
+                return res.status(400).send('Invalid permission: users cannot be invited directly to child groups');
+            }
+
+            if (modification === PERM_MODIFIER_ADD) {
+                await foundGroup.update(
+                    { $addToSet: { 'members.$[member].permissions': targetPermission } },
+                    { arrayFilters: [{ 'member.userId': targetUserId }] }
+                );
+            } else if (modification === PERM_MODIFIER_REMOVE) {
+                await foundGroup.update(
+                    { $pull: { 'members.$[member].permissions': targetPermission } },
+                    { arrayFilters: [{ 'member.userId': targetUserId }] }
+                );
+            }
+
+            return res.status(200).json({ msg: 'Permissions updated' });
+        } catch (err) {
+            console.log(err.message);
+            return res.status(500).send('Server error');
+        }
+    }
+);
 
 module.exports = router;
