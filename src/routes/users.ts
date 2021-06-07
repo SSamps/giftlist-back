@@ -8,7 +8,7 @@ import sendgrid from '@sendgrid/mail';
 import { unverifiedUserAuthMiddleware } from '../middleware/verificationAuth';
 import { listGroupBaseModel } from '../models/listGroups/ListGroupBase';
 import { PERM_GROUP_DELETE } from '../models/listGroups/permissions/ListGroupPermissions';
-import { deleteGroupAndAnyChildGroups, IgroupDeletionResult } from './groups';
+import { deleteGroupAndAnyChildGroups, IgroupDeletionResult } from './helperFunctions';
 
 sendgrid.setApiKey(process.env.SENDGRID_API_KEY);
 const router: Router = express.Router();

@@ -13,7 +13,6 @@ import {
     basicListOwnerBasePerms,
     giftListOwnerBasePerms,
     PERM_CHILD_GROUP_CREATE,
-    PERM_GROUP_DELETE,
     giftGroupOwnerBasePerms,
     PERM_GROUP_ADMIN,
     PERM_MODIFIERS_ALL,
@@ -40,44 +39,9 @@ import {
     LIST_GROUP_SINGLE_VARIANTS,
 } from '../models/listGroups/variants/ListGroupVariants';
 import { GiftListModel, GIFT_LIST, IgiftListMember, TgiftListFields } from '../models/listGroups/singular/GiftList';
-import { Schema } from 'mongoose';
+import { deleteGroupAndAnyChildGroups } from './helperFunctions';
 
 const router: Router = express.Router();
-
-export interface IgroupDeletionResult {
-    status: number;
-    msg: string;
-}
-
-export async function deleteGroupAndAnyChildGroups(
-    userId: Schema.Types.ObjectId,
-    groupId: string
-): Promise<IgroupDeletionResult> {
-    var foundGroup = await listGroupBaseModel.findOne().and([
-        { _id: groupId },
-        {
-            $or: [
-                { 'owner.userId': userId, 'owner.permissions': PERM_GROUP_DELETE },
-                { 'members.userId': userId, 'members.permissions': PERM_GROUP_DELETE },
-            ],
-        },
-    ]);
-
-    if (!foundGroup) {
-        return { status: 400, msg: 'Invalid groupId or unauthorized' };
-    }
-
-    // TODO Delete all associated list items and messages
-
-    if (!LIST_GROUP_PARENT_VARIANTS.includes(foundGroup.groupVariant)) {
-        await listGroupBaseModel.deleteOne({ _id: groupId });
-        return { status: 200, msg: 'Group deleted' };
-    } else {
-        await GiftGroupModel.deleteOne({ _id: groupId });
-        await GiftGroupChildModel.deleteMany({ parentGroupId: groupId });
-        return { status: 200, msg: 'Parent group and all child groups deleted' };
-    }
-}
 
 // @route GET api/groups/user/:userid
 // @desc Get groups a user owns or is a member of
