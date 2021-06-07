@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
-import User, { IUserCensoredProps } from '../models/User';
+import { IUserCensoredProps, UserModel } from '../models/User';
 
 interface IauthToken {
     alg: string;
@@ -25,7 +25,7 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
 
         // Check whether the token was issued before oldestValidJWT was last set. This could be used to invalidate user tokens if required. Also protects against tokens being used after user deletion.
         try {
-            var foundUser = await User.findById(decoded.user.id).select('-password');
+            var foundUser = await UserModel.findById(decoded.user.id).select('-password');
         } catch (err) {
             return res.status(500).json({ msg: 'Server Error' });
         }

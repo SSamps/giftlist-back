@@ -37,5 +37,4 @@ export const UserSchema = new Schema({
     verified: { type: Boolean, default: false },
 });
 
-const User = model<IUser>('User', UserSchema);
-export default User;
+export const UserModel = model<IUser>('User', UserSchema);

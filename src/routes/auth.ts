@@ -1,5 +1,5 @@
 import express, { Router, Request, Response } from 'express';
-import User, { IUserCensoredProps, IUserProps } from '../models/User';
+import { IUserCensoredProps, IUserProps, UserModel } from '../models/User';
 import { check, validationResult, Result, ValidationError } from 'express-validator';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
@@ -39,7 +39,7 @@ router.post(
 
         try {
             // See if user exists in the database
-            let foundUser = await User.findOne({ email });
+            let foundUser = await UserModel.findOne({ email });
             if (!foundUser) {
                 return res.status(400).json({ errors: [{ msg: 'Your email or password is incorrect.' }] });
             }

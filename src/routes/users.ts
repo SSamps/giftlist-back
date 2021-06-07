@@ -1,11 +1,14 @@
 import express, { Router, Request, Response } from 'express';
 import { check, validationResult, Result, ValidationError } from 'express-validator';
 import { Schema } from 'mongoose';
-import User, { IUserCensoredProps, IUser, IUserProps } from '../models/User';
+import { IUserCensoredProps, IUser, IUserProps, UserModel } from '../models/User';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import sendgrid from '@sendgrid/mail';
 import { unverifiedUserAuthMiddleware } from '../middleware/verificationAuth';
+import { listGroupBaseModel } from '../models/listGroups/ListGroupBase';
+import { PERM_GROUP_DELETE } from '../models/listGroups/permissions/ListGroupPermissions';
+import { deleteGroupAndAnyChildGroups, IgroupDeletionResult } from './groups';
 
 sendgrid.setApiKey(process.env.SENDGRID_API_KEY);
 const router: Router = express.Router();
@@ -17,6 +20,31 @@ interface IverificationToken {
     newUserId: string;
     iat: number;
     exp: number;
+}
+
+async function sendVerificationEmail(newUserId: Schema.Types.ObjectId, email: string, displayName: string) {
+    const payload = { newUserId: newUserId };
+    const token = await jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '3d' });
+
+    const verifyBaseLink = 'https://giftlist.sampsy.dev/verify/';
+    const verifyLink = verifyBaseLink + token;
+
+    const msg = {
+        //TODO change this to use the supplied email
+        to: 'simonjsampson@gmail.com',
+        from: {
+            name: 'GiftList',
+            email: 'welcome.giftlist@sampsy.dev',
+        },
+        templateId: 'd-965b63e57066478db17d0c6ae5f1203b',
+        dynamic_template_data: {
+            displayName: displayName,
+            verifyLink: verifyLink,
+        },
+    };
+    await sendgrid.send(msg);
+
+    return;
 }
 
 // @route POST api/users
@@ -42,7 +70,7 @@ router.post(
         try {
             // See if user already exists in the database
 
-            let foundUser = await User.findOne({ email });
+            let foundUser = await UserModel.findOne({ email });
             if (foundUser) {
                 return res.status(400).json({ errors: [{ msg: 'An account already exists with that email address' }] });
             }
@@ -54,7 +82,7 @@ router.post(
 
             // Create a new user
 
-            const newUser: IUser = new User({
+            const newUser: IUser = new UserModel({
                 displayName,
                 email,
                 password,
@@ -122,7 +150,7 @@ router.post('/verify/:verificationtoken', unverifiedUserAuthMiddleware, async (r
         const decodedverificationToken = jwt.verify(verificationToken, process.env.JWT_SECRET) as IverificationToken;
         const { newUserId } = decodedverificationToken;
 
-        const verifiedUser = await User.findByIdAndUpdate(newUserId, { verified: true });
+        const verifiedUser = await UserModel.findByIdAndUpdate(newUserId, { verified: true });
 
         if (!verifiedUser) {
             return res.status(404).json({ msg: 'User not found' });
@@ -135,29 +163,51 @@ router.post('/verify/:verificationtoken', unverifiedUserAuthMiddleware, async (r
     }
 });
 
-async function sendVerificationEmail(newUserId: Schema.Types.ObjectId, email: string, displayName: string) {
-    const payload = { newUserId: newUserId };
-    const token = await jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '3d' });
+// @route DELETE api/users/
+// @desc Verify a new user
+// @access Private
+router.delete('/', unverifiedUserAuthMiddleware, async (req: Request, res: Response) => {
+    console.log('DELETE api/users/ hit');
 
-    const verifyBaseLink = 'https://giftlist.sampsy.dev/verify/';
-    const verifyLink = verifyBaseLink + token;
+    const userId = req.user._id;
 
-    const msg = {
-        //TODO change this to use the supplied email
-        to: 'simonjsampson@gmail.com',
-        from: {
-            name: 'GiftList',
-            email: 'welcome.giftlist@sampsy.dev',
-        },
-        templateId: 'd-965b63e57066478db17d0c6ae5f1203b',
-        dynamic_template_data: {
-            displayName: displayName,
-            verifyLink: verifyLink,
-        },
-    };
-    await sendgrid.send(msg);
+    try {
+        let foundOwnedGroups = await listGroupBaseModel.find({
+            'owner.userId': userId,
+            'owner.permissions': PERM_GROUP_DELETE,
+        });
 
-    return;
-}
+        // delete user and groups
+        // TODO delete listitems & messages (or maybe not)
+        // TODO maybe rework later.
+        // TODO Fix - child groups in the array won't work properly if their parent groups get deleted first
+
+        let errors: IgroupDeletionResult[] = [];
+
+        console.log('the function is of type ' + typeof deleteGroupAndAnyChildGroups);
+
+        for (var i = 0; i < foundOwnedGroups.length; i++) {
+            console.log('iteration ' + i + ' ', foundOwnedGroups[i]);
+            let result = await deleteGroupAndAnyChildGroups(userId, foundOwnedGroups[i].id);
+            if (result.status !== 200) {
+                errors.push(result);
+            }
+        }
+
+        // await UserModel.findByIdAndDelete(userId);
+
+        if (errors.length > 0) {
+            return res.status(200).json({
+                msg: 'User deleted but some errors occured when deleting owned groups',
+                groupDeletionErrors: errors,
+            });
+        } else {
+            return res.status(200).json();
+        }
+    } catch (err) {
+        console.log(err.message);
+        return res.status(500).send('Server error');
+    }
+});
 
 module.exports = router;

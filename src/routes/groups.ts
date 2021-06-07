@@ -40,11 +40,47 @@ import {
     LIST_GROUP_SINGLE_VARIANTS,
 } from '../models/listGroups/variants/ListGroupVariants';
 import { GiftListModel, GIFT_LIST, IgiftListMember, TgiftListFields } from '../models/listGroups/singular/GiftList';
+import { Schema } from 'mongoose';
 
 const router: Router = express.Router();
 
+export interface IgroupDeletionResult {
+    status: number;
+    msg: string;
+}
+
+export async function deleteGroupAndAnyChildGroups(
+    userId: Schema.Types.ObjectId,
+    groupId: string
+): Promise<IgroupDeletionResult> {
+    var foundGroup = await listGroupBaseModel.findOne().and([
+        { _id: groupId },
+        {
+            $or: [
+                { 'owner.userId': userId, 'owner.permissions': PERM_GROUP_DELETE },
+                { 'members.userId': userId, 'members.permissions': PERM_GROUP_DELETE },
+            ],
+        },
+    ]);
+
+    if (!foundGroup) {
+        return { status: 400, msg: 'Invalid groupId or unauthorized' };
+    }
+
+    // TODO Delete all associated list items and messages
+
+    if (!LIST_GROUP_PARENT_VARIANTS.includes(foundGroup.groupVariant)) {
+        await listGroupBaseModel.deleteOne({ _id: groupId });
+        return { status: 200, msg: 'Group deleted' };
+    } else {
+        await GiftGroupModel.deleteOne({ _id: groupId });
+        await GiftGroupChildModel.deleteMany({ parentGroupId: groupId });
+        return { status: 200, msg: 'Parent group and all child groups deleted' };
+    }
+}
+
 // @route GET api/groups/user/:userid
-// @desc Get a user's own groups
+// @desc Get groups a user owns or is a member of
 // @access Private
 router.get('/user/:userid', authMiddleware, async (req: Request, res: Response) => {
     console.log('GET /api/groups/:userid hit');
@@ -52,6 +88,7 @@ router.get('/user/:userid', authMiddleware, async (req: Request, res: Response) 
     const userIdParams = req.params.userid;
     const userIdToken = req.user._id;
 
+    // TODO review if I want to do this. Could just allow you to get your own groups instead
     if (userIdParams !== userIdToken.toString()) {
         return res.status(401).json({ msg: 'User not authorized' });
     }
@@ -324,38 +361,13 @@ router.put('/leave/:groupid', authMiddleware, async (req: Request, res: Response
 router.delete('/delete/:groupid', authMiddleware, async (req: Request, res: Response) => {
     console.log('DELETE /api/groups/delete:groupid hit');
 
-    const userIdToken = req.user._id;
-    const groupIdParams = req.params.groupid;
+    const userId = req.user._id;
+    const groupId = req.params.groupid;
 
     try {
-        var foundGroup = await listGroupBaseModel.findOne().and([
-            { _id: groupIdParams },
-            {
-                $or: [
-                    { 'owner.userId': userIdToken, 'owner.permissions': PERM_GROUP_DELETE },
-                    { 'members.userId': userIdToken, 'owner.permissions': PERM_GROUP_DELETE },
-                ],
-            },
-        ]);
+        const result = await deleteGroupAndAnyChildGroups(userId, groupId);
 
-        if (!foundGroup) {
-            return res.status(400).send('Invalid groupId or unauthorized');
-        }
-    } catch (err) {
-        console.log(err.message);
-        return res.status(500).send('Server error');
-    }
-
-    // TODO Delete all associated list items and messages
-    try {
-        if (!LIST_GROUP_PARENT_VARIANTS.includes(foundGroup.groupVariant)) {
-            await listGroupBaseModel.deleteOne({ _id: groupIdParams });
-            return res.status(200).json({ msg: 'Group deleted' });
-        } else {
-            await GiftGroupModel.deleteOne({ _id: groupIdParams });
-            await GiftGroupChildModel.deleteMany({ parentGroupId: groupIdParams });
-            return res.status(200).json({ msg: 'Parent group and all child groups deleted' });
-        }
+        return res.status(result.status).json(result.msg);
     } catch (err) {
         console.log(err.message);
         return res.status(500).send('Server error');
