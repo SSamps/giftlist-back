@@ -6,9 +6,10 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import sendgrid from '@sendgrid/mail';
 import { unverifiedUserAuthMiddleware } from '../middleware/verificationAuth';
-import { listGroupBaseModel } from '../models/listGroups/ListGroupBase';
+import { listGroupBaseModel, TlistGroupAny } from '../models/listGroups/ListGroupBase';
 import { PERM_GROUP_DELETE } from '../models/listGroups/permissions/ListGroupPermissions';
 import { deleteGroupAndAnyChildGroups, IgroupDeletionResult } from './helperFunctions';
+import { LIST_GROUP_CHILD_VARIANTS, LIST_GROUP_PARENT_VARIANTS } from '../models/listGroups/variants/ListGroupVariants';
 
 sendgrid.setApiKey(process.env.SENDGRID_API_KEY);
 const router: Router = express.Router();
@@ -124,7 +125,7 @@ router.post(
 );
 
 // @route POST api/users/sendverification
-// @desc Verify a new user
+// @desc Send a verification email
 // @access Private
 router.post('/sendverification', unverifiedUserAuthMiddleware, async (req: Request, res: Response) => {
     console.log('POST api/users/sendverification hit');
@@ -164,7 +165,7 @@ router.post('/verify/:verificationtoken', unverifiedUserAuthMiddleware, async (r
 });
 
 // @route DELETE api/users/
-// @desc Verify a new user
+// @desc Delete a user and all their content
 // @access Private
 router.delete('/', unverifiedUserAuthMiddleware, async (req: Request, res: Response) => {
     console.log('DELETE api/users/ hit');
@@ -172,23 +173,49 @@ router.delete('/', unverifiedUserAuthMiddleware, async (req: Request, res: Respo
     const userId = req.user._id;
 
     try {
-        let foundOwnedGroups = await listGroupBaseModel.find({
-            'owner.userId': userId,
-            'owner.permissions': PERM_GROUP_DELETE,
-        });
-
         // delete user and groups
         // TODO delete listitems & messages (or maybe not)
         // TODO maybe rework later.
         // TODO Fix - child groups in the array won't work properly if their parent groups get deleted first
 
+        //Find and delete any parent groups and their child groups
+
+        let foundOwnedGroups = await listGroupBaseModel.find({
+            'owner.userId': userId,
+            'owner.permissions': PERM_GROUP_DELETE,
+        });
+
+        // TODO replace this with calls to delete all parents in one go using deleteMany, then find all others
+
+        let foundOwnedParentGroups: TlistGroupAny[] = [];
+        let foundOwnedChildGroups: TlistGroupAny[] = [];
+        let foundGroupsToDelete: TlistGroupAny[] = [];
+
+        foundOwnedGroups.forEach((group) => {
+            if (LIST_GROUP_PARENT_VARIANTS.includes(group.groupVariant)) {
+                foundOwnedParentGroups.push(group);
+            } else if (LIST_GROUP_CHILD_VARIANTS.includes(group.groupVariant)) {
+                foundOwnedChildGroups.push(group);
+            } else {
+                foundGroupsToDelete.push(group);
+            }
+        });
+
+        for (let i = foundOwnedChildGroups.length - 1; i >= 0; i--) {
+            let parentId = foundOwnedChildGroups[i].parentGroupId;
+            for (let j = 0; j < foundOwnedParentGroups.length; j++) {
+                if (foundOwnedParentGroups[j].id === parentId.toString()) {
+                    foundOwnedChildGroups.splice(i, 1);
+                    break;
+                }
+            }
+        }
+
+        foundGroupsToDelete = foundGroupsToDelete.concat(foundOwnedParentGroups, foundOwnedChildGroups);
         let errors: IgroupDeletionResult[] = [];
 
-        console.log('the function is of type ' + typeof deleteGroupAndAnyChildGroups);
-
-        for (var i = 0; i < foundOwnedGroups.length; i++) {
-            console.log('iteration ' + i + ' ', foundOwnedGroups[i]);
-            let result = await deleteGroupAndAnyChildGroups(userId, foundOwnedGroups[i].id);
+        for (var i = 0; i < foundGroupsToDelete.length; i++) {
+            let result = await deleteGroupAndAnyChildGroups(userId, foundGroupsToDelete[i].id);
             if (result.status !== 200) {
                 errors.push(result);
             }

@@ -34,7 +34,7 @@ type TlistGroupDiscriminatorKey = {
     groupVariant: string;
 };
 
-type TlistGroupAnyBase = TbasicListFields | TgiftListFields | TgiftGroupChildFields | TgiftGroupFields;
+type TlistGroupAnyBase = TbasicListFields & TgiftListFields & TgiftGroupFields & TgiftGroupChildFields;
 export type TlistGroupAny = Document & TlistGroupAnyBase & TlistGroupDiscriminatorKey;
 
 const options = { discriminatorKey: 'groupVariant' };
