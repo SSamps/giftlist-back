@@ -6,10 +6,10 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import sendgrid from '@sendgrid/mail';
 import { unverifiedUserAuthMiddleware } from '../middleware/verificationAuth';
-import { listGroupBaseModel, TlistGroupAny } from '../models/listGroups/ListGroupBase';
+import { listGroupBaseModel } from '../models/listGroups/ListGroupBase';
 import { PERM_GROUP_DELETE } from '../models/listGroups/permissions/ListGroupPermissions';
-import { deleteGroupAndAnyChildGroups, IgroupDeletionResult } from './helperFunctions';
-import { LIST_GROUP_CHILD_VARIANTS, LIST_GROUP_PARENT_VARIANTS } from '../models/listGroups/variants/ListGroupVariants';
+
+import { GiftGroupModel } from '../models/listGroups/parent/GiftGroup';
 
 sendgrid.setApiKey(process.env.SENDGRID_API_KEY);
 const router: Router = express.Router();
@@ -174,63 +174,26 @@ router.delete('/', unverifiedUserAuthMiddleware, async (req: Request, res: Respo
 
     try {
         // delete user and groups
-        // TODO delete listitems & messages (or maybe not)
-        // TODO maybe rework later.
-        // TODO Fix - child groups in the array won't work properly if their parent groups get deleted first
+        // TODO delete listitems & messages (or do something else with them)
 
-        //Find and delete any parent groups and their child groups
-
-        let foundOwnedGroups = await listGroupBaseModel.find({
+        let foundOwnedParentGroups = await GiftGroupModel.find({
             'owner.userId': userId,
             'owner.permissions': PERM_GROUP_DELETE,
         });
 
-        // TODO replace this with calls to delete all parents in one go using deleteMany, then find all others
+        for (var i = 0; i < foundOwnedParentGroups.length; i++) {
+            let parentId = foundOwnedParentGroups[i].id;
+            await listGroupBaseModel.deleteMany({ $or: [{ parentGroupId: parentId }, { _id: parentId }] });
+        }
 
-        let foundOwnedParentGroups: TlistGroupAny[] = [];
-        let foundOwnedChildGroups: TlistGroupAny[] = [];
-        let foundGroupsToDelete: TlistGroupAny[] = [];
-
-        foundOwnedGroups.forEach((group) => {
-            if (LIST_GROUP_PARENT_VARIANTS.includes(group.groupVariant)) {
-                foundOwnedParentGroups.push(group);
-            } else if (LIST_GROUP_CHILD_VARIANTS.includes(group.groupVariant)) {
-                foundOwnedChildGroups.push(group);
-            } else {
-                foundGroupsToDelete.push(group);
-            }
+        await listGroupBaseModel.deleteMany({
+            'owner.userId': userId,
+            'owner.permissions': PERM_GROUP_DELETE,
         });
 
-        for (let i = foundOwnedChildGroups.length - 1; i >= 0; i--) {
-            let parentId = foundOwnedChildGroups[i].parentGroupId;
-            for (let j = 0; j < foundOwnedParentGroups.length; j++) {
-                if (foundOwnedParentGroups[j].id === parentId.toString()) {
-                    foundOwnedChildGroups.splice(i, 1);
-                    break;
-                }
-            }
-        }
+        await UserModel.findByIdAndDelete(userId);
 
-        foundGroupsToDelete = foundGroupsToDelete.concat(foundOwnedParentGroups, foundOwnedChildGroups);
-        let errors: IgroupDeletionResult[] = [];
-
-        for (var i = 0; i < foundGroupsToDelete.length; i++) {
-            let result = await deleteGroupAndAnyChildGroups(userId, foundGroupsToDelete[i].id);
-            if (result.status !== 200) {
-                errors.push(result);
-            }
-        }
-
-        // await UserModel.findByIdAndDelete(userId);
-
-        if (errors.length > 0) {
-            return res.status(200).json({
-                msg: 'User deleted but some errors occured when deleting owned groups',
-                groupDeletionErrors: errors,
-            });
-        } else {
-            return res.status(200).json();
-        }
+        return res.status(200).json();
     } catch (err) {
         console.log(err.message);
         return res.status(500).send('Server error');
