@@ -10,6 +10,7 @@ import { listGroupBaseModel } from '../models/listGroups/ListGroupBase';
 import { PERM_GROUP_DELETE } from '../models/listGroups/permissions/ListGroupPermissions';
 
 import { GiftGroupModel } from '../models/listGroups/parent/GiftGroup';
+import { authMiddleware } from '../middleware/auth';
 
 sendgrid.setApiKey(process.env.SENDGRID_API_KEY);
 const router: Router = express.Router();
@@ -48,16 +49,16 @@ async function sendVerificationEmail(newUserId: Schema.Types.ObjectId, email: st
     return;
 }
 
+// TODO improve validation of user display name, email
 // @route POST api/users
 // @desc Register a new user
 // @access Public
 router.post(
     '/',
-    [
-        check('displayName', 'Display name is required').not().isEmpty(),
-        check('email', 'Please include a valid email').not().isEmpty(),
-        check('password', 'Please provide a password with 8 or more characters').isLength({ min: 8 }),
-    ],
+    check('displayName', 'Display name is required').not().isEmpty(),
+    check('email', 'Please include a valid email').not().isEmpty(),
+    check('email', 'Please include a valid email').isEmail(),
+    check('password', 'Please provide a password with 8 or more characters').isLength({ min: 8 }),
     async (req: Request, res: Response) => {
         console.log('POST api/users hit');
         const errors: Result<ValidationError> = validationResult(req);
@@ -199,5 +200,28 @@ router.delete('/', unverifiedUserAuthMiddleware, async (req: Request, res: Respo
         return res.status(500).send('Server error');
     }
 });
+
+// @route PUT api/users/
+// @desc Update a user's display name
+// @access Private
+router.put(
+    '/',
+    authMiddleware,
+    check('displayName', 'Display name is required').not().isEmpty(),
+    async (req: Request, res: Response) => {
+        console.log('PUT api/users/ hit');
+        try {
+            const userId = req.user._id;
+            const { displayName } = req.body;
+
+            await UserModel.findByIdAndUpdate(userId, { displayName: displayName });
+
+            return res.status(200).send();
+        } catch (err) {
+            console.log(err.message);
+            return res.status(500).send('Server error: ' + err.message);
+        }
+    }
+);
 
 module.exports = router;
