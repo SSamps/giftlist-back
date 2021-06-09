@@ -142,15 +142,15 @@ router.post('/sendverification', unverifiedUserAuthMiddleware, async (req: Reque
 
 // @route POST api/users/verify/:verificationtoken
 // @desc Verify a new user
-// @access Private
-router.post('/verify/:verificationtoken', unverifiedUserAuthMiddleware, async (req: Request, res: Response) => {
+// @access Public
+router.post('/verify/:verificationtoken', async (req: Request, res: Response) => {
     console.log('POST api/users/verify/:verificationtoken hit');
 
     const verificationToken = req.params.verificationtoken;
 
     try {
-        const decodedverificationToken = jwt.verify(verificationToken, process.env.JWT_SECRET) as IverificationToken;
-        const { newUserId } = decodedverificationToken;
+        const decodedVerificationToken = jwt.verify(verificationToken, process.env.JWT_SECRET) as IverificationToken;
+        const { newUserId } = decodedVerificationToken;
 
         const verifiedUser = await UserModel.findByIdAndUpdate(newUserId, { verified: true });
 

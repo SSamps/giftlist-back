@@ -41,29 +41,23 @@ import {
 
 const router: Router = express.Router();
 
-// @route GET api/groups/user/:userid
+// @route GET api/groups/user
 // @desc Get groups a user owns or is a member of
 // @access Private
-router.get('/user/:userid', authMiddleware, async (req: Request, res: Response) => {
-    console.log('GET /api/groups/:userid hit');
+router.get('/user', authMiddleware, async (req: Request, res: Response) => {
+    console.log('GET /api/groups/user hit');
 
-    const userIdParams = req.params.userid;
     const userIdToken = req.user._id;
-
-    // TODO review if I want to do this. Could just allow you to get your own groups instead
-    if (userIdParams !== userIdToken.toString()) {
-        return res.status(401).json({ msg: 'User not authorized' });
-    }
 
     try {
         let foundMemberGroups = await listGroupBaseModel.find({
-            $or: [{ 'owner.userId': userIdParams }, { 'members.userId': userIdParams }],
+            $or: [{ 'owner.userId': userIdToken }, { 'members.userId': userIdToken }],
         });
         let foundOwnedGroups: TlistGroupAny[] = [];
 
         for (var i = foundMemberGroups.length - 1; i >= 0; i--) {
             let document = foundMemberGroups[i];
-            if (document.owner.userId.toString() === userIdParams) {
+            if (document.owner.userId.toString() === userIdToken.toString()) {
                 foundOwnedGroups.push(document);
                 foundMemberGroups.splice(i, 1);
             }
