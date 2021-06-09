@@ -10,7 +10,7 @@ import {
     basicListMemberBasePerms,
     giftListMemberBasePerms,
     PERM_GROUP_INVITE,
-} from '../models/listGroups/permissions/ListGroupPermissions';
+} from '../models/listGroups/permissions/listGroupPermissions';
 import { BasicListModel, BASIC_LIST } from '../models/listGroups/discriminators/singular/BasicList';
 import { GiftGroupChildModel, GIFT_GROUP_CHILD } from '../models/listGroups/discriminators/child/GiftGroupChild';
 import { GiftGroupModel, GIFT_GROUP } from '../models/listGroups/discriminators/parent/GiftGroup';

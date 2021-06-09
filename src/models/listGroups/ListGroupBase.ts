@@ -9,6 +9,15 @@ const ListGroupBaseSchema = new Schema(
             userId: { type: Schema.Types.ObjectId },
             permissions: [{ type: String }],
             oldestUnreadMsg: { type: Date },
+            listItems: [
+                {
+                    author: { type: Schema.Types.ObjectId },
+                    creationDate: { type: Date, default: Date.now },
+                    body: { type: String },
+                    link: { type: String },
+                    selectedBy: { type: Schema.Types.ObjectId },
+                },
+            ],
         },
         members: [
             {
@@ -16,6 +25,15 @@ const ListGroupBaseSchema = new Schema(
                 permissions: [{ type: String }],
                 oldestUnreadMsg: { type: Date },
                 _id: false,
+                listItems: [
+                    {
+                        author: { type: Schema.Types.ObjectId },
+                        creationDate: { type: Date, default: Date.now },
+                        body: { type: String },
+                        link: { type: String },
+                        selectedBy: { type: Schema.Types.ObjectId },
+                    },
+                ],
             },
         ],
         parentGroupId: {

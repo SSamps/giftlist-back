@@ -13,7 +13,7 @@ import {
     PERM_MUTABLE_ALL,
     PERM_MODIFIER_ADD,
     PERM_MODIFIER_REMOVE,
-} from '../models/listGroups/permissions/ListGroupPermissions';
+} from '../models/listGroups/permissions/listGroupPermissions';
 import { GiftGroupChildModel, GIFT_GROUP_CHILD } from '../models/listGroups/discriminators/child/GiftGroupChild';
 import { GiftGroupModel, GIFT_GROUP } from '../models/listGroups/discriminators/parent/GiftGroup';
 import { BASIC_LIST, BasicListModel } from '../models/listGroups/discriminators/singular/BasicList';
@@ -21,7 +21,7 @@ import {
     LIST_GROUP_CHILD_VARIANTS,
     LIST_GROUP_PARENT_VARIANTS,
     LIST_GROUP_SINGLE_VARIANTS,
-} from '../models/listGroups/variants/ListGroupVariants';
+} from '../models/listGroups/discriminators/variants/listGroupVariants';
 import { GiftListModel, GIFT_LIST } from '../models/listGroups/discriminators/singular/GiftList';
 import { deleteGroupAndAnyChildGroups } from './helperFunctions';
 import {
@@ -444,6 +444,34 @@ router.put(
             console.log(err.message);
             return res.status(500).send('Server error');
         }
+    }
+);
+
+// TODO change routes to target specific group types
+
+// @route POST api/groups/giftlist/:groupid
+// @desc Add an item to a giftlist
+// @access Private
+router.post(
+    '/giftlist/:groupid',
+    authMiddleware,
+    check('body', 'A list item body is required').not().isEmpty(),
+    async (req: Request, res: Response) => {
+        console.log('POST /api/groups/single hit');
+
+        const errors: Result<ValidationError> = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        const userIdToken = req.user._id;
+        const { body, link } = req.body;
+
+        // TODO might be able to put some of this in a helper function.
+        // check the group exists, is of the right type and the user has either PERM_GROUP_RW_LIST_ITEMS or PERM_GROUP_RW_SECRET_LIST_ITEMS
+        // check if user is a member of owner
+        // check if adding would exceed maxListItems or maxSecretListItems
+        // append item to the user's object
     }
 );
 

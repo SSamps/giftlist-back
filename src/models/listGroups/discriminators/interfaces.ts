@@ -1,11 +1,12 @@
 import { Document, Schema } from 'mongoose';
+import { TgiftListItem } from '../listItems';
 import {
     TYPE_PERM_ALL_LIST_GROUP,
     TYPE_PERM_BASIC_LIST_ALL,
     TYPE_PERM_GIFT_GROUP_ALL,
     TYPE_PERM_GIFT_GROUP_CHILD_ALL,
     TYPE_PERM_GIFT_LIST_ALL,
-} from '../permissions/ListGroupPermissions';
+} from '../permissions/listGroupPermissions';
 
 // Base
 export class invalidGroupVariantError extends Error {
@@ -56,6 +57,7 @@ export type TbasicListFields = TlistGroupBaseFields & TbasicListExtraFields;
 
 export interface IgiftListMember extends IgroupMemberBase {
     permissions: TYPE_PERM_GIFT_LIST_ALL[];
+    listItems?: TgiftListItem[];
 }
 
 type TgiftListExtraFields = {

@@ -1,6 +1,6 @@
 import { Schema } from 'mongoose';
 import { listGroupBaseModel } from '../../ListGroupBase';
-import { PERM_BASIC_LIST_ALL } from '../../permissions/ListGroupPermissions';
+import { PERM_BASIC_LIST_ALL } from '../../permissions/listGroupPermissions';
 
 export const BASIC_LIST = 'BASIC_LIST';
 

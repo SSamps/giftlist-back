@@ -7,7 +7,7 @@ import jwt from 'jsonwebtoken';
 import sendgrid from '@sendgrid/mail';
 import { unverifiedUserAuthMiddleware } from '../middleware/verificationAuth';
 import { listGroupBaseModel } from '../models/listGroups/ListGroupBase';
-import { PERM_GROUP_DELETE } from '../models/listGroups/permissions/ListGroupPermissions';
+import { PERM_GROUP_DELETE } from '../models/listGroups/permissions/listGroupPermissions';
 
 import { GiftGroupModel } from '../models/listGroups/discriminators/parent/GiftGroup';
 import { authMiddleware } from '../middleware/auth';
