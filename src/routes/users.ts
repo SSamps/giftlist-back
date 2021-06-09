@@ -9,7 +9,7 @@ import { unverifiedUserAuthMiddleware } from '../middleware/verificationAuth';
 import { listGroupBaseModel } from '../models/listGroups/ListGroupBase';
 import { PERM_GROUP_DELETE } from '../models/listGroups/permissions/ListGroupPermissions';
 
-import { GiftGroupModel } from '../models/listGroups/parent/GiftGroup';
+import { GiftGroupModel } from '../models/listGroups/discriminators/parent/GiftGroup';
 import { authMiddleware } from '../middleware/auth';
 
 sendgrid.setApiKey(process.env.SENDGRID_API_KEY);

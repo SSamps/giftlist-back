@@ -1,20 +1,8 @@
 import { Schema } from 'mongoose';
-import { IgroupMemberBase, listGroupBaseModel, TlistGroupBaseFields } from '../ListGroupBase';
-import { PERM_BASIC_LIST_ALL, TYPE_PERM_BASIC_LIST_ALL } from '../permissions/ListGroupPermissions';
+import { listGroupBaseModel } from '../../ListGroupBase';
+import { PERM_BASIC_LIST_ALL } from '../../permissions/ListGroupPermissions';
 
 export const BASIC_LIST = 'BASIC_LIST';
-
-export interface IbasicListMember extends IgroupMemberBase {
-    permissions: TYPE_PERM_BASIC_LIST_ALL[];
-}
-
-type TbasicListExtraFields = {
-    owner: IbasicListMember;
-    members?: [IbasicListMember];
-    maxListItems?: Number;
-};
-
-export type TbasicListFields = TlistGroupBaseFields & TbasicListExtraFields;
 
 const basicListSchema = new Schema({
     owner: {

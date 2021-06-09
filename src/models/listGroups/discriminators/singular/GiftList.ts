@@ -1,21 +1,8 @@
 import { Schema } from 'mongoose';
-import { IgroupMemberBase, listGroupBaseModel, TlistGroupBaseFields } from '../ListGroupBase';
-import { PERM_GIFT_LIST_ALL, TYPE_PERM_GIFT_LIST_ALL } from '../permissions/ListGroupPermissions';
+import { listGroupBaseModel } from '../../ListGroupBase';
+import { PERM_GIFT_LIST_ALL } from '../../permissions/ListGroupPermissions';
 
 export const GIFT_LIST = 'GIFT_LIST';
-
-export interface IgiftListMember extends IgroupMemberBase {
-    permissions: TYPE_PERM_GIFT_LIST_ALL[];
-}
-
-type TgiftListExtraFields = {
-    owner: IgiftListMember;
-    members?: [IgiftListMember];
-    maxListItems?: Number;
-    maxSecretListItemsEach?: Number;
-};
-
-export type TgiftListFields = TlistGroupBaseFields & TgiftListExtraFields;
 
 const giftListSchema = new Schema({
     owner: {

@@ -1,13 +1,7 @@
 import express, { Router, Request, Response } from 'express';
 import { authMiddleware } from '../middleware/auth';
 import { check, Result, ValidationError, validationResult } from 'express-validator';
-import {
-    IgroupMemberBase,
-    invalidGroupVariantError,
-    invalidParentVariantError,
-    listGroupBaseModel,
-    TlistGroupAny,
-} from '../models/listGroups/ListGroupBase';
+import { listGroupBaseModel } from '../models/listGroups/ListGroupBase';
 import {
     giftGroupChildOwnerBasePerms,
     basicListOwnerBasePerms,
@@ -20,26 +14,30 @@ import {
     PERM_MODIFIER_ADD,
     PERM_MODIFIER_REMOVE,
 } from '../models/listGroups/permissions/ListGroupPermissions';
-import {
-    GiftGroupChildModel,
-    GIFT_GROUP_CHILD,
-    IgiftGroupChildMember,
-    TgiftGroupChildFields,
-} from '../models/listGroups/child/GiftGroupChild';
-import { GiftGroupModel, GIFT_GROUP, IgiftGroupMember, TgiftGroupFields } from '../models/listGroups/parent/GiftGroup';
-import {
-    BASIC_LIST,
-    IbasicListMember,
-    BasicListModel,
-    TbasicListFields,
-} from '../models/listGroups/singular/BasicList';
+import { GiftGroupChildModel, GIFT_GROUP_CHILD } from '../models/listGroups/discriminators/child/GiftGroupChild';
+import { GiftGroupModel, GIFT_GROUP } from '../models/listGroups/discriminators/parent/GiftGroup';
+import { BASIC_LIST, BasicListModel } from '../models/listGroups/discriminators/singular/BasicList';
 import {
     LIST_GROUP_CHILD_VARIANTS,
     LIST_GROUP_PARENT_VARIANTS,
     LIST_GROUP_SINGLE_VARIANTS,
 } from '../models/listGroups/variants/ListGroupVariants';
-import { GiftListModel, GIFT_LIST, IgiftListMember, TgiftListFields } from '../models/listGroups/singular/GiftList';
+import { GiftListModel, GIFT_LIST } from '../models/listGroups/discriminators/singular/GiftList';
 import { deleteGroupAndAnyChildGroups } from './helperFunctions';
+import {
+    IbasicListMember,
+    IgiftGroupChildMember,
+    IgiftGroupMember,
+    IgiftListMember,
+    IgroupMemberBase,
+    invalidGroupVariantError,
+    invalidParentVariantError,
+    TbasicListFields,
+    TgiftGroupChildFields,
+    TgiftGroupFields,
+    TgiftListFields,
+    TlistGroupAny,
+} from '../models/listGroups/discriminators/interfaces';
 
 const router: Router = express.Router();
 

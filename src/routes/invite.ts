@@ -3,7 +3,7 @@ import { authMiddleware } from '../middleware/auth';
 import jwt from 'jsonwebtoken';
 import sendgrid from '@sendgrid/mail';
 import { check, Result, ValidationError, validationResult } from 'express-validator';
-import { invalidGroupVariantError, listGroupBaseModel } from '../models/listGroups/ListGroupBase';
+import { listGroupBaseModel } from '../models/listGroups/ListGroupBase';
 import {
     giftGroupChildMemberBasePerms,
     giftGroupMemberBasePerms,
@@ -11,14 +11,17 @@ import {
     giftListMemberBasePerms,
     PERM_GROUP_INVITE,
 } from '../models/listGroups/permissions/ListGroupPermissions';
-import { BasicListModel, BASIC_LIST, IbasicListMember } from '../models/listGroups/singular/BasicList';
+import { BasicListModel, BASIC_LIST } from '../models/listGroups/discriminators/singular/BasicList';
+import { GiftGroupChildModel, GIFT_GROUP_CHILD } from '../models/listGroups/discriminators/child/GiftGroupChild';
+import { GiftGroupModel, GIFT_GROUP } from '../models/listGroups/discriminators/parent/GiftGroup';
+import { GiftListModel, GIFT_LIST } from '../models/listGroups/discriminators/singular/GiftList';
 import {
-    GiftGroupChildModel,
-    GIFT_GROUP_CHILD,
+    IbasicListMember,
     IgiftGroupChildMember,
-} from '../models/listGroups/child/GiftGroupChild';
-import { GiftGroupModel, GIFT_GROUP, IgiftGroupMember } from '../models/listGroups/parent/GiftGroup';
-import { GiftListModel, GIFT_LIST, IgiftListMember } from '../models/listGroups/singular/GiftList';
+    IgiftGroupMember,
+    IgiftListMember,
+    invalidGroupVariantError,
+} from '../models/listGroups/discriminators/interfaces';
 
 const router: Router = express.Router();
 sendgrid.setApiKey(process.env.SENDGRID_API_KEY);

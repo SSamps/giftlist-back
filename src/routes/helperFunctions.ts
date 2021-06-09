@@ -1,7 +1,7 @@
 import { Schema } from 'mongoose';
-import { GiftGroupChildModel } from '../models/listGroups/child/GiftGroupChild';
+import { GiftGroupChildModel } from '../models/listGroups/discriminators/child/GiftGroupChild';
 import { listGroupBaseModel } from '../models/listGroups/ListGroupBase';
-import { GiftGroupModel } from '../models/listGroups/parent/GiftGroup';
+import { GiftGroupModel } from '../models/listGroups/discriminators/parent/GiftGroup';
 import { PERM_GROUP_DELETE } from '../models/listGroups/permissions/ListGroupPermissions';
 import { LIST_GROUP_PARENT_VARIANTS } from '../models/listGroups/variants/ListGroupVariants';
 
