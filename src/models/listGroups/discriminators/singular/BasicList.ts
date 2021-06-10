@@ -1,10 +1,11 @@
 import { Schema } from 'mongoose';
 import { listGroupBaseModel } from '../../ListGroupBase';
 import { PERM_BASIC_LIST_ALL } from '../../permissions/listGroupPermissions';
+import { TbasicListDocument } from '../interfaces';
 
 export const BASIC_LIST = 'BASIC_LIST';
 
-const basicListSchema = new Schema({
+const basicListSchema = new Schema<TbasicListDocument>({
     owner: {
         userId: { type: Schema.Types.ObjectId, required: true },
         permissions: [{ type: String, required: true, enum: PERM_BASIC_LIST_ALL }],

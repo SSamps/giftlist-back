@@ -52,22 +52,25 @@ type TbasicListExtraFields = {
 };
 
 export type TbasicListFields = TlistGroupBaseFields & TbasicListExtraFields;
+export type TbasicListDocument = Document & TbasicListFields;
 
 // Gift Lists
 
 export interface IgiftListMember extends IgroupMemberBase {
     permissions: TYPE_PERM_GIFT_LIST_ALL[];
-    listItems?: TgiftListItem[];
 }
 
 type TgiftListExtraFields = {
     owner: IgiftListMember;
     members?: [IgiftListMember];
     maxListItems?: Number;
+    listItems?: TgiftListItem[];
     maxSecretListItemsEach?: Number;
+    secretListItems?: TgiftListItem[];
 };
 
 export type TgiftListFields = TlistGroupBaseFields & TgiftListExtraFields;
+export type TgiftListDocument = Document & TgiftListFields;
 
 // Parent groups
 // Gift Groups
@@ -82,6 +85,7 @@ type TgiftGroupExtraFields = {
 };
 
 export type TgiftGroupFields = TlistGroupBaseFields & TgiftGroupExtraFields;
+export type TgiftGroupDocument = Document & TgiftGroupFields;
 
 // Child groups
 
@@ -98,6 +102,7 @@ type TgiftGroupChildExtraFields = {
 };
 
 export type TgiftGroupChildFields = TlistGroupBaseFields & TgiftGroupChildExtraFields;
+export type TgiftGroupChildDocument = Document & TgiftGroupChildFields;
 
 // Aggregated
 

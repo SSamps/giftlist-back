@@ -13,6 +13,7 @@ import {
     PERM_MUTABLE_ALL,
     PERM_MODIFIER_ADD,
     PERM_MODIFIER_REMOVE,
+    PERM_GROUP_RW_LIST_ITEMS,
 } from '../models/listGroups/permissions/listGroupPermissions';
 import { GiftGroupChildModel, GIFT_GROUP_CHILD } from '../models/listGroups/discriminators/child/GiftGroupChild';
 import { GiftGroupModel, GIFT_GROUP } from '../models/listGroups/discriminators/parent/GiftGroup';
@@ -38,6 +39,7 @@ import {
     TgiftListFields,
     TlistGroupAny,
 } from '../models/listGroups/discriminators/interfaces';
+import { TgiftListItem } from '../models/listGroups/listItems';
 
 const router: Router = express.Router();
 
@@ -449,11 +451,11 @@ router.put(
 
 // TODO change routes to target specific group types
 
-// @route POST api/groups/giftlist/:groupid
+// @route POST api/groups/giftlist/:groupid/items
 // @desc Add an item to a giftlist
 // @access Private
 router.post(
-    '/giftlist/:groupid',
+    '/giftlist/:groupid/items',
     authMiddleware,
     check('body', 'A list item body is required').not().isEmpty(),
     async (req: Request, res: Response) => {
@@ -465,13 +467,45 @@ router.post(
         }
 
         const userIdToken = req.user._id;
+        const groupId = req.params.groupid;
         const { body, link } = req.body;
 
         // TODO might be able to put some of this in a helper function.
         // check the group exists, is of the right type and the user has either PERM_GROUP_RW_LIST_ITEMS or PERM_GROUP_RW_SECRET_LIST_ITEMS
-        // check if user is a member of owner
-        // check if adding would exceed maxListItems or maxSecretListItems
-        // append item to the user's object
+        try {
+            const foundGroup = await GiftListModel.findOne({
+                $and: [
+                    { _id: groupId, groupVariant: GIFT_LIST },
+                    {
+                        $or: [
+                            { 'owner.userId': userIdToken, 'owner.permissions': PERM_GROUP_RW_LIST_ITEMS },
+                            { 'members.userId': userIdToken, 'members.permissions': PERM_GROUP_RW_LIST_ITEMS },
+                        ],
+                    },
+                ],
+            });
+
+            if (!foundGroup) {
+                return res.status(404).send();
+            }
+            // build new list item
+            const newListItem: TgiftListItem = {
+                authorId: userIdToken,
+                body: body,
+                link: link,
+            };
+
+            // check if user is a member of owner
+            if (foundGroup.owner.userId.toString() === userIdToken.toString()) {
+                // check if adding would exceed maxListItems
+                await foundGroup.update({ $push: { listItems: newListItem } });
+                return res.status(200).send();
+            }
+            // Handle member case
+        } catch (err) {
+            console.log(err);
+            return res.status(500).send('Internal server error');
+        }
     }
 );
 

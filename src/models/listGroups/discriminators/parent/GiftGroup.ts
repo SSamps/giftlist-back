@@ -1,10 +1,11 @@
 import { Schema } from 'mongoose';
 import { listGroupBaseModel } from '../../ListGroupBase';
 import { PERM_GIFT_GROUP_ALL } from '../../permissions/listGroupPermissions';
+import { TgiftGroupDocument } from '../interfaces';
 
 export const GIFT_GROUP = 'GIFT_GROUP';
 
-const giftGroupSchema = new Schema({
+const giftGroupSchema = new Schema<TgiftGroupDocument>({
     owner: {
         userId: { type: Schema.Types.ObjectId, required: true },
         permissions: [{ type: String, required: true, enum: PERM_GIFT_GROUP_ALL }],
