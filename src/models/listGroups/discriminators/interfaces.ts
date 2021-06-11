@@ -45,11 +45,20 @@ export interface IbasicListMember extends IgroupMemberBase {
     permissions: TYPE_PERM_BASIC_LIST_ALL[];
 }
 
-type TbasicListExtraFields = {
+type TnewBasicListExtraFields = {
     owner: IbasicListMember;
     members?: [IbasicListMember];
     maxListItems?: Number;
 };
+
+type TbasicListExtraFields = {
+    owner: IbasicListMember;
+    members: [IbasicListMember];
+    maxListItems?: Number;
+};
+
+export type TnewBasicListFields = TlistGroupBaseFields & TnewBasicListExtraFields;
+export type TnewBasicListDocument = Document & TnewBasicListFields;
 
 export type TbasicListFields = TlistGroupBaseFields & TbasicListExtraFields;
 export type TbasicListDocument = Document & TbasicListFields;
@@ -60,7 +69,7 @@ export interface IgiftListMember extends IgroupMemberBase {
     permissions: TYPE_PERM_GIFT_LIST_ALL[];
 }
 
-type TgiftListExtraFields = {
+type TnewGiftListExtraFields = {
     owner: IgiftListMember;
     members?: [IgiftListMember];
     maxListItems?: Number;
@@ -68,6 +77,18 @@ type TgiftListExtraFields = {
     maxSecretListItemsEach?: Number;
     secretListItems?: TgiftListItem[];
 };
+
+type TgiftListExtraFields = {
+    owner: IgiftListMember;
+    members: [IgiftListMember];
+    maxListItems: Number;
+    listItems: TgiftListItem[];
+    maxSecretListItemsEach: Number;
+    secretListItems: TgiftListItem[];
+};
+
+export type TnewGiftListFields = TlistGroupBaseFields & TnewGiftListExtraFields;
+export type TnewGiftListDocument = Document & TnewGiftListFields;
 
 export type TgiftListFields = TlistGroupBaseFields & TgiftListExtraFields;
 export type TgiftListDocument = Document & TgiftListFields;
@@ -79,10 +100,18 @@ export interface IgiftGroupMember extends IgroupMemberBase {
     permissions: TYPE_PERM_GIFT_GROUP_ALL[];
 }
 
-type TgiftGroupExtraFields = {
+type TnewGiftGroupExtraFields = {
     owner: IgiftGroupMember;
     members?: [IgiftGroupMember];
 };
+
+type TgiftGroupExtraFields = {
+    owner: IgiftGroupMember;
+    members: [IgiftGroupMember];
+};
+
+export type TnewGiftGroupFields = TlistGroupBaseFields & TnewGiftGroupExtraFields;
+export type TnewGiftGroupDocument = Document & TnewGiftGroupFields;
 
 export type TgiftGroupFields = TlistGroupBaseFields & TgiftGroupExtraFields;
 export type TgiftGroupDocument = Document & TgiftGroupFields;
@@ -93,13 +122,24 @@ export interface IgiftGroupChildMember extends IgroupMemberBase {
     permissions: TYPE_PERM_GIFT_GROUP_CHILD_ALL[];
 }
 
-type TgiftGroupChildExtraFields = {
+type TnewGiftGroupChildExtraFields = {
     owner: IgiftGroupChildMember;
     members?: [IgiftGroupChildMember];
     parentGroupId: Schema.Types.ObjectId | string;
     maxListItems?: Number;
     maxSecretListItemsEach?: Number;
 };
+
+type TgiftGroupChildExtraFields = {
+    owner: IgiftGroupChildMember;
+    members: [IgiftGroupChildMember];
+    parentGroupId: Schema.Types.ObjectId | string;
+    maxListItems: Number;
+    maxSecretListItemsEach: Number;
+};
+
+export type TnewGiftGroupChildFields = TlistGroupBaseFields & TnewGiftGroupChildExtraFields;
+export type TnewGiftGroupChildDocument = Document & TnewGiftGroupChildFields;
 
 export type TgiftGroupChildFields = TlistGroupBaseFields & TgiftGroupChildExtraFields;
 export type TgiftGroupChildDocument = Document & TgiftGroupChildFields;

@@ -38,6 +38,10 @@ import {
     TgiftGroupFields,
     TgiftListFields,
     TlistGroupAny,
+    TnewBasicListFields,
+    TnewGiftGroupChildFields,
+    TnewGiftGroupFields,
+    TnewGiftListFields,
 } from '../models/listGroups/discriminators/interfaces';
 import { TgiftListItem } from '../models/listGroups/listItems';
 
@@ -103,7 +107,7 @@ router.post(
                         userId: userIdToken,
                         permissions: basicListOwnerBasePerms,
                     };
-                    const newListGroupData: TbasicListFields = { owner, groupName };
+                    const newListGroupData: TnewBasicListFields = { owner, groupName };
                     const newListGroup = new BasicListModel(newListGroupData);
                     await newListGroup.save();
                     return res.status(200).json(newListGroup);
@@ -113,7 +117,7 @@ router.post(
                         userId: userIdToken,
                         permissions: giftListOwnerBasePerms,
                     };
-                    const newListGroupData: TgiftListFields = { owner, groupName };
+                    const newListGroupData: TnewGiftListFields = { owner, groupName };
                     const newListGroup = new GiftListModel(newListGroupData);
                     await newListGroup.save();
                     return res.status(200).json(newListGroup);
@@ -177,7 +181,7 @@ router.post(
                         userId: userIdToken,
                         permissions: giftGroupChildOwnerBasePerms,
                     };
-                    const newListGroupData: TgiftGroupChildFields = { owner, groupName, parentGroupId };
+                    const newListGroupData: TnewGiftGroupChildFields = { owner, groupName, parentGroupId };
                     const newListGroup = new GiftGroupChildModel(newListGroupData);
                     await newListGroup.save();
                     return res.status(200).json(newListGroup);
@@ -219,7 +223,7 @@ router.post(
                         userId: userIdToken,
                         permissions: giftGroupOwnerBasePerms,
                     };
-                    const newGroupData: TgiftGroupFields = { owner, groupName };
+                    const newGroupData: TnewGiftGroupFields = { owner, groupName };
                     const newGroup = new GiftGroupModel(newGroupData);
                     await newGroup.save();
                     return res.status(200).json(newGroup);
@@ -498,6 +502,8 @@ router.post(
             // check if user is a member of owner
             if (foundGroup.owner.userId.toString() === userIdToken.toString()) {
                 // check if adding would exceed maxListItems
+                if (foundGroup.listItems.length + 1 >= foundGroup.maxListItems) {
+                }
                 await foundGroup.update({ $push: { listItems: newListItem } });
                 return res.status(200).send();
             }
