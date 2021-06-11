@@ -34,10 +34,6 @@ import {
     IgroupMemberBase,
     invalidGroupVariantError,
     invalidParentVariantError,
-    TbasicListFields,
-    TgiftGroupChildFields,
-    TgiftGroupFields,
-    TgiftListFields,
     TlistGroupAny,
     TnewBasicListFields,
     TnewGiftGroupChildFields,
@@ -45,6 +41,7 @@ import {
     TnewGiftListFields,
 } from '../models/listGroups/discriminators/interfaces';
 import { TgiftListItem } from '../models/listGroups/listItems';
+import mongoose from 'mongoose';
 
 const router: Router = express.Router();
 
@@ -454,8 +451,6 @@ router.put(
     }
 );
 
-// TODO change routes to target specific group types
-
 // @route POST api/groups/giftlist/:groupid/items
 // @desc Add an item to a giftlist
 // @access Private
@@ -464,7 +459,7 @@ router.post(
     authMiddleware,
     check('body', 'A list item body is required').not().isEmpty(),
     async (req: Request, res: Response) => {
-        console.log('POST /api/groups/single hit');
+        console.log('POST api/groups/giftlist/:groupid/items');
 
         const errors: Result<ValidationError> = validationResult(req);
         if (!errors.isEmpty()) {
@@ -526,5 +521,52 @@ router.post(
         }
     }
 );
+
+// @route POST api/groups/giftlist/:groupid/items/:itemid
+// @desc Delete an item from a giftlist
+// @access Private
+router.delete('/giftlist/:groupid/items/:itemid', authMiddleware, async (req: Request, res: Response) => {
+    console.log('DELETE api/groups/giftlist/:groupid/items');
+
+    const userIdToken = req.user._id;
+    const groupId = req.params.groupid;
+    const itemId = req.params.itemid;
+
+    // TODO might be able to put some of this in a helper function.
+    try {
+        const foundGroup = await GiftListModel.findOne({
+            $and: [
+                { _id: groupId, groupVariant: GIFT_LIST },
+                {
+                    $or: [
+                        { 'owner.userId': userIdToken, 'owner.permissions': PERM_GROUP_RW_LIST_ITEMS },
+                        { 'members.userId': userIdToken, 'members.permissions': PERM_GROUP_RW_SECRET_LIST_ITEMS },
+                    ],
+                },
+            ],
+        });
+
+        if (!foundGroup) {
+            return res.status(404).send();
+        }
+
+        if (foundGroup.owner.userId.toString() === userIdToken.toString()) {
+            let result = await foundGroup.update({ $pull: { listItems: { _id: itemId } } });
+            if (result.nModified === 1) {
+                return res.status(200).send();
+            }
+            return res.status(404).send();
+        } else {
+            let result = await foundGroup.update({ $pull: { secretListItems: { _id: itemId } } });
+            if (result.nModified === 1) {
+                return res.status(200).send();
+            }
+            return res.status(404).send();
+        }
+    } catch (err) {
+        console.log(err);
+        return res.status(500).send('Internal server error');
+    }
+});
 
 module.exports = router;
