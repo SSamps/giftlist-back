@@ -14,6 +14,7 @@ import {
     PERM_MODIFIER_ADD,
     PERM_MODIFIER_REMOVE,
     PERM_GROUP_RW_LIST_ITEMS,
+    PERM_GROUP_RW_SECRET_LIST_ITEMS,
 } from '../models/listGroups/permissions/listGroupPermissions';
 import { GiftGroupChildModel, GIFT_GROUP_CHILD } from '../models/listGroups/discriminators/child/GiftGroupChild';
 import { GiftGroupModel, GIFT_GROUP } from '../models/listGroups/discriminators/parent/GiftGroup';
@@ -475,7 +476,6 @@ router.post(
         const { body, link } = req.body;
 
         // TODO might be able to put some of this in a helper function.
-        // check the group exists, is of the right type and the user has either PERM_GROUP_RW_LIST_ITEMS or PERM_GROUP_RW_SECRET_LIST_ITEMS
         try {
             const foundGroup = await GiftListModel.findOne({
                 $and: [
@@ -483,7 +483,7 @@ router.post(
                     {
                         $or: [
                             { 'owner.userId': userIdToken, 'owner.permissions': PERM_GROUP_RW_LIST_ITEMS },
-                            { 'members.userId': userIdToken, 'members.permissions': PERM_GROUP_RW_LIST_ITEMS },
+                            { 'members.userId': userIdToken, 'members.permissions': PERM_GROUP_RW_SECRET_LIST_ITEMS },
                         ],
                     },
                 ],
@@ -492,22 +492,34 @@ router.post(
             if (!foundGroup) {
                 return res.status(404).send();
             }
-            // build new list item
+
             const newListItem: TgiftListItem = {
                 authorId: userIdToken,
                 body: body,
                 link: link,
             };
 
-            // check if user is a member of owner
             if (foundGroup.owner.userId.toString() === userIdToken.toString()) {
-                // check if adding would exceed maxListItems
-                if (foundGroup.listItems.length + 1 >= foundGroup.maxListItems) {
+                if (foundGroup.listItems.length + 1 > foundGroup.maxListItems) {
+                    return res.status(400).send('You have reached the maximum number of list items');
                 }
                 await foundGroup.update({ $push: { listItems: newListItem } });
                 return res.status(200).send();
+            } else {
+                let ownedItems = 0;
+                foundGroup.secretListItems.forEach((item) => {
+                    if (item.authorId.toString() === userIdToken.toString()) {
+                        ownedItems += 1;
+                        console.log('ownedItems now: ' + ownedItems);
+                    }
+                });
+
+                if (ownedItems + 1 > foundGroup.maxSecretListItemsEach) {
+                    return res.status(400).send('You have reached the maximum number of secret list items');
+                }
+                await foundGroup.update({ $push: { secretListItems: newListItem } });
+                return res.status(200).send();
             }
-            // Handle member case
         } catch (err) {
             console.log(err);
             return res.status(500).send('Internal server error');

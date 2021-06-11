@@ -32,6 +32,7 @@ const giftListSchema = new Schema<TgiftListDocument>({
     maxSecretListItemsEach: { type: Number, required: true, default: 5 },
     secretListItems: [
         {
+            authorId: { type: Schema.Types.ObjectId },
             creationDate: { type: Date, default: Date.now },
             body: { type: String },
             link: { type: String },
