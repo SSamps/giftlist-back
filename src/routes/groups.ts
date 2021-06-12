@@ -20,6 +20,7 @@ import { GiftGroupChildModel, GIFT_GROUP_CHILD } from '../models/listGroups/disc
 import { GiftGroupModel, GIFT_GROUP } from '../models/listGroups/discriminators/parent/GiftGroup';
 import { BASIC_LIST, BasicListModel } from '../models/listGroups/discriminators/singular/BasicList';
 import {
+    LIST_GROUP_ALL_VARIANTS,
     LIST_GROUP_CHILD_VARIANTS,
     LIST_GROUP_PARENT_VARIANTS,
     LIST_GROUP_SINGLE_VARIANTS,
@@ -33,6 +34,7 @@ import {
     IgiftListMember,
     IgroupMemberBase,
     invalidGroupVariantError,
+    invalidParentError,
     invalidParentVariantError,
     TlistGroupAny,
     TnewBasicListFields,
@@ -78,70 +80,114 @@ router.get('/user', authMiddleware, async (req: Request, res: Response) => {
     }
 });
 
-// @route POST api/groups/single
-// @desc Add a new singular group
-// @access Private
-router.post(
-    '/single',
-    authMiddleware,
-    check('groupName', 'groupName is required').not().isEmpty(),
-    check('groupVariant', 'groupVariant is required').not().isEmpty(),
-    check('groupVariant', 'groupVariant is not a valid single group type').isIn(LIST_GROUP_SINGLE_VARIANTS),
-    async (req: Request, res: Response) => {
-        console.log('POST /api/groups/single hit');
+async function validateParentGroup(
+    parentGroupId: mongoose.Schema.Types.ObjectId,
+    userIdToken: mongoose.Schema.Types.ObjectId,
+    childGroupVariant: string
+) {
+    const foundParentGroup = await listGroupBaseModel.findOne().and([
+        { _id: parentGroupId },
+        {
+            $or: [
+                { 'owner.userId': userIdToken, 'owner.permissions': PERM_CHILD_GROUP_CREATE },
+                { 'members.userId': userIdToken, 'owner.permissions': PERM_CHILD_GROUP_CREATE },
+            ],
+        },
+    ]);
 
-        const errors: Result<ValidationError> = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
-        }
+    if (!foundParentGroup) {
+        throw new invalidParentError(parentGroupId.toString());
+    }
 
-        const userIdToken = req.user._id;
-        const { groupVariant, groupName } = req.body;
+    const parentVariant = foundParentGroup.groupVariant;
 
-        try {
-            switch (groupVariant) {
-                case BASIC_LIST: {
-                    const owner: IbasicListMember = {
-                        userId: userIdToken,
-                        permissions: basicListOwnerBasePerms,
-                    };
-                    const newListGroupData: TnewBasicListFields = { owner, groupName };
-                    const newListGroup = new BasicListModel(newListGroupData);
-                    await newListGroup.save();
-                    return res.status(200).json(newListGroup);
-                }
-                case GIFT_LIST: {
-                    const owner: IgiftListMember = {
-                        userId: userIdToken,
-                        permissions: giftListOwnerBasePerms,
-                    };
-                    const newListGroupData: TnewGiftListFields = { owner, groupName };
-                    const newListGroup = new GiftListModel(newListGroupData);
-                    await newListGroup.save();
-                    return res.status(200).json(newListGroup);
-                }
-                default:
-                    throw new invalidGroupVariantError(groupVariant);
+    switch (childGroupVariant) {
+        case GIFT_GROUP_CHILD: {
+            if (parentVariant !== GIFT_GROUP) {
+                throw new invalidParentVariantError(childGroupVariant, parentVariant);
             }
-        } catch (err) {
-            console.log(err.message);
-            return res.status(500).send('Server error');
+        }
+        default:
+            throw new invalidGroupVariantError(childGroupVariant);
+    }
+}
+
+async function addGroup(
+    userIdToken: mongoose.Schema.Types.ObjectId,
+    groupVariant: string,
+    groupName: string,
+    res: Response,
+    parentGroupId: mongoose.Schema.Types.ObjectId
+) {
+    console.log(parentGroupId);
+    if (LIST_GROUP_CHILD_VARIANTS.includes(groupVariant)) {
+        if (parentGroupId === undefined) {
+            return res.status(400).json({ msg: 'Error: Child groups require a parent group' });
         }
     }
-);
+    try {
+        switch (groupVariant) {
+            case BASIC_LIST: {
+                const owner: IbasicListMember = {
+                    userId: userIdToken,
+                    permissions: basicListOwnerBasePerms,
+                };
+                const newListGroupData: TnewBasicListFields = { owner, groupName };
+                const newListGroup = new BasicListModel(newListGroupData);
+                await newListGroup.save();
+                return res.status(200).json(newListGroup);
+            }
+            case GIFT_LIST: {
+                const owner: IgiftListMember = {
+                    userId: userIdToken,
+                    permissions: giftListOwnerBasePerms,
+                };
+                const newListGroupData: TnewGiftListFields = { owner, groupName };
+                const newListGroup = new GiftListModel(newListGroupData);
+                await newListGroup.save();
+                return res.status(200).json(newListGroup);
+            }
+            case GIFT_GROUP: {
+                const owner: IgiftGroupMember = {
+                    userId: userIdToken,
+                    permissions: giftGroupOwnerBasePerms,
+                };
+                const newGroupData: TnewGiftGroupFields = { owner, groupName };
+                const newGroup = new GiftGroupModel(newGroupData);
+                await newGroup.save();
+                return res.status(200).json(newGroup);
+            }
+            case GIFT_GROUP_CHILD: {
+                await validateParentGroup(parentGroupId, userIdToken, groupVariant);
+                const owner: IgiftGroupChildMember = {
+                    userId: userIdToken,
+                    permissions: giftGroupChildOwnerBasePerms,
+                };
+                const newListGroupData: TnewGiftGroupChildFields = { owner, groupName, parentGroupId };
+                const newListGroup = new GiftGroupChildModel(newListGroupData);
+                await newListGroup.save();
+                return res.status(200).json(newListGroup);
+            }
+            default:
+                throw new invalidGroupVariantError(groupVariant);
+        }
+    } catch (err) {
+        console.log(err.message);
+        return res.status(500).send('Server error');
+    }
+}
 
-// @route POST api/groups/child
-// @desc Add a new child group
+// @route POST api/groups/
+// @desc Add a new group
 // @access Private
 router.post(
-    '/child',
+    '/',
     authMiddleware,
-    check('groupVariant', 'groupVariant is not a valid child group type').isIn(LIST_GROUP_CHILD_VARIANTS),
     check('groupName', 'groupName is required').not().isEmpty(),
     check('groupVariant', 'groupVariant is required').not().isEmpty(),
-    check('parentGroupId', 'parentGroupId is required for child groups').not().isEmpty(),
+    check('groupVariant', 'groupVariant is not a valid single group type').isIn(LIST_GROUP_ALL_VARIANTS),
     async (req: Request, res: Response) => {
-        console.log('POST /api/groups/child hit');
+        console.log('POST /api/groups hit');
 
         const errors: Result<ValidationError> = validationResult(req);
         if (!errors.isEmpty()) {
@@ -151,134 +197,16 @@ router.post(
         const userIdToken = req.user._id;
         const { groupVariant, groupName, parentGroupId } = req.body;
 
-        // Validation
+        let result;
         try {
-            const foundParentGroup = await listGroupBaseModel.findOne().and([
-                { _id: parentGroupId },
-                {
-                    $or: [
-                        { 'owner.userId': userIdToken, 'owner.permissions': PERM_CHILD_GROUP_CREATE },
-                        { 'members.userId': userIdToken, 'owner.permissions': PERM_CHILD_GROUP_CREATE },
-                    ],
-                },
-            ]);
-
-            if (!foundParentGroup) {
-                console.log(foundParentGroup);
-                return res.status(400).send('Invalid parentGroupId or unauthorized');
-            }
-
-            const parentVariant = foundParentGroup.groupVariant;
-
-            switch (groupVariant) {
-                case GIFT_GROUP_CHILD: {
-                    if (parentVariant !== GIFT_GROUP) {
-                        throw new invalidParentVariantError(groupVariant, parentVariant);
-                    }
-                    const owner: IgiftGroupChildMember = {
-                        userId: userIdToken,
-                        permissions: giftGroupChildOwnerBasePerms,
-                    };
-                    const newListGroupData: TnewGiftGroupChildFields = { owner, groupName, parentGroupId };
-                    const newListGroup = new GiftGroupChildModel(newListGroupData);
-                    await newListGroup.save();
-                    return res.status(200).json(newListGroup);
-                }
-                default:
-                    throw new invalidGroupVariantError(groupVariant);
-            }
+            result = await addGroup(userIdToken, groupVariant, groupName, res, parentGroupId);
+            return result;
         } catch (err) {
             console.log(err.message);
             return res.status(500).send('Server error');
         }
     }
 );
-
-// @route POST api/groups/parent
-// @desc Add a new parent group
-// @access Private
-router.post(
-    '/parent',
-    authMiddleware,
-    check('groupName', 'groupName is required').not().isEmpty(),
-    check('groupVariant', 'groupVariant is required').not().isEmpty(),
-    check('groupVariant', 'groupVariant is not a valid parent group type').isIn(LIST_GROUP_PARENT_VARIANTS),
-    async (req: Request, res: Response) => {
-        console.log('POST /api/groups/parent hit');
-
-        const errors: Result<ValidationError> = validationResult(req);
-        if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
-        }
-
-        const userIdToken = req.user._id;
-        const { groupVariant, groupName } = req.body;
-
-        try {
-            switch (groupVariant) {
-                case GIFT_GROUP: {
-                    const owner: IgiftGroupMember = {
-                        userId: userIdToken,
-                        permissions: giftGroupOwnerBasePerms,
-                    };
-                    const newGroupData: TnewGiftGroupFields = { owner, groupName };
-                    const newGroup = new GiftGroupModel(newGroupData);
-                    await newGroup.save();
-                    return res.status(200).json(newGroup);
-                }
-                default:
-                    throw new invalidGroupVariantError(groupVariant);
-            }
-        } catch (err) {
-            console.log(err.message);
-            return res.status(500).send('Server error');
-        }
-    }
-);
-
-// TODO potentially remove this route after no longer needed for testing.
-// @route PUT api/groups/join/groupid
-// @desc Join a group
-// @access Private
-router.put('/join/:groupid', authMiddleware, async (req: Request, res: Response) => {
-    console.log('PUT /api/groups/leave hit');
-
-    const userIdToken = req.user._id;
-    const groupIdParams = req.params.groupid;
-
-    // Validation group must exist and must not already be a member or owner
-    try {
-        const foundGroup = await listGroupBaseModel.findOne().and([
-            { _id: groupIdParams },
-            {
-                $nor: [{ 'owner.userId': userIdToken }, { 'members.userId': userIdToken }],
-            },
-        ]);
-
-        if (!foundGroup) {
-            return res.status(400).send('Invalid groupId or already a member');
-        }
-    } catch (err) {
-        console.log(err.message);
-        return res.status(500).send('Server error');
-    }
-
-    // TODO permission users to join a group. Add an invited array?
-
-    const newMember: IgroupMemberBase = { userId: userIdToken, permissions: [] };
-
-    try {
-        const updatedGroup = await listGroupBaseModel.findOneAndUpdate(
-            { _id: groupIdParams },
-            { $push: { members: newMember } },
-            { new: true }
-        );
-        return res.status(200).json(updatedGroup);
-    } catch (err) {
-        console.log(err.message);
-        return res.status(500).send('Server error');
-    }
-});
 
 // @route PUT api/groups/leave/groupid
 // @desc Leave a group if a member

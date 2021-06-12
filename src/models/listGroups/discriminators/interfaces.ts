@@ -16,6 +16,17 @@ export class invalidGroupVariantError extends Error {
     }
 }
 
+export class invalidParentError extends Error {
+    constructor(parentId: string) {
+        super(
+            'unable to find a parent group with id of ' +
+                parentId +
+                'on which the user is authorised to create child groups.'
+        );
+        this.name = 'invalidParentError';
+    }
+}
+
 export class invalidParentVariantError extends Error {
     constructor(childVariant: string, parentVariant: string) {
         super(childVariant + ' is an invalid child for the provided parent variant' + parentVariant);
