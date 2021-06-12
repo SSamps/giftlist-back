@@ -36,33 +36,6 @@ interface IinviteToken {
     exp: number;
 }
 
-// @route POST api/invite/test
-// @desc Send a test email
-// @access Public
-router.post('/test', async (req: Request, res: Response) => {
-    try {
-        const msg = {
-            to: 'simonjsampson@gmail.com',
-            from: {
-                name: 'GiftList',
-                email: 'invites.giftlist@sampsy.dev',
-            },
-            templateId: 'd-cc51518222ad4be5b77288e51c7b02a3',
-            dynamic_template_data: {
-                groupName: 'testGroup',
-                senderName: 'Simon',
-                inviteLink: 'www.testlink.com',
-            },
-        };
-
-        await sendgrid.send(msg);
-
-        return res.send(200);
-    } catch (error) {
-        return res.send(500);
-    }
-});
-
 // @route POST api/invite/send/:groupid
 // @desc Send an invite
 // @access Private
