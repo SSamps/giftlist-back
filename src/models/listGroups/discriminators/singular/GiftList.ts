@@ -1,5 +1,5 @@
 import { Schema } from 'mongoose';
-import { listGroupBaseModel } from '../../ListGroupBase';
+import { ListGroupBaseModel } from '../../ListGroupBase';
 import { PERM_GIFT_LIST_ALL } from '../../permissions/listGroupPermissions';
 import { TgiftListDocument } from '../interfaces';
 
@@ -41,4 +41,4 @@ const giftListSchema = new Schema<TgiftListDocument>({
     ],
 });
 
-export const GiftListModel = listGroupBaseModel.discriminator(GIFT_LIST, giftListSchema);
+export const GiftListModel = ListGroupBaseModel.discriminator(GIFT_LIST, giftListSchema);

@@ -1,7 +1,7 @@
 import express, { Router, Request, Response } from 'express';
 import { authMiddleware } from '../middleware/auth';
-import { check, Result, ValidationError, validationResult } from 'express-validator';
-import { listGroupBaseModel } from '../models/listGroups/ListGroupBase';
+import { check, Result, ValidationError, validationResult, oneOf } from 'express-validator';
+import { ListGroupBaseModel } from '../models/listGroups/ListGroupBase';
 import {
     giftGroupChildOwnerBasePerms,
     basicListOwnerBasePerms,
@@ -22,8 +22,6 @@ import { BASIC_LIST, BasicListModel } from '../models/listGroups/discriminators/
 import {
     LIST_GROUP_ALL_VARIANTS,
     LIST_GROUP_CHILD_VARIANTS,
-    LIST_GROUP_PARENT_VARIANTS,
-    LIST_GROUP_SINGLE_VARIANTS,
 } from '../models/listGroups/discriminators/variants/listGroupVariants';
 import { GiftListModel, GIFT_LIST } from '../models/listGroups/discriminators/singular/GiftList';
 import { deleteGroupAndAnyChildGroups } from './helperFunctions';
@@ -32,7 +30,6 @@ import {
     IgiftGroupChildMember,
     IgiftGroupMember,
     IgiftListMember,
-    IgroupMemberBase,
     invalidGroupVariantError,
     invalidParentError,
     invalidParentVariantError,
@@ -42,8 +39,8 @@ import {
     TnewGiftGroupFields,
     TnewGiftListFields,
 } from '../models/listGroups/discriminators/interfaces';
-import { TgiftListItem } from '../models/listGroups/listItems';
 import mongoose from 'mongoose';
+import { TnewListItemFields } from '../models/listGroups/listItems';
 
 const router: Router = express.Router();
 
@@ -56,7 +53,7 @@ router.get('/user', authMiddleware, async (req: Request, res: Response) => {
     const userIdToken = req.user._id;
 
     try {
-        let foundMemberGroups = await listGroupBaseModel.find({
+        let foundMemberGroups = await ListGroupBaseModel.find({
             $or: [{ 'owner.userId': userIdToken }, { 'members.userId': userIdToken }],
         });
         let foundOwnedGroups: TlistGroupAny[] = [];
@@ -85,7 +82,7 @@ async function validateParentGroup(
     userIdToken: mongoose.Schema.Types.ObjectId,
     childGroupVariant: string
 ) {
-    const foundParentGroup = await listGroupBaseModel.findOne().and([
+    const foundParentGroup = await ListGroupBaseModel.findOne().and([
         { _id: parentGroupId },
         {
             $or: [
@@ -106,6 +103,7 @@ async function validateParentGroup(
             if (parentVariant !== GIFT_GROUP) {
                 throw new invalidParentVariantError(childGroupVariant, parentVariant);
             }
+            break;
         }
         default:
             throw new invalidGroupVariantError(childGroupVariant);
@@ -185,7 +183,7 @@ router.post(
     authMiddleware,
     check('groupName', 'groupName is required').not().isEmpty(),
     check('groupVariant', 'groupVariant is required').not().isEmpty(),
-    check('groupVariant', 'groupVariant is not a valid single group type').isIn(LIST_GROUP_ALL_VARIANTS),
+    check('groupVariant', 'groupVariant is not a valid group type').isIn(LIST_GROUP_ALL_VARIANTS),
     async (req: Request, res: Response) => {
         console.log('POST /api/groups hit');
 
@@ -218,9 +216,10 @@ router.put('/:groupid/leave', authMiddleware, async (req: Request, res: Response
     const groupIdParams = req.params.groupid;
 
     try {
-        const foundGroup = await listGroupBaseModel
-            .findOne()
-            .and([{ _id: groupIdParams }, { 'members.userId': userIdToken }]);
+        const foundGroup = await ListGroupBaseModel.findOne().and([
+            { _id: groupIdParams },
+            { 'members.userId': userIdToken },
+        ]);
 
         if (!foundGroup) {
             return res.status(400).send('Invalid groupId or not a member');
@@ -231,7 +230,7 @@ router.put('/:groupid/leave', authMiddleware, async (req: Request, res: Response
     }
 
     try {
-        const updatedGroup = await listGroupBaseModel.findOneAndUpdate(
+        const updatedGroup = await ListGroupBaseModel.findOneAndUpdate(
             { _id: groupIdParams },
             { $pull: { members: { userId: userIdToken } } },
             { new: true }
@@ -286,7 +285,7 @@ router.put(
         const { targetUserId, targetPermission, modification } = req.body;
 
         try {
-            var foundGroup = await listGroupBaseModel.findOne({
+            var foundGroup = await ListGroupBaseModel.findOne({
                 $and: [
                     { _id: groupIdParams },
                     {
@@ -348,7 +347,7 @@ router.put(
         const { targetUserId } = req.body;
 
         try {
-            var foundGroup = await listGroupBaseModel.findOne({
+            var foundGroup = await ListGroupBaseModel.findOne({
                 $and: [
                     { _id: groupIdParams },
                     {
@@ -379,13 +378,138 @@ router.put(
     }
 );
 
+async function checkPermissions(
+    userIdToken: mongoose.Schema.Types.ObjectId | string,
+    groupId: mongoose.Schema.Types.ObjectId | string,
+    permission: string,
+    validGroupVariants: string[]
+) {
+    const foundGroup = await ListGroupBaseModel.findOne({
+        $and: [
+            { _id: groupId, groupVariant: { $in: validGroupVariants } },
+            {
+                $or: [
+                    { 'owner.userId': userIdToken, 'owner.permissions': permission },
+                    { 'members.userId': userIdToken, 'members.permissions': permission },
+                ],
+            },
+        ],
+    });
+
+    return foundGroup;
+}
+
+function hitMaxListItems(foundValidGroup: TlistGroupAny) {
+    return foundValidGroup.listItems.length + 1 > foundValidGroup.maxListItems;
+}
+
+function hitMaxSecretListItems(foundValidGroup: TlistGroupAny, userId: mongoose.Schema.Types.ObjectId | string) {
+    let ownedItems = 0;
+    foundValidGroup.secretListItems.forEach((item) => {
+        if (item.authorId.toString() === userId.toString()) {
+            ownedItems += 1;
+        }
+    });
+
+    return ownedItems + 1 > foundValidGroup.maxSecretListItemsEach;
+}
+
+async function addListItem(
+    group: TlistGroupAny,
+    userId: mongoose.Schema.Types.ObjectId | string,
+    listItemReq: TnewListItemFields,
+    res: Response
+) {
+    const newListItem: TnewListItemFields = {
+        authorId: userId,
+        body: listItemReq.body,
+        link: listItemReq.link,
+    };
+
+    await group.update({ $push: { listItems: newListItem } });
+    return res.status(200).send();
+}
+
+async function addSecretListItem(
+    group: TlistGroupAny,
+    userId: mongoose.Schema.Types.ObjectId | string,
+    listItemReq: TnewListItemFields,
+    res: Response
+) {
+    const newSecretListItem: TnewListItemFields = {
+        authorId: userId,
+        body: listItemReq.body,
+        link: listItemReq.link,
+    };
+
+    await group.update({ $push: { secretListItems: newSecretListItem } });
+    return res.status(200).send();
+}
+
+async function handleNewListItemRequest(
+    userIdToken: mongoose.Schema.Types.ObjectId | string,
+    groupId: mongoose.Schema.Types.ObjectId | string,
+    listItemReq: TnewListItemFields,
+    res: Response
+) {
+    if (listItemReq.body === undefined) {
+        return res.status(400).send('You must include an item body');
+    }
+
+    let permission = PERM_GROUP_RW_LIST_ITEMS;
+    let validGroupVariants = [BASIC_LIST, GIFT_LIST, GIFT_GROUP_CHILD];
+
+    let foundValidGroup = await checkPermissions(userIdToken, groupId, permission, validGroupVariants);
+    if (!foundValidGroup) {
+        return res
+            .status(400)
+            .send('User is not an owner or member of the supplied group with the correct permissions');
+    }
+
+    if (hitMaxListItems(foundValidGroup)) {
+        return res.status(400).send('You have reached the maximum number of list items');
+    }
+
+    const result = await addListItem(foundValidGroup, userIdToken, listItemReq, res);
+    return result;
+}
+
+async function handleNewSecretListItemRequest(
+    userIdToken: mongoose.Schema.Types.ObjectId | string,
+    groupId: mongoose.Schema.Types.ObjectId | string,
+    secretListItemReq: TnewListItemFields,
+    res: Response
+) {
+    if (secretListItemReq.body === undefined) {
+        return res.status(400).send('You must include an item body');
+    }
+
+    let permission = PERM_GROUP_RW_SECRET_LIST_ITEMS;
+    let validGroupVariants = [GIFT_LIST, GIFT_GROUP_CHILD];
+
+    let foundValidGroup = await checkPermissions(userIdToken, groupId, permission, validGroupVariants);
+    if (!foundValidGroup) {
+        return res.status(400).send('');
+    }
+
+    if (hitMaxSecretListItems(foundValidGroup, userIdToken)) {
+        res.status(400).send('You have reached the maximum number of secret list items');
+    }
+
+    let result = await addSecretListItem(foundValidGroup, userIdToken, secretListItemReq, res);
+    return result;
+}
+
 // @route POST api/groups/:groupid/items
 // @desc Add an item to a giftlist
 // @access Private
 router.post(
-    '/giftlist/:groupid/items',
+    '/:groupid/items',
     authMiddleware,
-    check('body', 'A list item body is required').not().isEmpty(),
+    oneOf([
+        check('listItem', 'A list item or secret list item object is required').not().isEmpty(),
+        check('secretListItem', 'A list item or secret list item object is required').not().isEmpty(),
+    ]),
     async (req: Request, res: Response) => {
         console.log('POST api/groups/giftlist/:groupid/items');
 
@@ -396,53 +520,20 @@ router.post(
 
         const userIdToken = req.user._id;
         const groupId = req.params.groupid;
-        const { body, link } = req.body;
+        const { listItem, secretListItem } = req.body;
 
-        // TODO might be able to put some of this in a helper function.
+        if (listItem && secretListItem) {
+            return res.status(400).send('You cannot specify a new list item and secret list item in the same request');
+        }
+
+        let result;
         try {
-            const foundGroup = await GiftListModel.findOne({
-                $and: [
-                    { _id: groupId, groupVariant: GIFT_LIST },
-                    {
-                        $or: [
-                            { 'owner.userId': userIdToken, 'owner.permissions': PERM_GROUP_RW_LIST_ITEMS },
-                            { 'members.userId': userIdToken, 'members.permissions': PERM_GROUP_RW_SECRET_LIST_ITEMS },
-                        ],
-                    },
-                ],
-            });
-
-            if (!foundGroup) {
-                return res.status(404).send();
+            if (listItem) {
+                result = await handleNewListItemRequest(userIdToken, groupId, listItem, res);
+            } else if (secretListItem) {
+                result = await handleNewSecretListItemRequest(userIdToken, groupId, secretListItem, res);
             }
-
-            const newListItem: TgiftListItem = {
-                authorId: userIdToken,
-                body: body,
-                link: link,
-            };
-
-            if (foundGroup.owner.userId.toString() === userIdToken.toString()) {
-                if (foundGroup.listItems.length + 1 > foundGroup.maxListItems) {
-                    return res.status(400).send('You have reached the maximum number of list items');
-                }
-                await foundGroup.update({ $push: { listItems: newListItem } });
-                return res.status(200).send();
-            } else {
-                let ownedItems = 0;
-                foundGroup.secretListItems.forEach((item) => {
-                    if (item.authorId.toString() === userIdToken.toString()) {
-                        ownedItems += 1;
-                        console.log('ownedItems now: ' + ownedItems);
-                    }
-                });
-
-                if (ownedItems + 1 > foundGroup.maxSecretListItemsEach) {
-                    return res.status(400).send('You have reached the maximum number of secret list items');
-                }
-                await foundGroup.update({ $push: { secretListItems: newListItem } });
-                return res.status(200).send();
-            }
+            return result;
         } catch (err) {
             console.log(err);
             return res.status(500).send('Internal server error');

@@ -1,5 +1,5 @@
 import { Schema } from 'mongoose';
-import { listGroupBaseModel } from '../../ListGroupBase';
+import { ListGroupBaseModel } from '../../ListGroupBase';
 import { PERM_GIFT_GROUP_CHILD_ALL } from '../../permissions/listGroupPermissions';
 import { TgiftGroupChildDocument } from '../interfaces';
 
@@ -27,4 +27,4 @@ const giftGroupChildSchema = new Schema<TgiftGroupChildDocument>({
     maxSecretListItemsEach: { type: Number, required: true, default: 5 },
 });
 
-export const GiftGroupChildModel = listGroupBaseModel.discriminator(GIFT_GROUP_CHILD, giftGroupChildSchema);
+export const GiftGroupChildModel = ListGroupBaseModel.discriminator(GIFT_GROUP_CHILD, giftGroupChildSchema);

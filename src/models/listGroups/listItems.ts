@@ -1,16 +1,15 @@
 import { Schema } from 'mongoose';
 
-export type TbasicListItem = {
+export type TListItem = {
+    authorId: Schema.Types.ObjectId | string;
     creationDate?: Date;
     body: String;
     link?: String;
     selectedBy?: Schema.Types.ObjectId | string;
 };
 
-export type TgiftListItem = {
+export type TnewListItemFields = {
     authorId: Schema.Types.ObjectId | string;
-    creationDate?: Date;
     body: String;
     link?: String;
-    selectedBy?: Schema.Types.ObjectId | string;
 };

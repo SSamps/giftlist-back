@@ -6,7 +6,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import sendgrid from '@sendgrid/mail';
 import { unverifiedUserAuthMiddleware } from '../middleware/verificationAuth';
-import { listGroupBaseModel } from '../models/listGroups/ListGroupBase';
+import { ListGroupBaseModel } from '../models/listGroups/ListGroupBase';
 import { PERM_GROUP_DELETE } from '../models/listGroups/permissions/listGroupPermissions';
 
 import { GiftGroupModel } from '../models/listGroups/discriminators/parent/GiftGroup';
@@ -184,10 +184,10 @@ router.delete('/', unverifiedUserAuthMiddleware, async (req: Request, res: Respo
 
         for (var i = 0; i < foundOwnedParentGroups.length; i++) {
             let parentId = foundOwnedParentGroups[i].id;
-            await listGroupBaseModel.deleteMany({ $or: [{ parentGroupId: parentId }, { _id: parentId }] });
+            await ListGroupBaseModel.deleteMany({ $or: [{ parentGroupId: parentId }, { _id: parentId }] });
         }
 
-        await listGroupBaseModel.deleteMany({
+        await ListGroupBaseModel.deleteMany({
             'owner.userId': userId,
             'owner.permissions': PERM_GROUP_DELETE,
         });

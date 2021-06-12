@@ -1,5 +1,5 @@
 import { Schema } from 'mongoose';
-import { listGroupBaseModel } from '../../ListGroupBase';
+import { ListGroupBaseModel } from '../../ListGroupBase';
 import { PERM_BASIC_LIST_ALL } from '../../permissions/listGroupPermissions';
 import { TbasicListDocument } from '../interfaces';
 
@@ -22,4 +22,4 @@ const basicListSchema = new Schema<TbasicListDocument>({
     maxListItems: { type: Number, required: true, default: 50 },
 });
 
-export const BasicListModel = listGroupBaseModel.discriminator(BASIC_LIST, basicListSchema);
+export const BasicListModel = ListGroupBaseModel.discriminator(BASIC_LIST, basicListSchema);

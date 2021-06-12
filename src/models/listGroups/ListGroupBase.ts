@@ -27,4 +27,4 @@ const ListGroupBaseSchema = new Schema(
     options
 );
 
-export const listGroupBaseModel = model<TlistGroupAny>('ListGroup', ListGroupBaseSchema);
+export const ListGroupBaseModel = model<TlistGroupAny>('ListGroup', ListGroupBaseSchema);

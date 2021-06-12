@@ -3,7 +3,7 @@ import { authMiddleware } from '../middleware/auth';
 import jwt from 'jsonwebtoken';
 import sendgrid from '@sendgrid/mail';
 import { check, Result, ValidationError, validationResult } from 'express-validator';
-import { listGroupBaseModel } from '../models/listGroups/ListGroupBase';
+import { ListGroupBaseModel } from '../models/listGroups/ListGroupBase';
 import {
     giftGroupChildMemberBasePerms,
     giftGroupMemberBasePerms,
@@ -83,7 +83,7 @@ router.post(
         const groupIdParams = req.params.groupid;
 
         try {
-            var foundGroup = await listGroupBaseModel.findOne().and([
+            var foundGroup = await ListGroupBaseModel.findOne().and([
                 { _id: groupIdParams },
                 {
                     $or: [
@@ -181,7 +181,7 @@ router.post('/accept/:groupToken', authMiddleware, async (req: Request, res: Res
     const { groupId } = decodedGroupToken;
 
     try {
-        var foundGroup = await listGroupBaseModel.findOne().and([
+        var foundGroup = await ListGroupBaseModel.findOne().and([
             { _id: groupId },
             {
                 $nor: [{ 'owner.userId': userIdToken }, { 'members.userId': userIdToken }],
