@@ -47,11 +47,11 @@ import mongoose from 'mongoose';
 
 const router: Router = express.Router();
 
-// @route GET api/groups/user
+// @route GET api/groups
 // @desc Get groups a user owns or is a member of
 // @access Private
 router.get('/user', authMiddleware, async (req: Request, res: Response) => {
-    console.log('GET /api/groups/user hit');
+    console.log('GET /api/groups hit');
 
     const userIdToken = req.user._id;
 
@@ -208,11 +208,11 @@ router.post(
     }
 );
 
-// @route PUT api/groups/leave/groupid
+// @route PUT api/groups/:groupid/leave
 // @desc Leave a group if a member
 // @access Private
-router.put('/leave/:groupid', authMiddleware, async (req: Request, res: Response) => {
-    console.log('PUT /api/groups/leave hit');
+router.put('/:groupid/leave', authMiddleware, async (req: Request, res: Response) => {
+    console.log('PUT /api/groups/:groupid/leave hit');
 
     const userIdToken = req.user._id;
     const groupIdParams = req.params.groupid;
@@ -243,11 +243,11 @@ router.put('/leave/:groupid', authMiddleware, async (req: Request, res: Response
     }
 });
 
-// @route DELETE api/groups/delete/groupid
+// @route DELETE api/groups/:groupid/delete
 // @desc Delete a group and all child groups if any
 // @access Private
-router.delete('/delete/:groupid', authMiddleware, async (req: Request, res: Response) => {
-    console.log('DELETE /api/groups/delete:groupid hit');
+router.delete('/:groupid/delete', authMiddleware, async (req: Request, res: Response) => {
+    console.log('DELETE /api/groups/:groupid/delete hit');
 
     const userId = req.user._id;
     const groupId = req.params.groupid;
@@ -262,11 +262,11 @@ router.delete('/delete/:groupid', authMiddleware, async (req: Request, res: Resp
     }
 });
 
-// @route PUT api/groups/permission/groupid
+// @route PUT api/groups/:groupid/permission
 // @desc Modify the permissions for users in a group
 // @access Private
 router.put(
-    '/permission/:groupid',
+    '/:groupid/permission',
     authMiddleware,
     check('targetUserId', 'targetUserId is required').not().isEmpty(),
     check('targetPermission', 'targetPermission is required').not().isEmpty(),
@@ -274,7 +274,7 @@ router.put(
     check('modification', 'modification is required').not().isEmpty(),
     check('modification', 'Invalid permission modifier').isIn(PERM_MODIFIERS_ALL),
     async (req: Request, res: Response) => {
-        console.log('put /api/groups/permission:groupid hit');
+        console.log('put /api/groups/:groupid/permission hit');
 
         const errors: Result<ValidationError> = validationResult(req);
         if (!errors.isEmpty()) {
@@ -328,15 +328,15 @@ router.put(
     }
 );
 
-// @route PUT api/groups/kick/groupid
+// @route PUT api/groups/:groupid/kick
 // @desc Kick a user from a group
 // @access Private
 router.put(
-    '/kick/:groupid',
+    '/:groupid/kick',
     authMiddleware,
     check('targetUserId', 'targetUserId is required').not().isEmpty(),
     async (req: Request, res: Response) => {
-        console.log('put /api/groups/kick:groupid hit');
+        console.log('put /api/groups/:groupid/kick hit');
 
         const errors: Result<ValidationError> = validationResult(req);
         if (!errors.isEmpty()) {
@@ -379,7 +379,7 @@ router.put(
     }
 );
 
-// @route POST api/groups/giftlist/:groupid/items
+// @route POST api/groups/:groupid/items
 // @desc Add an item to a giftlist
 // @access Private
 router.post(
@@ -450,7 +450,7 @@ router.post(
     }
 );
 
-// @route POST api/groups/giftlist/:groupid/items/:itemid
+// @route DELETE api/groups/giftlist/:groupid/items/:itemid
 // @desc Delete an item from a giftlist
 // @access Private
 router.delete('/giftlist/:groupid/items/:itemid', authMiddleware, async (req: Request, res: Response) => {
