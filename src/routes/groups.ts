@@ -362,11 +362,11 @@ router.delete('/:groupid/items/:itemid', authMiddleware, async (req: Request, re
 // @desc Modify an item in a giftlist
 // @access Private
 router.put(
-    '/giftlist/:groupid/items/:itemid',
+    '/:groupid/items/:itemid',
     authMiddleware,
     check('body', 'A list item body is required').not().isEmpty(),
     async (req: Request, res: Response) => {
-        console.log('PUT api/groups/giftlist/:groupid/items');
+        console.log('PUT api/groups/:groupid/items');
 
         const errors: Result<ValidationError> = validationResult(req);
         if (!errors.isEmpty()) {
@@ -378,9 +378,8 @@ router.put(
         const itemId = req.params.itemid;
         const { body, link } = req.body;
 
-        // TODO might be able to put some of this in a helper function.
         try {
-            const foundGroup = await GiftListModel.findOne({
+            const foundGroup = await ListGroupBaseModel.findOne({
                 $and: [
                     { _id: groupId, groupVariant: GIFT_LIST },
                     {
@@ -396,11 +395,16 @@ router.put(
                 return res.status(404).send();
             }
 
-            // foundGroup.listItems.forEach(item => {
-            //     if item.
-            // })
+            const [itemType, foundItem] = findItemInGroup(foundGroup, itemId);
+            if (!foundItem) {
+                return res.status(404).send('Item not found');
+            }
 
-            if (foundGroup.owner.userId.toString() === userIdToken.toString()) {
+            if (foundItem.authorId.toString() !== userIdToken.toString()) {
+                return res.status(401).send('You can only modify your own items');
+            }
+
+            if (itemType === 'listItem') {
                 let result = await foundGroup.update(
                     { $set: { 'listItems.$[item].body': body, 'listItems.$[item].link': link } },
                     { arrayFilters: [{ 'item._id': itemId }] }
@@ -422,5 +426,65 @@ router.put(
         }
     }
 );
+
+// @route PUT api/groups/giftlist/:groupid/items/:itemid/select
+// @desc Select an item in a giftlist
+// @access Private
+router.put('/:groupid/items/:itemid/select', authMiddleware, async (req: Request, res: Response) => {
+    console.log('PUT api/groups/:groupid/items/:itemid/select');
+
+    const errors: Result<ValidationError> = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
+    const userIdToken = req.user._id;
+    const groupId = req.params.groupid;
+    const itemId = req.params.itemid;
+    const { body, link } = req.body;
+
+    // TODO might be able to put some of this in a helper function.
+    try {
+        const foundGroup = await GiftListModel.findOne({
+            $and: [
+                { _id: groupId, groupVariant: GIFT_LIST },
+                {
+                    $or: [
+                        { 'owner.userId': userIdToken, 'owner.permissions': PERM_GROUP_RW_LIST_ITEMS },
+                        { 'members.userId': userIdToken, 'members.permissions': PERM_GROUP_RW_SECRET_LIST_ITEMS },
+                    ],
+                },
+            ],
+        });
+
+        if (!foundGroup) {
+            return res.status(404).send();
+        }
+
+        // foundGroup.listItems.forEach(item => {
+        //     if item.
+        // })
+
+        if (foundGroup.owner.userId.toString() === userIdToken.toString()) {
+            let result = await foundGroup.update(
+                { $set: { 'listItems.$[item].body': body, 'listItems.$[item].link': link } },
+                { arrayFilters: [{ 'item._id': itemId }] }
+            );
+            if (result.nModified === 1) {
+                return res.status(200).send();
+            }
+            return res.status(404).send();
+        } else {
+            let result = await foundGroup.update({ $pull: { secretListItems: { _id: itemId } } });
+            if (result.nModified === 1) {
+                return res.status(200).send();
+            }
+            return res.status(404).send();
+        }
+    } catch (err) {
+        console.log(err);
+        return res.status(500).send('Internal server error');
+    }
+});
 
 module.exports = router;
