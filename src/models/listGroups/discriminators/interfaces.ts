@@ -67,7 +67,8 @@ type TnewBasicListExtraFields = {
 type TbasicListExtraFields = {
     owner: IbasicListMember;
     members: [IbasicListMember];
-    maxListItems?: Number;
+    maxListItems: Number;
+    listItems: TListItem[];
 };
 
 export type TnewBasicListFields = TlistGroupBaseFields & TnewBasicListExtraFields;
@@ -150,7 +151,9 @@ type TgiftGroupChildExtraFields = {
     members: [IgiftGroupChildMember];
     parentGroupId: Schema.Types.ObjectId | string;
     maxListItems: Number;
+    listItems: TListItem[];
     maxSecretListItemsEach: Number;
+    secretListItems: TListItem[];
 };
 
 export type TnewGiftGroupChildFields = TlistGroupBaseFields & TnewGiftGroupChildExtraFields;

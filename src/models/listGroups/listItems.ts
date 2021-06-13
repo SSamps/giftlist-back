@@ -5,7 +5,7 @@ export type TListItem = {
     creationDate?: Date;
     body: String;
     link?: String;
-    selectedBy?: Schema.Types.ObjectId | string;
+    selectedBy?: Schema.Types.ObjectId[] | string[];
     _id: Schema.Types.ObjectId | string;
 };
 

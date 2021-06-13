@@ -24,7 +24,25 @@ const giftGroupChildSchema = new Schema<TgiftGroupChildDocument>({
         required: true,
     },
     maxListItems: { type: Number, required: true, default: 20 },
+    listItems: [
+        {
+            authorId: { type: Schema.Types.ObjectId },
+            creationDate: { type: Date, default: Date.now },
+            body: { type: String },
+            link: { type: String },
+            selectedBy: [{ type: Schema.Types.ObjectId }],
+        },
+    ],
     maxSecretListItemsEach: { type: Number, required: true, default: 5 },
+    secretListItems: [
+        {
+            authorId: { type: Schema.Types.ObjectId },
+            creationDate: { type: Date, default: Date.now },
+            body: { type: String },
+            link: { type: String },
+            selectedBy: [{ type: Schema.Types.ObjectId }],
+        },
+    ],
 });
 
 export const GiftGroupChildModel = ListGroupBaseModel.discriminator(GIFT_GROUP_CHILD, giftGroupChildSchema);

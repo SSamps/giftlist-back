@@ -26,7 +26,7 @@ const giftListSchema = new Schema<TgiftListDocument>({
             creationDate: { type: Date, default: Date.now },
             body: { type: String },
             link: { type: String },
-            selectedBy: { type: Schema.Types.ObjectId },
+            selectedBy: [{ type: Schema.Types.ObjectId }],
         },
     ],
     maxSecretListItemsEach: { type: Number, required: true, default: 5 },
@@ -36,7 +36,7 @@ const giftListSchema = new Schema<TgiftListDocument>({
             creationDate: { type: Date, default: Date.now },
             body: { type: String },
             link: { type: String },
-            selectedBy: { type: Schema.Types.ObjectId },
+            selectedBy: [{ type: Schema.Types.ObjectId }],
         },
     ],
 });

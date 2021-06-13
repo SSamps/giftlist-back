@@ -20,6 +20,15 @@ const basicListSchema = new Schema<TbasicListDocument>({
         },
     ],
     maxListItems: { type: Number, required: true, default: 50 },
+    listItems: [
+        {
+            authorId: { type: Schema.Types.ObjectId },
+            creationDate: { type: Date, default: Date.now },
+            body: { type: String },
+            link: { type: String },
+            selectedBy: [{ type: Schema.Types.ObjectId }],
+        },
+    ],
 });
 
 export const BasicListModel = ListGroupBaseModel.discriminator(BASIC_LIST, basicListSchema);
