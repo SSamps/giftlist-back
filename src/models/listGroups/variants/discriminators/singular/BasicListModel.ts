@@ -1,7 +1,7 @@
 import { Schema } from 'mongoose';
-import { ListGroupBaseModel } from '../../ListGroupBase';
-import { PERM_BASIC_LIST_ALL } from '../../permissions/listGroupPermissions';
-import { TbasicListDocument } from '../interfaces';
+import { ListGroupBaseModel } from '../../../ListGroupBaseModel';
+import { PERM_BASIC_LIST_ALL } from '../../../listGroupPermissions';
+import { TbasicListDocument } from '../../../listGroupInterfaces';
 
 export const BASIC_LIST = 'BASIC_LIST';
 

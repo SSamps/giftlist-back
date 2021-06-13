@@ -1,11 +1,6 @@
 import { Document, Schema } from 'mongoose';
 
 // Base model
-import { SYSTEM_MESSAGE } from './discriminators/SystemMessage';
-import { USER_MESSAGE } from './discriminators/UserMessage';
-
-export const MESSAGE_VARIANTS = [USER_MESSAGE, SYSTEM_MESSAGE];
-
 export const MESSAGE_DISCRIMINATOR = 'messageVariant';
 type TmessageDiscriminatorKey = { MESSAGE_DISCRIMINATOR: string };
 

@@ -1,6 +1,6 @@
 import { Schema } from 'mongoose';
-import { MessageBaseModel } from '../../MessageBase';
-import { TsystemMessageDocument } from '../messageInterfaces';
+import { MessageBaseModel } from '../../MessageBaseModel';
+import { TsystemMessageDocument } from '../../messageInterfaces';
 
 export const SYSTEM_MESSAGE = 'SYSTEM_MESSAGE';
 

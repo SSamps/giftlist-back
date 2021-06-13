@@ -1,7 +1,7 @@
 import { Schema } from 'mongoose';
-import { ListGroupBaseModel } from '../../ListGroupBase';
-import { PERM_GIFT_GROUP_ALL } from '../../permissions/listGroupPermissions';
-import { TgiftGroupDocument } from '../interfaces';
+import { ListGroupBaseModel } from '../../../ListGroupBaseModel';
+import { PERM_GIFT_GROUP_ALL } from '../../../listGroupPermissions';
+import { TgiftGroupDocument } from '../../../listGroupInterfaces';
 
 export const GIFT_GROUP = 'GIFT_GROUP';
 

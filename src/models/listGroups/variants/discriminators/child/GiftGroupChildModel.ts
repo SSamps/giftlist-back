@@ -1,24 +1,28 @@
 import { Schema } from 'mongoose';
-import { ListGroupBaseModel } from '../../ListGroupBase';
-import { PERM_GIFT_LIST_ALL } from '../../permissions/listGroupPermissions';
-import { TgiftListDocument } from '../interfaces';
+import { ListGroupBaseModel } from '../../../ListGroupBaseModel';
+import { PERM_GIFT_GROUP_CHILD_ALL } from '../../../listGroupPermissions';
+import { TgiftGroupChildDocument } from '../../../listGroupInterfaces';
 
-export const GIFT_LIST = 'GIFT_LIST';
+export const GIFT_GROUP_CHILD = 'GIFT_GROUP_CHILD';
 
-const giftListSchema = new Schema<TgiftListDocument>({
+const giftGroupChildSchema = new Schema<TgiftGroupChildDocument>({
     owner: {
         userId: { type: Schema.Types.ObjectId, required: true },
-        permissions: [{ type: String, required: true, enum: PERM_GIFT_LIST_ALL }],
+        permissions: [{ type: String, required: true, enum: PERM_GIFT_GROUP_CHILD_ALL }],
         oldestUnreadMsg: { type: Date },
     },
     members: [
         {
             userId: { type: Schema.Types.ObjectId, required: true },
-            permissions: [{ type: String, required: true, enum: PERM_GIFT_LIST_ALL }],
+            permissions: [{ type: String, required: true, enum: PERM_GIFT_GROUP_CHILD_ALL }],
             oldestUnreadMsg: { type: Date },
             _id: false,
         },
     ],
+    parentGroupId: {
+        type: Schema.Types.ObjectId,
+        required: true,
+    },
     maxListItems: { type: Number, required: true, default: 20 },
     listItems: [
         {
@@ -41,4 +45,4 @@ const giftListSchema = new Schema<TgiftListDocument>({
     ],
 });
 
-export const GiftListModel = ListGroupBaseModel.discriminator(GIFT_LIST, giftListSchema);
+export const GiftGroupChildModel = ListGroupBaseModel.discriminator(GIFT_GROUP_CHILD, giftGroupChildSchema);

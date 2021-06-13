@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose';
-import { MESSAGE_DISCRIMINATOR, TmessageAny } from './variants/messageInterfaces';
+import { MESSAGE_DISCRIMINATOR, TmessageAny } from './messageInterfaces';
 
 const options = { discriminatorKey: MESSAGE_DISCRIMINATOR };
 

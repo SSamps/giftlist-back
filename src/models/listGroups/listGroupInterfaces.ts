@@ -1,12 +1,12 @@
 import { Document, Schema } from 'mongoose';
-import { TListItem } from '../listItems';
+import { TListItem } from './listItemInterfaces';
 import {
     TYPE_PERM_ALL_LIST_GROUP,
     TYPE_PERM_BASIC_LIST_ALL,
     TYPE_PERM_GIFT_GROUP_ALL,
     TYPE_PERM_GIFT_GROUP_CHILD_ALL,
     TYPE_PERM_GIFT_LIST_ALL,
-} from '../permissions/listGroupPermissions';
+} from './listGroupPermissions';
 
 // Base
 export class invalidGroupVariantError extends Error {

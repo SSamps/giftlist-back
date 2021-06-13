@@ -1,6 +1,6 @@
 import { Schema } from 'mongoose';
-import { MessageBaseModel } from '../../MessageBase';
-import { TusermMessageDocument } from '../messageInterfaces';
+import { MessageBaseModel } from '../../MessageBaseModel';
+import { TusermMessageDocument } from '../../messageInterfaces';
 
 export const USER_MESSAGE = 'USER_MESSAGE';
 

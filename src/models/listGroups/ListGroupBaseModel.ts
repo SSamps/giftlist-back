@@ -1,5 +1,5 @@
 import { Schema, model } from 'mongoose';
-import { TlistGroupAny } from './discriminators/interfaces';
+import { TlistGroupAny } from './listGroupInterfaces';
 
 const options = { discriminatorKey: 'groupVariant' };
 

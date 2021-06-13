@@ -6,10 +6,10 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import sendgrid from '@sendgrid/mail';
 import { unverifiedUserAuthMiddleware } from '../middleware/verificationAuth';
-import { ListGroupBaseModel } from '../models/listGroups/ListGroupBase';
-import { PERM_GROUP_DELETE } from '../models/listGroups/permissions/listGroupPermissions';
+import { ListGroupBaseModel } from '../models/listGroups/ListGroupBaseModel';
+import { PERM_GROUP_DELETE } from '../models/listGroups/listGroupPermissions';
 
-import { GiftGroupModel } from '../models/listGroups/discriminators/parent/GiftGroup';
+import { GiftGroupModel } from '../models/listGroups/variants/discriminators/parent/GiftGroupModel';
 import { authMiddleware } from '../middleware/auth';
 
 sendgrid.setApiKey(process.env.SENDGRID_API_KEY);

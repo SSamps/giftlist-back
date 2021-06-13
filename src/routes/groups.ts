@@ -1,7 +1,7 @@
 import express, { Router, Request, Response } from 'express';
 import { authMiddleware } from '../middleware/auth';
 import { check, Result, ValidationError, validationResult, oneOf } from 'express-validator';
-import { ListGroupBaseModel } from '../models/listGroups/ListGroupBase';
+import { ListGroupBaseModel } from '../models/listGroups/ListGroupBaseModel';
 import {
     PERM_GROUP_ADMIN,
     PERM_MODIFIERS_ALL,
@@ -12,12 +12,9 @@ import {
     PERM_GROUP_RW_SECRET_LIST_ITEMS,
     PERM_GROUP_SELECT_LIST_ITEMS,
     PERM_GROUP_SELECT_SECRET_LIST_ITEMS,
-} from '../models/listGroups/permissions/listGroupPermissions';
-import {
-    LIST_GROUP_ALL_VARIANTS,
-    LIST_GROUP_CHILD_VARIANTS,
-} from '../models/listGroups/discriminators/variants/listGroupVariants';
-import { GIFT_LIST } from '../models/listGroups/discriminators/singular/GiftList';
+} from '../models/listGroups/listGroupPermissions';
+import { LIST_GROUP_ALL_VARIANTS, LIST_GROUP_CHILD_VARIANTS } from '../models/listGroups/variants/listGroupVariants';
+import { GIFT_LIST } from '../models/listGroups/variants/discriminators/singular/GiftListModel';
 import {
     addGroup,
     deleteGroupAndAnyChildGroups,
@@ -26,7 +23,7 @@ import {
     handleNewListItemRequest,
     handleNewSecretListItemRequest,
 } from './helperFunctions';
-import { TlistGroupAny } from '../models/listGroups/discriminators/interfaces';
+import { TlistGroupAny } from '../models/listGroups/listGroupInterfaces';
 
 const router: Router = express.Router();
 
