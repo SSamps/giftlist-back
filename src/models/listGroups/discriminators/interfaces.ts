@@ -72,7 +72,6 @@ type TbasicListExtraFields = {
 };
 
 export type TnewBasicListFields = TlistGroupBaseFields & TnewBasicListExtraFields;
-export type TnewBasicListDocument = Document & TnewBasicListFields;
 
 export type TbasicListFields = TlistGroupBaseFields & TbasicListExtraFields;
 export type TbasicListDocument = Document & TbasicListFields;
@@ -102,7 +101,6 @@ type TgiftListExtraFields = {
 };
 
 export type TnewGiftListFields = TlistGroupBaseFields & TnewGiftListExtraFields;
-export type TnewGiftListDocument = Document & TnewGiftListFields;
 
 export type TgiftListFields = TlistGroupBaseFields & TgiftListExtraFields;
 export type TgiftListDocument = Document & TgiftListFields;
@@ -127,7 +125,6 @@ type TgiftGroupExtraFields = {
 };
 
 export type TnewGiftGroupFields = TlistGroupBaseFields & TnewGiftGroupExtraFields;
-export type TnewGiftGroupDocument = Document & TnewGiftGroupFields;
 
 export type TgiftGroupFields = TlistGroupBaseFields & TgiftGroupExtraFields;
 export type TgiftGroupDocument = Document & TgiftGroupFields;
@@ -157,7 +154,6 @@ type TgiftGroupChildExtraFields = {
 };
 
 export type TnewGiftGroupChildFields = TlistGroupBaseFields & TnewGiftGroupChildExtraFields;
-export type TnewGiftGroupChildDocument = Document & TnewGiftGroupChildFields;
 
 export type TgiftGroupChildFields = TlistGroupBaseFields & TgiftGroupChildExtraFields;
 export type TgiftGroupChildDocument = Document & TgiftGroupChildFields;
