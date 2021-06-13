@@ -17,7 +17,7 @@ import {
     LIST_GROUP_ALL_VARIANTS,
     LIST_GROUP_CHILD_VARIANTS,
 } from '../models/listGroups/discriminators/variants/listGroupVariants';
-import { GiftListModel, GIFT_LIST } from '../models/listGroups/discriminators/singular/GiftList';
+import { GIFT_LIST } from '../models/listGroups/discriminators/singular/GiftList';
 import {
     addGroup,
     deleteGroupAndAnyChildGroups,
@@ -27,8 +27,6 @@ import {
     handleNewSecretListItemRequest,
 } from './helperFunctions';
 import { TlistGroupAny } from '../models/listGroups/discriminators/interfaces';
-import mongoose from 'mongoose';
-import { TListItem } from '../models/listGroups/listItems';
 
 const router: Router = express.Router();
 
@@ -434,84 +432,93 @@ router.put(
 // @route PUT api/groups/giftlist/:groupid/items/:itemid/select
 // @desc Select an item in a giftlist
 // @access Private
-router.put('/:groupid/items/:itemid/select', authMiddleware, async (req: Request, res: Response) => {
-    console.log('PUT api/groups/:groupid/items/:itemid/select');
+router.put(
+    '/:groupid/items/:itemid/select',
+    authMiddleware,
+    check('action', 'You must specify an action in the request body').not().isEmpty(),
+    check('action', 'action must be either select or deselect').isIn(['SELECT', 'DESELECT']),
+    async (req: Request, res: Response) => {
+        console.log('PUT api/groups/:groupid/items/:itemid/select');
 
-    const errors: Result<ValidationError> = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-    }
-
-    const userIdToken = req.user._id;
-    const groupId = req.params.groupid;
-    const itemId = req.params.itemid;
-    const { body, link } = req.body;
-
-    try {
-        const foundGroup = await ListGroupBaseModel.findOne({
-            $and: [
-                { _id: groupId, groupVariant: GIFT_LIST },
-                {
-                    $or: [
-                        { 'owner.userId': userIdToken, 'owner.permissions': PERM_GROUP_RW_LIST_ITEMS },
-                        { 'members.userId': userIdToken, 'members.permissions': PERM_GROUP_RW_SECRET_LIST_ITEMS },
-                    ],
-                },
-            ],
-        });
-
-        if (!foundGroup) {
-            return res.status(404).send();
+        const errors: Result<ValidationError> = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
         }
 
-        const [itemType, foundItem] = findItemInGroup(foundGroup, itemId);
-        if (!foundItem) {
-            return res.status(404).send('Item not found');
-        }
+        const userIdToken = req.user._id;
+        const groupId = req.params.groupid;
+        const itemId = req.params.itemid;
+        const { action }: { action: 'SELECT' | 'DESELECT' } = req.body;
 
-        const [, foundUser] = findUserInGroup(foundGroup, userIdToken);
-        if (!foundUser) {
-            return res.status(401).send('You must be a member of a group to select items within it');
-        }
+        try {
+            const foundGroup = await ListGroupBaseModel.findOne({
+                $and: [
+                    { _id: groupId, groupVariant: GIFT_LIST },
+                    {
+                        $or: [
+                            { 'owner.userId': userIdToken, 'owner.permissions': PERM_GROUP_RW_LIST_ITEMS },
+                            { 'members.userId': userIdToken, 'members.permissions': PERM_GROUP_RW_SECRET_LIST_ITEMS },
+                        ],
+                    },
+                ],
+            });
 
-        // need to verify you have the right permission based on the itemType
-        if (itemType === 'listItem') {
-            if (!foundUser.permissions.includes(PERM_GROUP_SELECT_LIST_ITEMS)) {
-                return res.status(401).send('You are not authorised to select list items in this group');
+            if (!foundGroup) {
+                return res.status(404).send();
             }
-        } else if (itemType === 'secretListItem') {
-            if (!foundUser.permissions.includes(PERM_GROUP_SELECT_SECRET_LIST_ITEMS)) {
-                return res.status(401).send('You are not authorised to select secret list items in this group');
+
+            const [itemType, foundItem] = findItemInGroup(foundGroup, itemId);
+            if (!foundItem) {
+                return res.status(404).send('Item not found');
             }
-        }
 
-        // use addToSet
+            const [, foundUser] = findUserInGroup(foundGroup, userIdToken);
+            if (!foundUser) {
+                return res.status(401).send('You must be a member of a group to select items within it');
+            }
 
-        // if (modification === PERM_MODIFIER_ADD) {
-        //     await foundGroup.update(
-        //         { $addToSet: { 'members.$[member].permissions': targetPermission } },
-        //         { arrayFilters: [{ 'member.userId': targetUserId }] }
-        //     );
+            if (itemType === 'listItem') {
+                if (!foundUser.permissions.includes(PERM_GROUP_SELECT_LIST_ITEMS)) {
+                    return res.status(401).send('You are not authorised to select list items in this group');
+                }
+            } else if (itemType === 'secretListItem') {
+                if (!foundUser.permissions.includes(PERM_GROUP_SELECT_SECRET_LIST_ITEMS)) {
+                    return res.status(401).send('You are not authorised to select secret list items in this group');
+                }
+            }
 
-        if (itemType === 'listItem') {
-            await foundGroup.update(
-                { $addToSet: { 'listItems.$[item].selectedBy': userIdToken } },
-                { arrayFilters: [{ 'item._id': itemId }] }
-            );
+            if (itemType === 'listItem') {
+                if (action === 'SELECT') {
+                    await foundGroup.update(
+                        { $addToSet: { 'listItems.$[item].selectedBy': userIdToken } },
+                        { arrayFilters: [{ 'item._id': itemId }] }
+                    );
+                    return res.status(200).send();
+                } else {
+                    await foundGroup.update(
+                        { $pull: { 'listItems.$[item].selectedBy': userIdToken } },
+                        { arrayFilters: [{ 'item._id': itemId }] }
+                    );
+                }
+            } else {
+                if (action === 'SELECT') {
+                    await foundGroup.update(
+                        { $addToSet: { 'secretListItems.$[item].selectedBy': userIdToken } },
+                        { arrayFilters: [{ 'item._id': itemId }] }
+                    );
+                } else {
+                    await foundGroup.update(
+                        { $pull: { 'secretListItems.$[item].selectedBy': userIdToken } },
+                        { arrayFilters: [{ 'item._id': itemId }] }
+                    );
+                }
+            }
             return res.status(200).send();
-        } else {
-            await foundGroup.update(
-                { $addToSet: { 'secretListItems.$[item].selectedBy': userIdToken } },
-                { arrayFilters: [{ 'item._id': itemId }] }
-            );
-            return res.status(200).send();
+        } catch (err) {
+            console.log(err);
+            return res.status(500).send('Internal server error');
         }
-    } catch (err) {
-        console.log(err);
-        return res.status(500).send('Internal server error');
     }
-});
-
-// TODO handle deselection of list items
+);
 
 module.exports = router;
