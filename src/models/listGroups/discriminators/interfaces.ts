@@ -1,5 +1,5 @@
 import { Document, Schema } from 'mongoose';
-import { TgiftListItem } from '../listItems';
+import { TListItem } from '../listItems';
 import {
     TYPE_PERM_ALL_LIST_GROUP,
     TYPE_PERM_BASIC_LIST_ALL,
@@ -39,6 +39,8 @@ export interface IgroupMemberBase {
     oldestReadMessage?: Date | undefined;
     permissions: TYPE_PERM_ALL_LIST_GROUP[];
 }
+
+export type TgroupMemberTypes = 'member' | 'owner';
 
 export type TlistGroupBaseFields = {
     groupName: string;
@@ -84,18 +86,18 @@ type TnewGiftListExtraFields = {
     owner: IgiftListMember;
     members?: [IgiftListMember];
     maxListItems?: Number;
-    listItems?: TgiftListItem[];
+    listItems?: TListItem[];
     maxSecretListItemsEach?: Number;
-    secretListItems?: TgiftListItem[];
+    secretListItems?: TListItem[];
 };
 
 type TgiftListExtraFields = {
     owner: IgiftListMember;
     members: [IgiftListMember];
     maxListItems: Number;
-    listItems: TgiftListItem[];
+    listItems: TListItem[];
     maxSecretListItemsEach: Number;
-    secretListItems: TgiftListItem[];
+    secretListItems: TListItem[];
 };
 
 export type TnewGiftListFields = TlistGroupBaseFields & TnewGiftListExtraFields;
@@ -103,6 +105,8 @@ export type TnewGiftListDocument = Document & TnewGiftListFields;
 
 export type TgiftListFields = TlistGroupBaseFields & TgiftListExtraFields;
 export type TgiftListDocument = Document & TgiftListFields;
+
+let a: TgiftListExtraFields;
 
 // Parent groups
 // Gift Groups
@@ -159,3 +163,5 @@ export type TgiftGroupChildDocument = Document & TgiftGroupChildFields;
 
 type TlistGroupAnyBase = TbasicListFields & TgiftListFields & TgiftGroupFields & TgiftGroupChildFields;
 export type TlistGroupAny = Document & TlistGroupAnyBase & TlistGroupDiscriminatorKey;
+
+export type TgroupMemberAny = IbasicListMember & IgiftListMember & IgiftGroupMember & IgiftGroupChildMember;

@@ -24,13 +24,15 @@ import {
     invalidGroupVariantError,
     invalidParentError,
     invalidParentVariantError,
+    TgroupMemberAny,
+    TgroupMemberTypes,
     TlistGroupAny,
     TnewBasicListFields,
     TnewGiftGroupChildFields,
     TnewGiftGroupFields,
     TnewGiftListFields,
 } from '../models/listGroups/discriminators/interfaces';
-import { TnewListItemFields } from '../models/listGroups/listItems';
+import { TitemTypes, TListItem, TnewListItemFields } from '../models/listGroups/listItems';
 import { BasicListModel, BASIC_LIST } from '../models/listGroups/discriminators/singular/BasicList';
 import { GiftListModel, GIFT_LIST } from '../models/listGroups/discriminators/singular/GiftList';
 import { Response } from 'express';
@@ -68,27 +70,6 @@ export async function deleteGroupAndAnyChildGroups(
         await GiftGroupChildModel.deleteMany({ parentGroupId: groupId });
         return { status: 200, msg: 'Parent group and all child groups deleted' };
     }
-}
-
-async function checkPermissions(
-    userIdToken: mongoose.Schema.Types.ObjectId | string,
-    groupId: mongoose.Schema.Types.ObjectId | string,
-    permission: string,
-    validGroupVariants: string[]
-) {
-    const foundGroup = await ListGroupBaseModel.findOne({
-        $and: [
-            { _id: groupId, groupVariant: { $in: validGroupVariants } },
-            {
-                $or: [
-                    { 'owner.userId': userIdToken, 'owner.permissions': permission },
-                    { 'members.userId': userIdToken, 'members.permissions': permission },
-                ],
-            },
-        ],
-    });
-
-    return foundGroup;
 }
 
 function hitMaxListItems(foundValidGroup: TlistGroupAny) {
@@ -151,18 +132,29 @@ export async function handleNewListItemRequest(
     let permission = PERM_GROUP_RW_LIST_ITEMS;
     let validGroupVariants = [BASIC_LIST, GIFT_LIST, GIFT_GROUP_CHILD];
 
-    let foundValidGroup = await checkPermissions(userIdToken, groupId, permission, validGroupVariants);
-    if (!foundValidGroup) {
+    let foundGroup = await ListGroupBaseModel.findOne({
+        $and: [
+            { _id: groupId, groupVariant: { $in: validGroupVariants } },
+            {
+                $or: [
+                    { 'owner.userId': userIdToken, 'owner.permissions': permission },
+                    { 'members.userId': userIdToken, 'members.permissions': permission },
+                ],
+            },
+        ],
+    });
+
+    if (!foundGroup) {
         return res
             .status(400)
             .send('User is not an owner or member of the supplied group with the correct permissions');
     }
 
-    if (hitMaxListItems(foundValidGroup)) {
+    if (hitMaxListItems(foundGroup)) {
         return res.status(400).send('You have reached the maximum number of list items');
     }
 
-    const result = await addListItem(foundValidGroup, userIdToken, listItemReq, res);
+    const result = await addListItem(foundGroup, userIdToken, listItemReq, res);
     return result;
 }
 
@@ -179,7 +171,18 @@ export async function handleNewSecretListItemRequest(
     let permission = PERM_GROUP_RW_SECRET_LIST_ITEMS;
     let validGroupVariants = [GIFT_LIST, GIFT_GROUP_CHILD];
 
-    let foundValidGroup = await checkPermissions(userIdToken, groupId, permission, validGroupVariants);
+    let foundValidGroup = await ListGroupBaseModel.findOne({
+        $and: [
+            { _id: groupId, groupVariant: { $in: validGroupVariants } },
+            {
+                $or: [
+                    { 'owner.userId': userIdToken, 'owner.permissions': permission },
+                    { 'members.userId': userIdToken, 'members.permissions': permission },
+                ],
+            },
+        ],
+    });
+
     if (!foundValidGroup) {
         return res.status(400).send('');
     }
@@ -288,4 +291,40 @@ export async function addGroup(
         console.log(err.message);
         return res.status(500).send('Server error');
     }
+}
+
+export function findItemInGroup(
+    group: TlistGroupAny,
+    itemId: Schema.Types.ObjectId | string
+): [TitemTypes | 'error', TListItem | null] {
+    for (let item of group.listItems) {
+        if (item._id.toString() === itemId.toString()) {
+            return ['listItem', item];
+        }
+    }
+
+    for (let secretItem of group.secretListItems) {
+        if (secretItem._id.toString() === itemId.toString()) {
+            return ['secretListItem', secretItem];
+        }
+    }
+
+    return ['error', null];
+}
+
+export function findUserInGroup(
+    group: TlistGroupAny,
+    userId: Schema.Types.ObjectId | string
+): [TgroupMemberTypes | 'error', TgroupMemberAny | null] {
+    if (group.owner.userId.toString() === userId.toString()) {
+        return ['owner', group.owner];
+    }
+
+    for (let member of group.members) {
+        if (member.userId.toString() === userId.toString()) {
+            return ['member', member];
+        }
+    }
+
+    return ['error', null];
 }

@@ -6,6 +6,7 @@ export type TListItem = {
     body: String;
     link?: String;
     selectedBy?: Schema.Types.ObjectId | string;
+    _id: Schema.Types.ObjectId | string;
 };
 
 export type TnewListItemFields = {
@@ -13,3 +14,5 @@ export type TnewListItemFields = {
     body: String;
     link?: String;
 };
+
+export type TitemTypes = 'listItem' | 'secretListItem';

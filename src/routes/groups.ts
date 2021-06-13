@@ -19,11 +19,13 @@ import { GiftListModel, GIFT_LIST } from '../models/listGroups/discriminators/si
 import {
     addGroup,
     deleteGroupAndAnyChildGroups,
+    findItemInGroup,
     handleNewListItemRequest,
     handleNewSecretListItemRequest,
 } from './helperFunctions';
 import { TlistGroupAny } from '../models/listGroups/discriminators/interfaces';
 import mongoose from 'mongoose';
+import { TListItem } from '../models/listGroups/listItems';
 
 const router: Router = express.Router();
 
@@ -304,26 +306,22 @@ router.post(
     }
 );
 
-// @route DELETE api/groups/giftlist/:groupid/items/:itemid
+// @route DELETE api/groups/:groupid/items/:itemid
 // @desc Delete an item from a giftlist
 // @access Private
-router.delete('/giftlist/:groupid/items/:itemid', authMiddleware, async (req: Request, res: Response) => {
-    console.log('DELETE api/groups/giftlist/:groupid/items');
+router.delete('/:groupid/items/:itemid', authMiddleware, async (req: Request, res: Response) => {
+    console.log('DELETE api/groups/:groupid/items/:itemid');
 
     const userIdToken = req.user._id;
     const groupId = req.params.groupid;
     const itemId = req.params.itemid;
 
-    // TODO might be able to put some of this in a helper function.
     try {
-        const foundGroup = await GiftListModel.findOne({
+        const foundGroup = await ListGroupBaseModel.findOne({
             $and: [
-                { _id: groupId, groupVariant: GIFT_LIST },
+                { _id: groupId },
                 {
-                    $or: [
-                        { 'owner.userId': userIdToken, 'owner.permissions': PERM_GROUP_RW_LIST_ITEMS },
-                        { 'members.userId': userIdToken, 'members.permissions': PERM_GROUP_RW_SECRET_LIST_ITEMS },
-                    ],
+                    $or: [{ 'owner.userId': userIdToken }, { 'members.userId': userIdToken }],
                 },
             ],
         });
@@ -332,7 +330,16 @@ router.delete('/giftlist/:groupid/items/:itemid', authMiddleware, async (req: Re
             return res.status(404).send();
         }
 
-        if (foundGroup.owner.userId.toString() === userIdToken.toString()) {
+        const [itemType, foundItem] = findItemInGroup(foundGroup, itemId);
+        if (!foundItem) {
+            return res.status(404).send('Item not found');
+        }
+
+        if (foundItem.authorId.toString() !== userIdToken.toString()) {
+            return res.status(401).send('You can only delete your own items');
+        }
+
+        if (itemType === 'listItem') {
             let result = await foundGroup.update({ $pull: { listItems: { _id: itemId } } });
             if (result.nModified === 1) {
                 return res.status(200).send();
@@ -388,6 +395,10 @@ router.put(
             if (!foundGroup) {
                 return res.status(404).send();
             }
+
+            // foundGroup.listItems.forEach(item => {
+            //     if item.
+            // })
 
             if (foundGroup.owner.userId.toString() === userIdToken.toString()) {
                 let result = await foundGroup.update(
