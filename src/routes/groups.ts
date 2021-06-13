@@ -29,6 +29,7 @@ import { TListItem } from '../models/listGroups/listItems';
 
 const router: Router = express.Router();
 
+// TODO will have to update this later to censor the results depending on the user's permissions
 // @route GET api/groups
 // @desc Get groups a user owns or is a member of
 // @access Private
@@ -443,9 +444,8 @@ router.put('/:groupid/items/:itemid/select', authMiddleware, async (req: Request
     const itemId = req.params.itemid;
     const { body, link } = req.body;
 
-    // TODO might be able to put some of this in a helper function.
     try {
-        const foundGroup = await GiftListModel.findOne({
+        const foundGroup = await ListGroupBaseModel.findOne({
             $and: [
                 { _id: groupId, groupVariant: GIFT_LIST },
                 {
@@ -461,9 +461,12 @@ router.put('/:groupid/items/:itemid/select', authMiddleware, async (req: Request
             return res.status(404).send();
         }
 
-        // foundGroup.listItems.forEach(item => {
-        //     if item.
-        // })
+        const [itemType, foundItem] = findItemInGroup(foundGroup, itemId);
+        if (!foundItem) {
+            return res.status(404).send('Item not found');
+        }
+
+        // need to verify you have
 
         if (foundGroup.owner.userId.toString() === userIdToken.toString()) {
             let result = await foundGroup.update(
