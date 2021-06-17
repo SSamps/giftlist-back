@@ -19,7 +19,7 @@ import {
 const router: Router = express.Router();
 
 // @route POST api/groups/:groupid/items
-// @desc Add an item to a giftlist
+// @desc Add an item to a list group
 // @access Private
 router.post(
     '/:groupid/items',
@@ -60,7 +60,7 @@ router.post(
 );
 
 // @route DELETE api/groups/:groupid/items/:itemid
-// @desc Delete an item from a giftlist
+// @desc Delete an item from a list group
 // @access Private
 router.delete('/:groupid/items/:itemid', authMiddleware, async (req: Request, res: Response) => {
     console.log('DELETE api/groups/:groupid/items/:itemid');
@@ -111,8 +111,8 @@ router.delete('/:groupid/items/:itemid', authMiddleware, async (req: Request, re
     }
 });
 
-// @route PUT api/groups/giftlist/:groupid/items/:itemid
-// @desc Modify an item in a giftlist
+// @route PUT api/groups/:groupid/items/:itemid
+// @desc Modify an item in a list group
 // @access Private
 router.put(
     '/:groupid/items/:itemid',
@@ -180,8 +180,8 @@ router.put(
     }
 );
 
-// @route PUT api/groups/giftlist/:groupid/items/:itemid/select
-// @desc Select an item in a giftlist
+// @route PUT api/groups/:groupid/items/:itemid/select
+// @desc Select an item in a list group
 // @access Private
 router.put(
     '/:groupid/items/:itemid/select',

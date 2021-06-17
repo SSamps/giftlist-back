@@ -34,5 +34,6 @@ app.listen(PORT, () => {
     console.log('Server started on port ' + PORT);
 });
 
+// TODO IMPORTANT Sanitise all data sent to endpoints
 // TODO standardise error responses
 // TODO standardise logging
