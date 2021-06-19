@@ -9,19 +9,80 @@ import {
     PERM_MODIFIER_ADD,
     PERM_MODIFIER_REMOVE,
 } from '../../models/listGroups/listGroupPermissions';
-import { LIST_GROUP_ALL_VARIANTS, LIST_GROUP_CHILD_VARIANTS } from '../../models/listGroups/variants/listGroupVariants';
+import {
+    LIST_GROUP_ALL_TOP_LEVEL_VARIANTS,
+    LIST_GROUP_ALL_VARIANTS,
+    LIST_GROUP_CHILD_VARIANTS,
+} from '../../models/listGroups/variants/listGroupVariants';
 
 import { addGroup, deleteGroupAndAnyChildGroups } from '../helperFunctions';
-import { TlistGroupAny } from '../../models/listGroups/listGroupInterfaces';
+import { TlistGroupAny, TlistGroupAnyCensored } from '../../models/listGroups/listGroupInterfaces';
 
 const router: Router = express.Router();
 
 // TODO will have to update this later to censor the results depending on the user's permissions
 // @route GET api/groups
-// @desc Get groups a user owns or is a member of
+// @desc Get all top level groups a user owns or is a member of and censors them.
 // @access Private
 router.get('/user', authMiddleware, async (req: Request, res: Response) => {
-    console.log('GET /api/groups hit');
+    console.log('GET /api/groups/user hit');
+
+    const userIdToken = req.user._id;
+
+    try {
+        let foundMemberGroups = await ListGroupBaseModel.find({
+            $and: [
+                { $or: [{ 'owner.userId': userIdToken }, { 'members.userId': userIdToken }] },
+                { groupVariant: { $in: LIST_GROUP_ALL_TOP_LEVEL_VARIANTS } },
+            ],
+        });
+        let foundOwnedGroups: TlistGroupAny[] = [];
+
+        for (var i = foundMemberGroups.length - 1; i >= 0; i--) {
+            let document = foundMemberGroups[i];
+            if (document.owner.userId.toString() === userIdToken.toString()) {
+                foundOwnedGroups.push(document);
+                foundMemberGroups.splice(i, 1);
+            }
+        }
+
+        console.log(foundOwnedGroups);
+
+        if (foundOwnedGroups.length == 0 && foundMemberGroups.length == 0) {
+            return res.status(404).json({ msg: 'No groups found' });
+        }
+
+        let censoredOwnedGroups: TlistGroupAnyCensored[] = foundOwnedGroups;
+
+        censoredOwnedGroups.map((group) => {
+            if (group.secretListItems) {
+                group.secretListItems = undefined;
+            }
+            if (group.listItems) {
+                group.listItems.map((item) => {
+                    item.selectedBy = undefined;
+                    return item;
+                });
+            }
+            return group;
+        });
+
+        return res.status(200).json({
+            ownedGroups: foundOwnedGroups,
+            memberGroups: foundMemberGroups,
+        });
+    } catch (err) {
+        console.log(err.message);
+        return res.status(500).send('Server error');
+    }
+});
+
+// TODO this is a test route so remove it later
+// @route GET api/groups
+// @desc Get all groups a user owns or is a member of
+// @access Private
+router.get('/user/all', authMiddleware, async (req: Request, res: Response) => {
+    console.log('GET /api/groups/user/all hit');
 
     const userIdToken = req.user._id;
 

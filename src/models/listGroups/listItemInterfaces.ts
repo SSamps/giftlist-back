@@ -9,6 +9,15 @@ export type TListItem = {
     _id: Schema.Types.ObjectId | string;
 };
 
+export type TListItemCensored = {
+    authorId: Schema.Types.ObjectId | string;
+    creationDate?: Date;
+    body: String;
+    link?: String;
+    selectedBy?: Schema.Types.ObjectId[] | string[] | undefined;
+    _id: Schema.Types.ObjectId | string;
+};
+
 export type TnewListItemFields = {
     authorId: Schema.Types.ObjectId | string;
     body: String;

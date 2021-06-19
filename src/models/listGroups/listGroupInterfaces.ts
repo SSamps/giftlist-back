@@ -1,5 +1,5 @@
 import { Document, Schema } from 'mongoose';
-import { TListItem } from './listItemInterfaces';
+import { TListItem, TListItemCensored } from './listItemInterfaces';
 import {
     TYPE_PERM_ALL_LIST_GROUP,
     TYPE_PERM_BASIC_LIST_ALL,
@@ -100,12 +100,21 @@ type TgiftListExtraFields = {
     secretListItems: TListItem[];
 };
 
+type TgiftListExtraFieldsCensored = {
+    owner: IgiftListMember;
+    members: [IgiftListMember];
+    maxListItems: Number;
+    listItems: TListItemCensored[];
+    maxSecretListItemsEach: Number;
+    secretListItems: TListItemCensored[] | undefined;
+};
+
 export type TnewGiftListFields = TlistGroupBaseFields & TnewGiftListExtraFields;
 
 export type TgiftListFields = TlistGroupBaseFields & TgiftListExtraFields;
 export type TgiftListDocument = Document & TgiftListFields;
 
-let a: TgiftListExtraFields;
+export type TgiftListFieldsCensored = TlistGroupBaseFields & TgiftListExtraFieldsCensored;
 
 // Parent groups
 // Gift Groups
@@ -153,10 +162,22 @@ type TgiftGroupChildExtraFields = {
     secretListItems: TListItem[];
 };
 
+type TgiftGroupChildExtraFieldsCensored = {
+    owner: IgiftGroupChildMember;
+    members: [IgiftGroupChildMember];
+    parentGroupId: Schema.Types.ObjectId | string;
+    maxListItems: Number;
+    listItems: TListItemCensored[];
+    maxSecretListItemsEach: Number;
+    secretListItems: TListItemCensored[] | undefined;
+};
+
 export type TnewGiftGroupChildFields = TlistGroupBaseFields & TnewGiftGroupChildExtraFields;
 
 export type TgiftGroupChildFields = TlistGroupBaseFields & TgiftGroupChildExtraFields;
 export type TgiftGroupChildDocument = Document & TgiftGroupChildFields;
+
+export type TgiftGroupChildFieldsCensored = TlistGroupBaseFields & TgiftGroupChildExtraFieldsCensored;
 
 // Aggregated
 
@@ -164,3 +185,9 @@ type TlistGroupAnyBase = TbasicListFields & TgiftListFields & TgiftGroupFields &
 export type TlistGroupAny = Document & TlistGroupAnyBase & TlistGroupDiscriminatorKey;
 
 export type TgroupMemberAny = IbasicListMember & IgiftListMember & IgiftGroupMember & IgiftGroupChildMember;
+
+type TlistGroupAnyBaseCensored = TbasicListFields &
+    TgiftListFieldsCensored &
+    TgiftGroupFields &
+    TgiftGroupChildFieldsCensored;
+export type TlistGroupAnyCensored = Document & TlistGroupAnyBaseCensored & TlistGroupDiscriminatorKey;
