@@ -46,8 +46,6 @@ router.get('/user', authMiddleware, async (req: Request, res: Response) => {
             }
         }
 
-        console.log(foundOwnedGroups);
-
         if (foundOwnedGroups.length == 0 && foundMemberGroups.length == 0) {
             return res.status(404).json({ msg: 'No groups found' });
         }
@@ -67,10 +65,9 @@ router.get('/user', authMiddleware, async (req: Request, res: Response) => {
             return group;
         });
 
-        return res.status(200).json({
-            ownedGroups: foundOwnedGroups,
-            memberGroups: foundMemberGroups,
-        });
+        let response = [...censoredOwnedGroups, ...foundMemberGroups];
+
+        return res.status(200).json(response);
     } catch (err) {
         console.log(err.message);
         return res.status(500).send('Server error');
