@@ -1,10 +1,11 @@
 import { Document, Schema, model } from 'mongoose';
 
 export interface IUserCensoredProps {
-    displayName?: string;
-    email?: string;
-    registrationDate?: Date;
-    _id?: string;
+    displayName: string;
+    email: string;
+    registrationDate: Date;
+    _id: Schema.Types.ObjectId;
+    verified: Boolean;
 }
 
 export interface IUserProps {
@@ -13,7 +14,8 @@ export interface IUserProps {
     password: string;
     registrationDate: Date;
     oldestValidJWT?: Date;
-    _id: string;
+    _id: Schema.Types.ObjectId;
+    verified: Boolean;
 }
 
 export interface IUser extends Document {
@@ -22,6 +24,8 @@ export interface IUser extends Document {
     password: string;
     registrationDate: Date;
     oldestValidJWT?: Date;
+    verified: Boolean;
+    _id: Schema.Types.ObjectId;
 }
 
 export const UserSchema = new Schema({
@@ -30,7 +34,7 @@ export const UserSchema = new Schema({
     password: { type: String, required: true },
     registrationDate: { type: Date, default: Date.now },
     oldestValidJWT: { type: Date, default: Date.now },
+    verified: { type: Boolean, default: false },
 });
 
-const User = model<IUser>('User', UserSchema);
-export default User;
+export const UserModel = model<IUser>('User', UserSchema);

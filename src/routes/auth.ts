@@ -1,16 +1,16 @@
 import express, { Router, Request, Response } from 'express';
-import auth from '../middleware/auth';
-import User, { IUserCensoredProps, IUserProps } from '../models/User';
+import { IUserCensoredProps, IUserProps, UserModel } from '../models/User';
 import { check, validationResult, Result, ValidationError } from 'express-validator';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { unverifiedUserAuthMiddleware } from '../middleware/verificationAuth';
 
 const router: Router = express.Router();
 
 // @route GET api/auth
 // @desc Get a user's info using a token
 // @access Private
-router.get('/', auth, async (req, res) => {
+router.get('/', unverifiedUserAuthMiddleware, async (req, res) => {
     try {
         console.log('GET api/auth hit');
         return res.json(req.user);
@@ -21,11 +21,12 @@ router.get('/', auth, async (req, res) => {
 });
 
 // @route POST api/auth
-// @desc Authenticate user, get token and basic user info
+// @desc Login user, sending a token and basic user info
 // @access Public
 router.post(
     '/',
-    [check('email', 'An email is required').not().isEmpty(), check('password', 'A password is required').exists()],
+    check('email', 'An email is required').not().isEmpty(),
+    check('password', 'A password is required').exists(),
     async (req: Request, res: Response) => {
         console.log('POST api/auth hit');
         const errors: Result<ValidationError> = validationResult(req);
@@ -38,7 +39,7 @@ router.post(
 
         try {
             // See if user exists in the database
-            let foundUser = await User.findOne({ email });
+            let foundUser = await UserModel.findOne({ email });
             if (!foundUser) {
                 return res.status(400).json({ errors: [{ msg: 'Your email or password is incorrect.' }] });
             }
@@ -61,9 +62,11 @@ router.post(
                 displayName: foundUser.displayName,
                 email: foundUser.email,
                 registrationDate: foundUser.registrationDate,
+                verified: foundUser.verified,
             };
 
-            jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: 36000 }, (err, token) => {
+            // TODO reduce lifetime of this token on release
+            jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1w' }, (err, token) => {
                 if (err) throw err;
                 return res.json({ token, user });
             });

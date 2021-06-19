@@ -10,7 +10,7 @@ interface IauthToken {
     exp: number;
 }
 
-export async function authMiddleware(req: Request, res: Response, next: NextFunction) {
+export async function unverifiedUserAuthMiddleware(req: Request, res: Response, next: NextFunction) {
     // Get token from header
     const token = req.header('x-auth-token');
     // Check if not token
@@ -41,10 +41,6 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
         if (tokenDate < (oldestValidJWT as Date)) {
             console.log('invalidated token');
             return res.status(401).json({ msg: 'Unauthorized' });
-        }
-
-        if (!foundUser.verified) {
-            return res.status(401).json({ msg: 'User not verified' });
         }
 
         var user: IUserCensoredProps = {

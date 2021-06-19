@@ -24,8 +24,16 @@ app.use(cors());
 app.use('/api/users', require('./routes/users'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/test', require('./routes/test'));
+app.use('/api/groups', require('./routes/groups/groups'));
+app.use('/api/groups', require('./routes/groups/groupMessages'));
+app.use('/api/groups', require('./routes/groups/groupItems'));
+app.use('/api/groups', require('./routes/groups/groupInvites'));
 
 // Start app
 app.listen(PORT, () => {
     console.log('Server started on port ' + PORT);
 });
+
+// TODO IMPORTANT Sanitise all data sent to endpoints
+// TODO standardise error responses
+// TODO standardise logging

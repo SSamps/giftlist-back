@@ -1,0 +1,13 @@
+{
+	"fontSize": "10px",
+    "layout": "dot",
+	"graphVizOptions": {
+		"G": {
+			"rankdir": "RL"
+		},
+        "E": {
+            "dir": "back"
+        }
+
+	}
+}
