@@ -23,7 +23,6 @@ app.use(cors());
 // Define Routes
 app.use('/api/users', require('./routes/users'));
 app.use('/api/auth', require('./routes/auth'));
-app.use('/api/test', require('./routes/test'));
 app.use('/api/groups', require('./routes/groups/groups'));
 app.use('/api/groups', require('./routes/groups/groupMessages'));
 app.use('/api/groups', require('./routes/groups/groupItems'));
