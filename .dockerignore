@@ -1,11 +1,10 @@
 node_modules
-src/
 docker/
 .git/
 .gitignore
-tsconfig.json
 README.md
 .vscode/
 .env
 ./madgerc
 dependencyGraph.png
+dist/
