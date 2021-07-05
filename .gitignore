@@ -6,3 +6,6 @@ node_modules/
 
 # Dev
 /.vscode
+
+# Compiled build
+dist/
