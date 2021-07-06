@@ -108,6 +108,37 @@ router.get('/user/all', authMiddleware, async (req: Request, res: Response) => {
     }
 });
 
+// TODO censor based on user permissions
+// @route GET api/groups
+// @desc Get a group the user owns or is a member of
+// @access Private
+router.get('/:groupid', authMiddleware, async (req: Request, res: Response) => {
+    console.log('GET /api/groups/:groupid hit');
+
+    const userIdToken = req.user._id;
+    const groupIdParams = req.params.groupid;
+
+    try {
+        let foundGroup = await ListGroupBaseModel.find({
+            $and: [
+                { _id: groupIdParams },
+                {
+                    $or: [{ 'owner.userId': userIdToken }, { 'members.userId': userIdToken }],
+                },
+            ],
+        });
+
+        if (!foundGroup) {
+            return res.status(404).send('Group not found or unauthorised');
+        }
+
+        return res.status(200).json(foundGroup);
+    } catch (err) {
+        console.log(err.message);
+        return res.status(500).send('Server error');
+    }
+});
+
 // @route POST api/groups/
 // @desc Add a new group
 // @access Private
