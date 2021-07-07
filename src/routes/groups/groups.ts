@@ -75,7 +75,7 @@ router.get('/user', authMiddleware, async (req: Request, res: Response) => {
 });
 
 // TODO this is a test route so remove it later
-// @route GET api/groups
+// @route GET api/groups/user/all
 // @desc Get all groups a user owns or is a member of
 // @access Private
 router.get('/user/all', authMiddleware, async (req: Request, res: Response) => {
@@ -109,7 +109,7 @@ router.get('/user/all', authMiddleware, async (req: Request, res: Response) => {
 });
 
 // TODO censor based on user permissions
-// @route GET api/groups
+// @route GET api/groups/:groupid
 // @desc Get a group the user owns or is a member of
 // @access Private
 router.get('/:groupid', authMiddleware, async (req: Request, res: Response) => {
@@ -119,7 +119,7 @@ router.get('/:groupid', authMiddleware, async (req: Request, res: Response) => {
     const groupIdParams = req.params.groupid;
 
     try {
-        let foundGroup = await ListGroupBaseModel.find({
+        let foundGroup = await ListGroupBaseModel.findOne({
             $and: [
                 { _id: groupIdParams },
                 {
