@@ -13,6 +13,7 @@ import {
     LIST_GROUP_ALL_TOP_LEVEL_VARIANTS,
     LIST_GROUP_ALL_VARIANTS,
     LIST_GROUP_CHILD_VARIANTS,
+    LIST_GROUP_PARENT_VARIANTS,
 } from '../../models/listGroups/variants/listGroupVariants';
 
 import { addGroup, deleteGroupAndAnyChildGroups } from '../helperFunctions';
@@ -126,13 +127,18 @@ router.get('/:groupid', authMiddleware, async (req: Request, res: Response) => {
                     $or: [{ 'owner.userId': userIdToken }, { 'members.userId': userIdToken }],
                 },
             ],
-        });
+        }).lean();
 
         if (!foundGroup) {
             return res.status(404).send('Group not found or unauthorised');
         }
 
-        return res.status(200).json(foundGroup);
+        let children;
+        if (LIST_GROUP_PARENT_VARIANTS.includes(foundGroup.groupVariant)) {
+            children = await ListGroupBaseModel.find({ parentGroupId: foundGroup._id });
+        }
+
+        return res.status(200).json({ ...foundGroup, children });
     } catch (err) {
         console.log(err.message);
         return res.status(500).send('Server error');
