@@ -1,4 +1,4 @@
-import { Document, Schema } from 'mongoose';
+import { Document, LeanDocument, Schema } from 'mongoose';
 import { TListItem, TListItemCensored } from './listItemInterfaces';
 import {
     TYPE_PERM_ALL_LIST_GROUP,
@@ -184,10 +184,19 @@ export type TgiftGroupChildFieldsCensored = TlistGroupBaseFields & TgiftGroupChi
 type TlistGroupAnyBase = TbasicListFields & TgiftListFields & TgiftGroupFields & TgiftGroupChildFields;
 export type TlistGroupAny = Document & TlistGroupAnyBase & TlistGroupDiscriminatorKey;
 
+type TgroupChildren = {
+    children: LeanDocument<TlistGroupAnyCensoredSingular>[];
+};
+
+export type TlistGroupAnyWithChildren = TlistGroupAny & TgroupChildren;
+
 export type TgroupMemberAny = IbasicListMember & IgiftListMember & IgiftGroupMember & IgiftGroupChildMember;
 
 type TlistGroupAnyBaseCensored = TbasicListFields &
     TgiftListFieldsCensored &
     TgiftGroupFields &
     TgiftGroupChildFieldsCensored;
-export type TlistGroupAnyCensored = Document & TlistGroupAnyBaseCensored & TlistGroupDiscriminatorKey;
+export type TlistGroupAnyCensoredSingular = Document & TlistGroupAnyBaseCensored & TlistGroupDiscriminatorKey;
+export type TlistGroupAnyCensoredWithChildren = TlistGroupAnyCensoredSingular & TgroupChildren;
+
+export type TlistGroupAnyCensoredAny = TlistGroupAnyCensoredSingular | TlistGroupAnyCensoredWithChildren;

@@ -16,8 +16,14 @@ import {
     LIST_GROUP_PARENT_VARIANTS,
 } from '../../models/listGroups/variants/listGroupVariants';
 
-import { addGroup, deleteGroupAndAnyChildGroups } from '../helperFunctions';
-import { TlistGroupAny, TlistGroupAnyCensored } from '../../models/listGroups/listGroupInterfaces';
+import {
+    addGroup,
+    censorSingularGroup,
+    deleteGroupAndAnyChildGroups,
+    findAndCensorChildGroups,
+} from '../helperFunctions';
+import { TlistGroupAny, TlistGroupAnyCensoredAny } from '../../models/listGroups/listGroupInterfaces';
+import { LeanDocument } from 'mongoose';
 
 const router: Router = express.Router();
 
@@ -31,44 +37,27 @@ router.get('/user', authMiddleware, async (req: Request, res: Response) => {
     const userIdToken = req.user._id;
 
     try {
-        let foundMemberGroups = await ListGroupBaseModel.find({
+        let foundGroups = await ListGroupBaseModel.find({
             $and: [
                 { $or: [{ 'owner.userId': userIdToken }, { 'members.userId': userIdToken }] },
                 { groupVariant: { $in: LIST_GROUP_ALL_TOP_LEVEL_VARIANTS } },
             ],
-        });
-        let foundOwnedGroups: TlistGroupAny[] = [];
+        }).lean();
 
-        for (var i = foundMemberGroups.length - 1; i >= 0; i--) {
-            let document = foundMemberGroups[i];
-            if (document.owner.userId.toString() === userIdToken.toString()) {
-                foundOwnedGroups.push(document);
-                foundMemberGroups.splice(i, 1);
+        // for each found group if it's a parent find any children and nest them under it.
+
+        //TODO redo this using permissions not ownership and factor out into a separate function. Pass the final result in rather than one by one to keep the route clean.
+
+        let censoredGroups: LeanDocument<TlistGroupAnyCensoredAny>[] = [];
+        for (let i = 0; i < foundGroups.length; i++) {
+            if (LIST_GROUP_PARENT_VARIANTS.includes(foundGroups[i].groupVariant)) {
+                censoredGroups.push(await findAndCensorChildGroups(userIdToken.toString(), foundGroups[i]));
+            } else {
+                censoredGroups.push(censorSingularGroup(userIdToken.toString(), foundGroups[i]));
             }
         }
 
-        if (foundOwnedGroups.length == 0 && foundMemberGroups.length == 0) {
-            return res.status(404).json({ msg: 'No groups found' });
-        }
-
-        let censoredOwnedGroups: TlistGroupAnyCensored[] = foundOwnedGroups;
-
-        censoredOwnedGroups.map((group) => {
-            if (group.secretListItems) {
-                group.secretListItems = undefined;
-            }
-            if (group.listItems) {
-                group.listItems.map((item) => {
-                    item.selectedBy = undefined;
-                    return item;
-                });
-            }
-            return group;
-        });
-
-        let response = [...censoredOwnedGroups, ...foundMemberGroups];
-
-        return res.status(200).json(response);
+        return res.status(200).json(censoredGroups);
     } catch (err) {
         console.log(err.message);
         return res.status(500).send('Server error');
@@ -133,12 +122,14 @@ router.get('/:groupid', authMiddleware, async (req: Request, res: Response) => {
             return res.status(404).send('Group not found or unauthorised');
         }
 
-        let children;
+        let censoredGroup;
         if (LIST_GROUP_PARENT_VARIANTS.includes(foundGroup.groupVariant)) {
-            children = await ListGroupBaseModel.find({ parentGroupId: foundGroup._id });
+            censoredGroup = await findAndCensorChildGroups(userIdToken.toString(), foundGroup);
+        } else {
+            censoredGroup = censorSingularGroup(userIdToken.toString(), foundGroup);
         }
 
-        return res.status(200).json({ ...foundGroup, children });
+        return res.status(200).json(censoredGroup);
     } catch (err) {
         console.log(err.message);
         return res.status(500).send('Server error');
@@ -175,6 +166,8 @@ router.post(
         }
     }
 );
+
+//TODO if you leave a parent leave all the children too
 
 // @route PUT api/groups/:groupid/leave
 // @desc Leave a group if a member

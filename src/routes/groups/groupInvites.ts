@@ -196,11 +196,17 @@ router.post('/invite/accept/:groupToken', authMiddleware, async (req: Request, r
                 break;
             }
             case GIFT_GROUP: {
-                let newMember: IgiftGroupMember = {
+                let newParentMember: IgiftGroupMember = {
                     userId: userIdToken,
                     permissions: giftGroupMemberBasePerms,
                 };
-                await GiftGroupModel.findOneAndUpdate({ _id: groupId }, { $push: { members: newMember } });
+                let newChildMember: IgiftGroupChildMember = {
+                    userId: userIdToken,
+                    permissions: giftGroupChildMemberBasePerms,
+                };
+                await GiftGroupModel.findOneAndUpdate({ _id: groupId }, { $push: { members: newParentMember } });
+                await ListGroupBaseModel.updateMany({ parentGroupId: groupId }, { $push: { members: newChildMember } });
+
                 break;
             }
             default:

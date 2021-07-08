@@ -180,6 +180,7 @@ router.put(
     }
 );
 
+// TODO needs to work on other variants not just gift lists, owners can't select for now and you can select either a secret or regular list item
 // @route PUT api/groups/:groupid/items/:itemid/select
 // @desc Select an item in a list group
 // @access Private

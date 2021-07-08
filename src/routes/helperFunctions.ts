@@ -1,4 +1,4 @@
-import mongoose, { Schema } from 'mongoose';
+import mongoose, { LeanDocument, Schema } from 'mongoose';
 import {
     GiftGroupChildModel,
     GIFT_GROUP_CHILD,
@@ -14,8 +14,16 @@ import {
     PERM_GROUP_DELETE,
     PERM_GROUP_RW_LIST_ITEMS,
     PERM_GROUP_RW_SECRET_LIST_ITEMS,
+    PERM_GROUP_SELECT_LIST_ITEMS,
+    TYPE_PERM_ALL_LIST_GROUP,
 } from '../models/listGroups/listGroupPermissions';
-import { LIST_GROUP_CHILD_VARIANTS, LIST_GROUP_PARENT_VARIANTS } from '../models/listGroups/variants/listGroupVariants';
+import {
+    LIST_GROUP_ALL_CENSORABLE,
+    LIST_GROUP_ALL_CENSORABLE_CHILDREN,
+    LIST_GROUP_ALL_NON_CENSORABLE,
+    LIST_GROUP_CHILD_VARIANTS,
+    LIST_GROUP_PARENT_VARIANTS,
+} from '../models/listGroups/variants/listGroupVariants';
 import {
     IbasicListMember,
     IgiftGroupChildMember,
@@ -27,6 +35,9 @@ import {
     TgroupMemberAny,
     TgroupMemberTypes,
     TlistGroupAny,
+    TlistGroupAnyCensoredSingular,
+    TlistGroupAnyCensoredWithChildren,
+    TlistGroupAnyWithChildren,
     TnewBasicListFields,
     TnewGiftGroupChildFields,
     TnewGiftGroupFields,
@@ -294,7 +305,11 @@ export async function addGroup(
 }
 
 export function findItemInGroup(
-    group: TlistGroupAny,
+    group:
+        | TlistGroupAny
+        | TlistGroupAnyWithChildren
+        | LeanDocument<TlistGroupAny>
+        | LeanDocument<TlistGroupAnyWithChildren>,
     itemId: Schema.Types.ObjectId | string
 ): [TitemTypes | 'error', TListItem | null] {
     for (let item of group.listItems) {
@@ -312,10 +327,17 @@ export function findItemInGroup(
     return ['error', null];
 }
 
+// TODO change this to throw exceptions
 export function findUserInGroup(
-    group: TlistGroupAny,
+    group:
+        | TlistGroupAny
+        | TlistGroupAnyWithChildren
+        | LeanDocument<TlistGroupAny>
+        | LeanDocument<TlistGroupAnyWithChildren>,
     userId: Schema.Types.ObjectId | string
 ): [TgroupMemberTypes | 'error', TgroupMemberAny | null] {
+    console.log(userId);
+    console.log(group);
     if (group.owner.userId.toString() === userId.toString()) {
         return ['owner', group.owner];
     }
@@ -327,4 +349,56 @@ export function findUserInGroup(
     }
 
     return ['error', null];
+}
+
+export function findUserPermissionsInGroup(
+    userId: string,
+    group: LeanDocument<TlistGroupAny> | LeanDocument<TlistGroupAnyWithChildren>
+): TYPE_PERM_ALL_LIST_GROUP[] {
+    let [_, user] = findUserInGroup(group, userId);
+
+    if (!user) {
+        throw new Error('User not found in group when checking permissions');
+    }
+    return user.permissions;
+}
+
+export async function findAndCensorChildGroups(
+    userId: string,
+    group: LeanDocument<TlistGroupAny>
+): Promise<LeanDocument<TlistGroupAnyCensoredWithChildren>> {
+    let foundChildren = await ListGroupBaseModel.find({ parentGroupId: group._id }).lean();
+
+    let censoredChildren: LeanDocument<TlistGroupAnyCensoredSingular>[] = [];
+    for (let i = 0; i < foundChildren.length; i++) {
+        censoredChildren.push(censorSingularGroup(userId, foundChildren[i]));
+    }
+    return { ...group, children: censoredChildren };
+}
+
+export function censorSingularGroup(
+    userId: string,
+    group: LeanDocument<TlistGroupAny> | LeanDocument<TlistGroupAnyWithChildren>
+): LeanDocument<TlistGroupAnyCensoredSingular> {
+    if (LIST_GROUP_ALL_CENSORABLE.includes(group.groupVariant)) {
+        let censoredGroup: LeanDocument<TlistGroupAnyCensoredSingular> = group;
+        let permissions = findUserPermissionsInGroup(userId, group);
+
+        if (!permissions.includes(PERM_GROUP_SELECT_LIST_ITEMS)) {
+            censoredGroup.listItems = censoredGroup.listItems.map((item) => {
+                item.selectedBy = undefined;
+                return item;
+            });
+        }
+
+        if (!permissions.includes(PERM_GROUP_RW_SECRET_LIST_ITEMS)) {
+            censoredGroup.secretListItems = undefined;
+        }
+        return censoredGroup;
+    } else if (LIST_GROUP_ALL_NON_CENSORABLE.includes(group.groupVariant)) {
+        return group;
+    } else {
+        console.error('Invalid group variant passed to censorSingularGroup: ', { ...group });
+        throw new Error('Server Error');
+    }
 }
