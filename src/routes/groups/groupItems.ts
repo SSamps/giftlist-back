@@ -12,6 +12,7 @@ import { GIFT_LIST } from '../../models/listGroups/variants/discriminators/singu
 import {
     findItemInGroup,
     findUserInGroup,
+    findUserPermissionsInGroup,
     handleNewListItemRequest,
     handleNewSecretListItemRequest,
 } from '../helperFunctions';
@@ -180,9 +181,8 @@ router.put(
     }
 );
 
-// TODO needs to work on other variants not just gift lists, owners can't select for now and you can select either a secret or regular list item
 // @route PUT api/groups/:groupid/items/:itemid/select
-// @desc Select an item in a list group
+// @desc Select or deselect an item in a list group
 // @access Private
 router.put(
     '/:groupid/items/:itemid/select',
@@ -205,36 +205,31 @@ router.put(
         try {
             const foundGroup = await ListGroupBaseModel.findOne({
                 $and: [
-                    { _id: groupId, groupVariant: GIFT_LIST },
+                    { _id: groupId },
                     {
-                        $or: [
-                            { 'owner.userId': userIdToken, 'owner.permissions': PERM_GROUP_RW_LIST_ITEMS },
-                            { 'members.userId': userIdToken, 'members.permissions': PERM_GROUP_RW_SECRET_LIST_ITEMS },
-                        ],
+                        $or: [{ 'owner.userId': userIdToken }, { 'members.userId': userIdToken }],
                     },
                 ],
             });
 
             if (!foundGroup) {
-                return res.status(404).send();
+                return res.status(404).send('You are not a member or owner of a group with the supplied id');
             }
 
             const [itemType, foundItem] = findItemInGroup(foundGroup, itemId);
+
             if (!foundItem) {
-                return res.status(404).send('Item not found');
+                return res.status(404).send('Item not found in the specified group');
             }
 
-            const [, foundUser] = findUserInGroup(foundGroup, userIdToken);
-            if (!foundUser) {
-                return res.status(401).send('You must be a member of a group to select items within it');
-            }
+            let userPermissions = findUserPermissionsInGroup(userIdToken.toString(), foundGroup);
 
             if (itemType === 'listItem') {
-                if (!foundUser.permissions.includes(PERM_GROUP_SELECT_LIST_ITEMS)) {
+                if (!userPermissions.includes(PERM_GROUP_SELECT_LIST_ITEMS)) {
                     return res.status(401).send('You are not authorised to select list items in this group');
                 }
             } else if (itemType === 'secretListItem') {
-                if (!foundUser.permissions.includes(PERM_GROUP_SELECT_SECRET_LIST_ITEMS)) {
+                if (!userPermissions.includes(PERM_GROUP_SELECT_SECRET_LIST_ITEMS)) {
                     return res.status(401).send('You are not authorised to select secret list items in this group');
                 }
             }

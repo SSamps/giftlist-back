@@ -167,7 +167,8 @@ router.post(
     }
 );
 
-//TODO if you leave a parent leave all the children too
+//TODO prevent users from leaving child groups
+//TODO decide how to handle items and messages when a user leaves
 
 // @route PUT api/groups/:groupid/leave
 // @desc Leave a group if a member
@@ -187,18 +188,20 @@ router.put('/:groupid/leave', authMiddleware, async (req: Request, res: Response
         if (!foundGroup) {
             return res.status(400).send('Invalid groupId or not a member');
         }
-    } catch (err) {
-        console.log(err.message);
-        return res.status(500).send('Server error');
-    }
 
-    try {
-        const updatedGroup = await ListGroupBaseModel.findOneAndUpdate(
+        await ListGroupBaseModel.findOneAndUpdate(
             { _id: groupIdParams },
             { $pull: { members: { userId: userIdToken } } },
             { new: true }
         );
-        return res.status(200).json(updatedGroup);
+
+        if (LIST_GROUP_PARENT_VARIANTS.includes(foundGroup.groupVariant)) {
+            await ListGroupBaseModel.updateMany(
+                { parentGroupId: groupIdParams },
+                { $pull: { members: { userId: userIdToken } } }
+            );
+        }
+        return res.status(200).send('Successfully left group');
     } catch (err) {
         console.log(err.message);
         return res.status(500).send('Server error');

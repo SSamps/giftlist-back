@@ -353,7 +353,11 @@ export function findUserInGroup(
 
 export function findUserPermissionsInGroup(
     userId: string,
-    group: LeanDocument<TlistGroupAny> | LeanDocument<TlistGroupAnyWithChildren>
+    group:
+        | LeanDocument<TlistGroupAny>
+        | LeanDocument<TlistGroupAnyWithChildren>
+        | TlistGroupAny
+        | TlistGroupAnyWithChildren
 ): TYPE_PERM_ALL_LIST_GROUP[] {
     let [_, user] = findUserInGroup(group, userId);
 
