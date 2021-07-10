@@ -21,6 +21,7 @@ import {
     LIST_GROUP_ALL_CENSORABLE,
     LIST_GROUP_ALL_CENSORABLE_CHILDREN,
     LIST_GROUP_ALL_NON_CENSORABLE,
+    LIST_GROUP_ALL_WITH_SECRET_ITEMS,
     LIST_GROUP_CHILD_VARIANTS,
     LIST_GROUP_PARENT_VARIANTS,
 } from '../models/listGroups/variants/listGroupVariants';
@@ -317,10 +318,11 @@ export function findItemInGroup(
             return ['listItem', item];
         }
     }
-
-    for (let secretItem of group.secretListItems) {
-        if (secretItem._id.toString() === itemId.toString()) {
-            return ['secretListItem', secretItem];
+    if (LIST_GROUP_ALL_WITH_SECRET_ITEMS.includes(group.groupVariant)) {
+        for (let secretItem of group.secretListItems) {
+            if (secretItem._id.toString() === itemId.toString()) {
+                return ['secretListItem', secretItem];
+            }
         }
     }
 

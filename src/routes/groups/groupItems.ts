@@ -94,17 +94,19 @@ router.delete('/:groupid/items/:itemid', authMiddleware, async (req: Request, re
         }
 
         if (itemType === 'listItem') {
-            let result = await foundGroup.update({ $pull: { listItems: { _id: itemId } } });
-            if (result.nModified === 1) {
-                return res.status(200).send();
-            }
-            return res.status(404).send();
+            let result = await ListGroupBaseModel.findOneAndUpdate(
+                { _id: groupId },
+                { $pull: { listItems: { _id: itemId } } },
+                { new: true }
+            );
+            return res.status(200).json(result);
         } else {
-            let result = await foundGroup.update({ $pull: { secretListItems: { _id: itemId } } });
-            if (result.nModified === 1) {
-                return res.status(200).send();
-            }
-            return res.status(404).send();
+            let result = await ListGroupBaseModel.findOneAndUpdate(
+                { _id: groupId },
+                { $pull: { secretListItems: { _id: itemId } } },
+                { new: true }
+            );
+            return res.status(200).json(result);
         }
     } catch (err) {
         console.log(err);
