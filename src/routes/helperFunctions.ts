@@ -19,7 +19,6 @@ import {
 } from '../models/listGroups/listGroupPermissions';
 import {
     LIST_GROUP_ALL_CENSORABLE,
-    LIST_GROUP_ALL_CENSORABLE_CHILDREN,
     LIST_GROUP_ALL_NON_CENSORABLE,
     LIST_GROUP_ALL_WITH_SECRET_ITEMS,
     LIST_GROUP_CHILD_VARIANTS,
@@ -406,5 +405,31 @@ export function censorSingularGroup(
     } else {
         console.error('Invalid group variant passed to censorSingularGroup: ', { ...group });
         throw new Error('Server Error');
+    }
+}
+
+export async function findOneAndUpdateUsingDiscriminator(
+    variant: string,
+    query: Object,
+    update: Object,
+    options: Object
+) {
+    switch (variant) {
+        case BASIC_LIST: {
+            return await BasicListModel.findOneAndUpdate(query, update, options);
+        }
+        case GIFT_LIST: {
+            return await GiftListModel.findOneAndUpdate(query, update, options);
+        }
+        case GIFT_GROUP: {
+            return await GiftGroupModel.findOneAndUpdate(query, update, options);
+        }
+        case GIFT_GROUP_CHILD: {
+            return await GiftGroupChildModel.findOneAndUpdate(query, update, options);
+        }
+        default: {
+            console.error('Invalid group variant of ', variant, ' passed to findOneAndUpdateUsingDiscriminator');
+            throw new Error('Server Error');
+        }
     }
 }

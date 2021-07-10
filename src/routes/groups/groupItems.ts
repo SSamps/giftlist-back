@@ -11,6 +11,7 @@ import {
 import { GIFT_LIST } from '../../models/listGroups/variants/discriminators/singular/GiftListModel';
 import {
     findItemInGroup,
+    findOneAndUpdateUsingDiscriminator,
     findUserInGroup,
     findUserPermissionsInGroup,
     handleNewListItemRequest,
@@ -94,11 +95,13 @@ router.delete('/:groupid/items/:itemid', authMiddleware, async (req: Request, re
         }
 
         if (itemType === 'listItem') {
-            let result = await ListGroupBaseModel.findOneAndUpdate(
+            let result = await findOneAndUpdateUsingDiscriminator(
+                foundGroup.groupVariant,
                 { _id: groupId },
                 { $pull: { listItems: { _id: itemId } } },
                 { new: true }
             );
+
             return res.status(200).json(result);
         } else {
             let result = await ListGroupBaseModel.findOneAndUpdate(
