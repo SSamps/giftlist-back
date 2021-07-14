@@ -101,6 +101,7 @@ function hitMaxSecretListItems(foundValidGroup: TlistGroupAny, userId: mongoose.
 async function addListItem(
     group: TlistGroupAny,
     userId: mongoose.Schema.Types.ObjectId | string,
+    itemType: 'listItems' | 'secretListItems',
     listItemReq: TnewListItemFields,
     res: Response
 ) {
@@ -110,24 +111,14 @@ async function addListItem(
         link: listItemReq.link,
     };
 
-    await group.update({ $push: { listItems: newListItem } });
-    return res.status(200).send();
-}
+    let result = await findOneAndUpdateUsingDiscriminator(
+        group.groupVariant,
+        { _id: group._id },
+        { $push: { [itemType]: newListItem } },
+        { new: true }
+    );
 
-async function addSecretListItem(
-    group: TlistGroupAny,
-    userId: mongoose.Schema.Types.ObjectId | string,
-    listItemReq: TnewListItemFields,
-    res: Response
-) {
-    const newSecretListItem: TnewListItemFields = {
-        authorId: userId,
-        body: listItemReq.body,
-        link: listItemReq.link,
-    };
-
-    await group.update({ $push: { secretListItems: newSecretListItem } });
-    return res.status(200).send();
+    return res.status(200).json(result);
 }
 
 export async function handleNewListItemRequest(
@@ -165,7 +156,7 @@ export async function handleNewListItemRequest(
         return res.status(400).send('You have reached the maximum number of list items');
     }
 
-    const result = await addListItem(foundGroup, userIdToken, listItemReq, res);
+    const result = await addListItem(foundGroup, userIdToken, 'listItems', listItemReq, res);
     return result;
 }
 
@@ -202,7 +193,7 @@ export async function handleNewSecretListItemRequest(
         res.status(400).send('You have reached the maximum number of secret list items');
     }
 
-    let result = await addSecretListItem(foundValidGroup, userIdToken, secretListItemReq, res);
+    let result = await addListItem(foundValidGroup, userIdToken, 'secretListItems', secretListItemReq, res);
     return result;
 }
 

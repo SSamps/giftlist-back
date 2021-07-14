@@ -12,7 +12,6 @@ import { GIFT_LIST } from '../../models/listGroups/variants/discriminators/singu
 import {
     findItemInGroup,
     findOneAndUpdateUsingDiscriminator,
-    findUserInGroup,
     findUserPermissionsInGroup,
     handleNewListItemRequest,
     handleNewSecretListItemRequest,
@@ -104,7 +103,8 @@ router.delete('/:groupid/items/:itemid', authMiddleware, async (req: Request, re
 
             return res.status(200).json(result);
         } else {
-            let result = await ListGroupBaseModel.findOneAndUpdate(
+            let result = await findOneAndUpdateUsingDiscriminator(
+                foundGroup.groupVariant,
                 { _id: groupId },
                 { $pull: { secretListItems: { _id: itemId } } },
                 { new: true }
