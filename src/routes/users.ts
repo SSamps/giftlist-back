@@ -44,7 +44,6 @@ async function sendVerificationEmail(newUserId: Schema.Types.ObjectId, email: st
         },
     };
     await sendgrid.send(msg);
-
     return;
 }
 
@@ -131,9 +130,9 @@ router.post('/sendverification', unverifiedUserAuthMiddleware, async (req: Reque
     console.log('POST api/users/sendverification hit');
     try {
         await sendVerificationEmail(req.user._id, req.user.email, req.user.displayName);
-        return res.send(200);
+        return res.sendStatus(200);
     } catch (err) {
-        console.error(err.message);
+        console.error('POST api/users/sendverification:', err.message);
         return res.status(500).send('Server error');
     }
 });
