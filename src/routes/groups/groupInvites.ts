@@ -45,8 +45,9 @@ interface IinviteToken {
 router.post(
     '/:groupid/invite/send',
     authMiddleware,
-    check('invitedEmail', 'invitedEmail is required').not().isEmpty(),
-    check('invitedEmail', 'invitedEmail must be an email').isEmail(),
+    check('invitedEmails', 'invitedEmails is required').not().isEmpty(),
+    check('invitedEmails', 'invitedEmails must be an array').isArray(),
+    check('invitedEmails.*', 'invitedEmails must contain only emails').isEmail(),
     async (req: Request, res: Response) => {
         console.log('POST /api/groups/:groupid/invite/send hit');
 
@@ -88,7 +89,7 @@ router.post(
             const inviteLink = inviteBaseLink + token;
 
             const msg = {
-                to: req.body.invitedEmail,
+                to: req.body.invitedEmails,
                 from: {
                     name: 'GiftList',
                     email: 'invites.giftlist@sampsy.dev',

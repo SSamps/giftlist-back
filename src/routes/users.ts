@@ -32,8 +32,7 @@ async function sendVerificationEmail(newUserId: Schema.Types.ObjectId, email: st
     const verifyLink = verifyBaseLink + token;
 
     const msg = {
-        //TODO change this to use the supplied email
-        to: 'simonjsampson@gmail.com',
+        to: email,
         from: {
             name: 'GiftList',
             email: 'welcome.giftlist@sampsy.dev',
@@ -132,7 +131,6 @@ router.post('/sendverification', unverifiedUserAuthMiddleware, async (req: Reque
     console.log('POST api/users/sendverification hit');
     try {
         await sendVerificationEmail(req.user._id, req.user.email, req.user.displayName);
-        console.log('sending response to user');
         return res.send(200);
     } catch (err) {
         console.error(err.message);
