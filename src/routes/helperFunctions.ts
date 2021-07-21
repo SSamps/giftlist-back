@@ -190,7 +190,7 @@ export async function handleNewSecretListItemRequest(
     }
 
     if (hitMaxSecretListItems(foundValidGroup, userIdToken)) {
-        res.status(400).send('You have reached the maximum number of secret list items');
+        return res.status(400).send('You have reached the maximum number of secret list items');
     }
 
     let result = await addListItem(foundValidGroup, userIdToken, 'secretListItems', secretListItemReq, res);
