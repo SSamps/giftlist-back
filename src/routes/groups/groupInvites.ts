@@ -214,7 +214,7 @@ router.post('/invite/accept/:groupToken', authMiddleware, async (req: Request, r
                 throw new invalidGroupVariantError(groupVariant);
         }
 
-        return res.send(200);
+        return res.sendStatus(200).json({ _id: groupId });
     } catch (err) {
         console.log(err.message);
         console.log(err);
