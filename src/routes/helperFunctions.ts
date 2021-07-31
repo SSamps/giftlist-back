@@ -105,10 +105,17 @@ async function addListItem(
     listItemReq: TnewListItemFields,
     res: Response
 ) {
+    if (listItemReq.body === undefined) {
+        return res.status(400).send('You must include an item body');
+    }
+    if (listItemReq.links === undefined) {
+        return res.status(400).send('You must include an item links array');
+    }
+
     const newListItem: TnewListItemFields = {
         authorId: userId,
         body: listItemReq.body,
-        link: listItemReq.link,
+        links: listItemReq.links,
     };
 
     let result = await findOneAndUpdateUsingDiscriminator(
@@ -127,12 +134,16 @@ export async function handleNewListItemRequest(
     listItemReq: TnewListItemFields,
     res: Response
 ) {
-    if (listItemReq.body === undefined) {
-        return res.status(400).send('You must include an item body');
-    }
-
     let permission = PERM_GROUP_RW_LIST_ITEMS;
     let validGroupVariants = [BASIC_LIST, GIFT_LIST, GIFT_GROUP_CHILD];
+
+    let links = listItemReq.links;
+
+    for (let i = 0; i < links.length; i++) {
+        if (links[i].length <= 0) {
+            return res.status(400).send('You cannot supply empty links');
+        }
+    }
 
     let foundGroup = await ListGroupBaseModel.findOne({
         $and: [
@@ -166,12 +177,15 @@ export async function handleNewSecretListItemRequest(
     secretListItemReq: TnewListItemFields,
     res: Response
 ) {
-    if (secretListItemReq.body === undefined) {
-        return res.status(400).send('You must include an item body');
-    }
-
     let permission = PERM_GROUP_RW_SECRET_LIST_ITEMS;
     let validGroupVariants = [GIFT_LIST, GIFT_GROUP_CHILD];
+
+    let links = secretListItemReq.links;
+    for (let i = 0; i < links.length; i++) {
+        if (links[i].length <= 0) {
+            return res.status(400).send('You cannot supply empty links');
+        }
+    }
 
     let foundValidGroup = await ListGroupBaseModel.findOne({
         $and: [

@@ -3,8 +3,8 @@ import { Schema } from 'mongoose';
 export type TListItem = {
     authorId: Schema.Types.ObjectId | string;
     creationDate?: Date;
-    body: String;
-    link?: String;
+    body: string;
+    links: string[];
     selectedBy?: Schema.Types.ObjectId[] | string[];
     _id: Schema.Types.ObjectId | string;
 };
@@ -13,7 +13,7 @@ export type TListItemCensored = {
     authorId: Schema.Types.ObjectId | string;
     creationDate?: Date;
     body: String;
-    link?: String;
+    links: string[];
     selectedBy?: Schema.Types.ObjectId[] | string[] | undefined;
     _id: Schema.Types.ObjectId | string;
 };
@@ -21,7 +21,7 @@ export type TListItemCensored = {
 export type TnewListItemFields = {
     authorId: Schema.Types.ObjectId | string;
     body: String;
-    link?: String;
+    links: string[];
 };
 
 export type TitemTypes = 'listItem' | 'secretListItem';

@@ -124,6 +124,8 @@ router.put(
     '/:groupid/items/:itemid',
     authMiddleware,
     check('body', 'A list item body is required').not().isEmpty(),
+    check('links', 'A list item body is required').isArray,
+    check('links.*', 'All links must be strings').isString,
     async (req: Request, res: Response) => {
         console.log('PUT api/groups/:groupid/items');
 
@@ -135,7 +137,7 @@ router.put(
         const userIdToken = req.user._id;
         const groupId = req.params.groupid;
         const itemId = req.params.itemid;
-        const { body, link } = req.body;
+        const { body, links } = req.body;
 
         try {
             const foundGroup = await ListGroupBaseModel.findOne({
@@ -165,7 +167,7 @@ router.put(
 
             if (itemType === 'listItem') {
                 let result = await foundGroup.update(
-                    { $set: { 'listItems.$[item].body': body, 'listItems.$[item].link': link } },
+                    { $set: { 'listItems.$[item].body': body, 'listItems.$[item].links': links } },
                     { arrayFilters: [{ 'item._id': itemId }] }
                 );
                 if (result.nModified === 1) {
@@ -173,7 +175,10 @@ router.put(
                 }
                 return res.status(404).send();
             } else {
-                let result = await foundGroup.update({ $pull: { secretListItems: { _id: itemId } } });
+                let result = await foundGroup.update(
+                    { $set: { 'secretListItems.$[item].body': body, 'secretListItems.$[item].links': links } },
+                    { arrayFilters: [{ 'item._id': itemId }] }
+                );
                 if (result.nModified === 1) {
                     return res.status(200).send();
                 }
