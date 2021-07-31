@@ -16,6 +16,7 @@ import {
     handleNewListItemRequest,
     handleNewSecretListItemRequest,
 } from '../helperFunctions';
+import { BASIC_LIST } from '../../models/listGroups/variants/discriminators/singular/BasicListModel';
 
 const router: Router = express.Router();
 
@@ -124,10 +125,10 @@ router.put(
     '/:groupid/items/:itemid',
     authMiddleware,
     check('body', 'A list item body is required').not().isEmpty(),
-    check('links', 'A list item body is required').isArray,
-    check('links.*', 'All links must be strings').isString,
+    check('links', 'A list item body is required').isArray(),
+    check('links.*', 'All links must be strings').isString(),
     async (req: Request, res: Response) => {
-        console.log('PUT api/groups/:groupid/items');
+        console.log('PUT api/groups/:groupid/items:itemid');
 
         const errors: Result<ValidationError> = validationResult(req);
         if (!errors.isEmpty()) {
@@ -142,7 +143,7 @@ router.put(
         try {
             const foundGroup = await ListGroupBaseModel.findOne({
                 $and: [
-                    { _id: groupId, groupVariant: GIFT_LIST },
+                    { _id: groupId, groupVariant: { $in: [GIFT_LIST, BASIC_LIST] } },
                     {
                         $or: [
                             { 'owner.userId': userIdToken, 'owner.permissions': PERM_GROUP_RW_LIST_ITEMS },
@@ -153,6 +154,7 @@ router.put(
             });
 
             if (!foundGroup) {
+                console.log('hello');
                 return res.status(404).send();
             }
 
