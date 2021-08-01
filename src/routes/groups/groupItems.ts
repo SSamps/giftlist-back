@@ -167,25 +167,18 @@ router.put(
                 return res.status(401).send('You can only modify your own items');
             }
 
-            if (itemType === 'listItem') {
-                let result = await foundGroup.update(
-                    { $set: { 'listItems.$[item].body': body, 'listItems.$[item].links': links } },
-                    { arrayFilters: [{ 'item._id': itemId }] }
-                );
-                if (result.nModified === 1) {
-                    return res.status(200).send();
-                }
-                return res.status(404).send();
-            } else {
-                let result = await foundGroup.update(
-                    { $set: { 'secretListItems.$[item].body': body, 'secretListItems.$[item].links': links } },
-                    { arrayFilters: [{ 'item._id': itemId }] }
-                );
-                if (result.nModified === 1) {
-                    return res.status(200).send();
-                }
-                return res.status(404).send();
-            }
+            let queryItemType = itemType + 's';
+            let bodyQuery = `${queryItemType}.$[item].body`;
+            let linksQuery = `${queryItemType}.$[item].links`;
+
+            let result = await findOneAndUpdateUsingDiscriminator(
+                foundGroup.groupVariant,
+                { _id: foundGroup._id },
+                { $set: { [bodyQuery]: body, [linksQuery]: links } },
+                { new: true, arrayFilters: [{ 'item._id': itemId }] }
+            );
+
+            return res.status(200).json(result);
         } catch (err) {
             console.log(err);
             return res.status(500).send('Internal server error');
