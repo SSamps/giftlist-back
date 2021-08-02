@@ -1,6 +1,6 @@
 import { Schema } from 'mongoose';
 
-export type TListItem = {
+export type TgiftListItem = {
     authorId: Schema.Types.ObjectId | string;
     creationDate?: Date;
     body: string;
@@ -9,12 +9,30 @@ export type TListItem = {
     _id: Schema.Types.ObjectId | string;
 };
 
-export type TListItemCensored = {
+export type TgiftListItemCensored = {
     authorId: Schema.Types.ObjectId | string;
     creationDate?: Date;
     body: String;
     links: string[];
     selectedBy?: Schema.Types.ObjectId[] | string[] | undefined;
+    _id: Schema.Types.ObjectId | string;
+};
+
+export type TbasicListItem = {
+    authorId: Schema.Types.ObjectId | string;
+    creationDate?: Date;
+    body: string;
+    links: string[];
+    selected?: boolean;
+    _id: Schema.Types.ObjectId | string;
+};
+
+export type TbasicListItemCensored = {
+    authorId: Schema.Types.ObjectId | string;
+    creationDate?: Date;
+    body: String;
+    links: string[];
+    selected?: boolean;
     _id: Schema.Types.ObjectId | string;
 };
 

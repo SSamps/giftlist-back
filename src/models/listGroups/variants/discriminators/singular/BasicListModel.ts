@@ -26,7 +26,7 @@ const basicListSchema = new Schema<TbasicListDocument>({
             creationDate: { type: Date, default: Date.now },
             body: { type: String },
             links: [{ type: String }],
-            selectedBy: [{ type: Schema.Types.ObjectId }],
+            selected: { type: Boolean, default: false },
         },
     ],
 });

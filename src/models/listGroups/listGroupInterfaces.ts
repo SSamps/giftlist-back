@@ -1,5 +1,5 @@
 import { Document, LeanDocument, Schema } from 'mongoose';
-import { TListItem, TListItemCensored } from './listItemInterfaces';
+import { TbasicListItem, TgiftListItem, TgiftListItemCensored } from './listItemInterfaces';
 import {
     TYPE_PERM_ALL_LIST_GROUP,
     TYPE_PERM_BASIC_LIST_ALL,
@@ -68,7 +68,7 @@ type TbasicListExtraFields = {
     owner: IbasicListMember;
     members: [IbasicListMember];
     maxListItems: Number;
-    listItems: TListItem[];
+    listItems: TbasicListItem[];
 };
 
 export type TnewBasicListFields = TlistGroupBaseFields & TnewBasicListExtraFields;
@@ -86,27 +86,27 @@ type TnewGiftListExtraFields = {
     owner: IgiftListMember;
     members?: [IgiftListMember];
     maxListItems?: Number;
-    listItems?: TListItem[];
+    listItems?: TgiftListItem[];
     maxSecretListItemsEach?: Number;
-    secretListItems?: TListItem[];
+    secretListItems?: TgiftListItem[];
 };
 
 type TgiftListExtraFields = {
     owner: IgiftListMember;
     members: [IgiftListMember];
     maxListItems: Number;
-    listItems: TListItem[];
+    listItems: TgiftListItem[];
     maxSecretListItemsEach: Number;
-    secretListItems: TListItem[];
+    secretListItems: TgiftListItem[];
 };
 
 type TgiftListExtraFieldsCensored = {
     owner: IgiftListMember;
     members: [IgiftListMember];
     maxListItems: Number;
-    listItems: TListItemCensored[];
+    listItems: TgiftListItemCensored[];
     maxSecretListItemsEach: Number;
-    secretListItems: TListItemCensored[] | undefined;
+    secretListItems: TgiftListItemCensored[] | undefined;
 };
 
 export type TnewGiftListFields = TlistGroupBaseFields & TnewGiftListExtraFields;
@@ -157,9 +157,9 @@ type TgiftGroupChildExtraFields = {
     members: [IgiftGroupChildMember];
     parentGroupId: Schema.Types.ObjectId | string;
     maxListItems: Number;
-    listItems: TListItem[];
+    listItems: TgiftListItem[];
     maxSecretListItemsEach: Number;
-    secretListItems: TListItem[];
+    secretListItems: TgiftListItem[];
 };
 
 type TgiftGroupChildExtraFieldsCensored = {
@@ -167,9 +167,9 @@ type TgiftGroupChildExtraFieldsCensored = {
     members: [IgiftGroupChildMember];
     parentGroupId: Schema.Types.ObjectId | string;
     maxListItems: Number;
-    listItems: TListItemCensored[];
+    listItems: TgiftListItemCensored[];
     maxSecretListItemsEach: Number;
-    secretListItems: TListItemCensored[] | undefined;
+    secretListItems: TgiftListItemCensored[] | undefined;
 };
 
 export type TnewGiftGroupChildFields = TlistGroupBaseFields & TnewGiftGroupChildExtraFields;

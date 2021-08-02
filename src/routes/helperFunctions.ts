@@ -43,7 +43,7 @@ import {
     TnewGiftGroupFields,
     TnewGiftListFields,
 } from '../models/listGroups/listGroupInterfaces';
-import { TitemTypes, TListItem, TnewListItemFields } from '../models/listGroups/listItemInterfaces';
+import { TitemTypes, TgiftListItem, TnewListItemFields } from '../models/listGroups/listItemInterfaces';
 import { BasicListModel, BASIC_LIST } from '../models/listGroups/variants/discriminators/singular/BasicListModel';
 import { GiftListModel, GIFT_LIST } from '../models/listGroups/variants/discriminators/singular/GiftListModel';
 import { Response } from 'express';
@@ -118,7 +118,7 @@ async function addListItem(
         links: listItemReq.links,
     };
 
-    let result = await findOneAndUpdateUsingDiscriminator(
+    const result = await findOneAndUpdateUsingDiscriminator(
         group.groupVariant,
         { _id: group._id },
         { $push: { [itemType]: newListItem } },
@@ -316,7 +316,7 @@ export function findItemInGroup(
         | LeanDocument<TlistGroupAny>
         | LeanDocument<TlistGroupAnyWithChildren>,
     itemId: Schema.Types.ObjectId | string
-): [TitemTypes | 'error', TListItem | null] {
+): [TitemTypes | 'error', TgiftListItem | null] {
     for (let item of group.listItems) {
         if (item._id.toString() === itemId.toString()) {
             return ['listItem', item];
@@ -417,7 +417,7 @@ export async function findOneAndUpdateUsingDiscriminator(
     variant: string,
     query: Object,
     update: Object,
-    options: Object
+    options?: Object
 ) {
     switch (variant) {
         case BASIC_LIST: {

@@ -210,7 +210,7 @@ router.put(
         try {
             const foundGroup = await ListGroupBaseModel.findOne({
                 $and: [
-                    { _id: groupId },
+                    { _id: groupId, groupVariant: { $in: [BASIC_LIST, GIFT_LIST] } },
                     {
                         $or: [{ 'owner.userId': userIdToken }, { 'members.userId': userIdToken }],
                     },
@@ -239,33 +239,31 @@ router.put(
                 }
             }
 
-            if (itemType === 'listItem') {
-                if (action === 'SELECT') {
-                    await foundGroup.update(
-                        { $addToSet: { 'listItems.$[item].selectedBy': userIdToken } },
-                        { arrayFilters: [{ 'item._id': itemId }] }
-                    );
-                    return res.status(200).send();
-                } else {
-                    await foundGroup.update(
-                        { $pull: { 'listItems.$[item].selectedBy': userIdToken } },
-                        { arrayFilters: [{ 'item._id': itemId }] }
-                    );
-                }
+            const searchQuery = { _id: groupId };
+            const updateQueryItemType = itemType + 's';
+            let updateQuery;
+
+            if (foundGroup.groupVariant === BASIC_LIST) {
+                const updateQueryKey = `${updateQueryItemType}.$[item].selected`;
+                const updateQueryValue = action === 'SELECT' ? true : false;
+                updateQuery = { [updateQueryKey]: updateQueryValue };
             } else {
-                if (action === 'SELECT') {
-                    await foundGroup.update(
-                        { $addToSet: { 'secretListItems.$[item].selectedBy': userIdToken } },
-                        { arrayFilters: [{ 'item._id': itemId }] }
-                    );
-                } else {
-                    await foundGroup.update(
-                        { $pull: { 'secretListItems.$[item].selectedBy': userIdToken } },
-                        { arrayFilters: [{ 'item._id': itemId }] }
-                    );
-                }
+                const updateQueryKey = `${updateQueryItemType}.$[item].selectedBy`;
+                const updateQueryValue = userIdToken;
+                const updateQueryOperator = action === 'SELECT' ? '$addToSet' : '$pull';
+                updateQuery = { [updateQueryOperator]: { [updateQueryKey]: updateQueryValue } };
             }
-            return res.status(200).send();
+
+            const options = { new: true, arrayFilters: [{ 'item._id': itemId }] };
+
+            const result = await findOneAndUpdateUsingDiscriminator(
+                foundGroup.groupVariant,
+                searchQuery,
+                updateQuery,
+                options
+            );
+
+            return res.status(200).json(result);
         } catch (err) {
             console.log(err);
             return res.status(500).send('Internal server error');
