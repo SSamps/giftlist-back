@@ -138,6 +138,11 @@ export async function handleNewListItemRequest(
     let validGroupVariants = [BASIC_LIST, GIFT_LIST, GIFT_GROUP_CHILD];
 
     let links = listItemReq.links;
+    let body = listItemReq.body;
+
+    if (body.length <= 0) {
+        return res.status(400).send('You cannot supply an empty item body');
+    }
 
     for (let i = 0; i < links.length; i++) {
         if (links[i].length <= 0) {
@@ -179,6 +184,12 @@ export async function handleNewSecretListItemRequest(
 ) {
     let permission = PERM_GROUP_RW_SECRET_LIST_ITEMS;
     let validGroupVariants = [GIFT_LIST, GIFT_GROUP_CHILD];
+
+    let body = secretListItemReq.body;
+
+    if (body.length <= 0) {
+        return res.status(400).send('You cannot supply an empty item body');
+    }
 
     let links = secretListItemReq.links;
     for (let i = 0; i < links.length; i++) {

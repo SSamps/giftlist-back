@@ -154,7 +154,6 @@ router.put(
             });
 
             if (!foundGroup) {
-                console.log('hello');
                 return res.status(404).send();
             }
 
