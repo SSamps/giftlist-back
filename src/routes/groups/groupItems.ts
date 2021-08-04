@@ -32,6 +32,7 @@ router.post(
     ]),
     async (req: Request, res: Response) => {
         console.log('POST api/groups/giftlist/:groupid/items');
+        console.log('request body: ', req.body);
 
         const errors: Result<ValidationError> = validationResult(req);
         if (!errors.isEmpty()) {
@@ -64,59 +65,72 @@ router.post(
 // @route DELETE api/groups/:groupid/items/:itemid
 // @desc Delete an item from a list group
 // @access Private
-router.delete('/:groupid/items/:itemid', authMiddleware, async (req: Request, res: Response) => {
-    console.log('DELETE api/groups/:groupid/items/:itemid');
+router.delete(
+    '/:groupid/items',
+    authMiddleware,
+    check('itemsToDelete', 'You must specify an array of items ids to delete').isArray(),
+    check('itemsToDelete', 'You must specify a populated array of items ids to delete').not().isEmpty(),
+    check('itemsToDelete.*', 'You must specify an array of items ids to delete').isString(),
+    async (req: Request, res: Response) => {
+        console.log('DELETE api/groups/:groupid/items');
 
-    const userIdToken = req.user._id;
-    const groupId = req.params.groupid;
-    const itemId = req.params.itemid;
-
-    try {
-        const foundGroup = await ListGroupBaseModel.findOne({
-            $and: [
-                { _id: groupId },
-                {
-                    $or: [{ 'owner.userId': userIdToken }, { 'members.userId': userIdToken }],
-                },
-            ],
-        });
-
-        if (!foundGroup) {
-            return res.status(404).send();
+        const errors: Result<ValidationError> = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
         }
 
-        const [itemType, foundItem] = findItemInGroup(foundGroup, itemId);
-        if (!foundItem) {
-            return res.status(404).send('Item not found');
-        }
+        const userIdToken = req.user._id;
+        const groupId = req.params.groupid;
+        const itemsToDelete = req.body.itemsToDelete;
 
-        if (foundItem.authorId.toString() !== userIdToken.toString()) {
-            return res.status(401).send('You can only delete your own items');
-        }
+        try {
+            const foundGroup = await ListGroupBaseModel.findOne({
+                $and: [
+                    { _id: groupId },
+                    {
+                        $or: [{ 'owner.userId': userIdToken }, { 'members.userId': userIdToken }],
+                    },
+                ],
+            });
 
-        if (itemType === 'listItem') {
-            let result = await findOneAndUpdateUsingDiscriminator(
-                foundGroup.groupVariant,
-                { _id: groupId },
-                { $pull: { listItems: { _id: itemId } } },
-                { new: true }
-            );
+            if (!foundGroup) {
+                return res.status(404).send();
+            }
 
-            return res.status(200).json(result);
-        } else {
-            let result = await findOneAndUpdateUsingDiscriminator(
-                foundGroup.groupVariant,
-                { _id: groupId },
-                { $pull: { secretListItems: { _id: itemId } } },
-                { new: true }
-            );
-            return res.status(200).json(result);
+            //TODO need to refactor this to use arrays properly
+            const [itemType, foundItem] = findItemInGroup(foundGroup, itemsToDelete[0]);
+            if (!foundItem) {
+                return res.status(404).send('Item not found');
+            }
+
+            if (foundItem.authorId.toString() !== userIdToken.toString()) {
+                return res.status(401).send('You can only delete your own items');
+            }
+
+            if (itemType === 'listItem') {
+                let result = await findOneAndUpdateUsingDiscriminator(
+                    foundGroup.groupVariant,
+                    { _id: groupId },
+                    { $pull: { listItems: { _id: { $in: itemsToDelete } } } },
+                    { new: true }
+                );
+
+                return res.status(200).json(result);
+            } else {
+                let result = await findOneAndUpdateUsingDiscriminator(
+                    foundGroup.groupVariant,
+                    { _id: groupId },
+                    { $pull: { secretListItems: { _id: itemsToDelete } } },
+                    { new: true }
+                );
+                return res.status(200).json(result);
+            }
+        } catch (err) {
+            console.log(err);
+            return res.status(500).send('Internal server error');
         }
-    } catch (err) {
-        console.log(err);
-        return res.status(500).send('Internal server error');
     }
-});
+);
 
 // @route PUT api/groups/:groupid/items/:itemid
 // @desc Modify an item in a list group

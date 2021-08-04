@@ -17,7 +17,7 @@ const PORT: string | number = process.env.PORT || 5000;
 connectDB(process.env.MONGO_URI);
 
 // // Init middleware
-app.use(express.json());
+app.use(express.json() as express.RequestHandler);
 app.use(cors());
 
 // Define Routes

@@ -321,11 +321,7 @@ export async function addGroup(
 }
 
 export function findItemInGroup(
-    group:
-        | TlistGroupAny
-        | TlistGroupAnyWithChildren
-        | LeanDocument<TlistGroupAny>
-        | LeanDocument<TlistGroupAnyWithChildren>,
+    group: TlistGroupAny,
     itemId: Schema.Types.ObjectId | string
 ): [TitemTypes | 'error', TgiftListItem | null] {
     for (let item of group.listItems) {
