@@ -10,7 +10,7 @@ import {
 } from '../../models/listGroups/listGroupPermissions';
 import { GIFT_LIST } from '../../models/listGroups/variants/discriminators/singular/GiftListModel';
 import {
-    findItemInGroup,
+    findItemsInGroup,
     findOneAndUpdateUsingDiscriminator,
     findUserPermissionsInGroup,
     handleNewListItemRequest,
@@ -81,7 +81,7 @@ router.delete(
 
         const userIdToken = req.user._id;
         const groupId = req.params.groupid;
-        const itemsToDelete = req.body.itemsToDelete;
+        const itemsToDelete: string[] = req.body.itemsToDelete;
 
         try {
             const foundGroup = await ListGroupBaseModel.findOne({
@@ -98,13 +98,16 @@ router.delete(
             }
 
             //TODO need to refactor this to use arrays properly
-            const [itemType, foundItem] = findItemInGroup(foundGroup, itemsToDelete[0]);
-            if (!foundItem) {
+            const [itemType, foundItems] = findItemsInGroup(foundGroup, itemsToDelete);
+            if (foundItems.length <= 0) {
                 return res.status(404).send('Item not found');
             }
 
-            if (foundItem.authorId.toString() !== userIdToken.toString()) {
-                return res.status(401).send('You can only delete your own items');
+            if (foundGroup.groupVariant === GIFT_LIST) {
+                // need to loop over array
+                if (foundItem.authorId.toString() !== userIdToken.toString()) {
+                    return res.status(401).send('You can only delete your own items');
+                }
             }
 
             if (itemType === 'listItem') {
@@ -171,12 +174,12 @@ router.put(
                 return res.status(404).send();
             }
 
-            const [itemType, foundItem] = findItemInGroup(foundGroup, itemId);
-            if (!foundItem) {
+            const [itemType, foundItems] = findItemsInGroup(foundGroup, [itemId]);
+            if (foundItems.length <= 0) {
                 return res.status(404).send('Item not found');
             }
 
-            if (foundItem.authorId.toString() !== userIdToken.toString()) {
+            if (foundItems[0].authorId.toString() !== userIdToken.toString()) {
                 return res.status(401).send('You can only modify your own items');
             }
 
@@ -234,9 +237,9 @@ router.put(
                 return res.status(404).send('You are not a member or owner of a group with the supplied id');
             }
 
-            const [itemType, foundItem] = findItemInGroup(foundGroup, itemId);
+            const [itemType, foundItems] = findItemsInGroup(foundGroup, [itemId]);
 
-            if (!foundItem) {
+            if (foundItems.length <= 0) {
                 return res.status(404).send('Item not found in the specified group');
             }
 

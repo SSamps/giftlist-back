@@ -320,24 +320,38 @@ export async function addGroup(
     }
 }
 
-export function findItemInGroup(
+export function findItemsInGroup(
     group: TlistGroupAny,
-    itemId: Schema.Types.ObjectId | string
-): [TitemTypes | 'error', TgiftListItem | null] {
-    for (let item of group.listItems) {
-        if (item._id.toString() === itemId.toString()) {
-            return ['listItem', item];
-        }
-    }
-    if (LIST_GROUP_ALL_WITH_SECRET_ITEMS.includes(group.groupVariant)) {
-        for (let secretItem of group.secretListItems) {
-            if (secretItem._id.toString() === itemId.toString()) {
-                return ['secretListItem', secretItem];
+    itemIdArray: Schema.Types.ObjectId[] | string[]
+): [TitemTypes | 'error', any[]] {
+    let foundItems = [];
+
+    for (let itemId in itemIdArray) {
+        let found = false;
+        for (let item of group.listItems) {
+            if (item._id.toString() === itemId.toString()) {
+                foundItems.push(item);
+                found = true;
+                break;
             }
+        }
+
+        if (LIST_GROUP_ALL_WITH_SECRET_ITEMS.includes(group.groupVariant) && !found) {
+            for (let secretItem of group.secretListItems) {
+                if (secretItem._id.toString() === itemId.toString()) {
+                    foundItems.push(secretItem);
+                    found = true;
+                    break;
+                }
+            }
+        }
+        if (!found) {
+            return ['error', []];
         }
     }
 
-    return ['error', null];
+    //TODO have to modify this.
+    return ['listItem', foundItems];
 }
 
 // TODO change this to throw exceptions
