@@ -10,6 +10,7 @@ import {
 } from '../../models/listGroups/listGroupPermissions';
 import { GIFT_LIST } from '../../models/listGroups/variants/discriminators/singular/GiftListModel';
 import {
+    findItemInGroup,
     findItemsInGroup,
     findOneAndUpdateUsingDiscriminator,
     findUserPermissionsInGroup,
@@ -97,37 +98,27 @@ router.delete(
                 return res.status(404).send();
             }
 
-            //TODO need to refactor this to use arrays properly
-            const [itemType, foundItems] = findItemsInGroup(foundGroup, itemsToDelete);
+            const foundItems = findItemsInGroup(foundGroup, itemsToDelete);
             if (foundItems.length <= 0) {
                 return res.status(404).send('Item not found');
             }
 
             if (foundGroup.groupVariant === GIFT_LIST) {
-                // need to loop over array
-                if (foundItem.authorId.toString() !== userIdToken.toString()) {
-                    return res.status(401).send('You can only delete your own items');
+                for (let i = 0; i < foundItems.length; i++) {
+                    if (foundItems[i].authorId.toString() !== userIdToken.toString()) {
+                        return res.status(401).send('You can only delete your own items in a Gift List');
+                    }
                 }
             }
 
-            if (itemType === 'listItem') {
-                let result = await findOneAndUpdateUsingDiscriminator(
-                    foundGroup.groupVariant,
-                    { _id: groupId },
-                    { $pull: { listItems: { _id: { $in: itemsToDelete } } } },
-                    { new: true }
-                );
+            let result = await findOneAndUpdateUsingDiscriminator(
+                foundGroup.groupVariant,
+                { _id: groupId },
+                { $pull: { listItems: { _id: { $in: itemsToDelete } }, secretListItems: { _id: itemsToDelete } } },
+                { new: true }
+            );
 
-                return res.status(200).json(result);
-            } else {
-                let result = await findOneAndUpdateUsingDiscriminator(
-                    foundGroup.groupVariant,
-                    { _id: groupId },
-                    { $pull: { secretListItems: { _id: itemsToDelete } } },
-                    { new: true }
-                );
-                return res.status(200).json(result);
-            }
+            return res.status(200).json(result);
         } catch (err) {
             console.log(err);
             return res.status(500).send('Internal server error');
@@ -174,12 +165,12 @@ router.put(
                 return res.status(404).send();
             }
 
-            const [itemType, foundItems] = findItemsInGroup(foundGroup, [itemId]);
-            if (foundItems.length <= 0) {
+            const [itemType, foundItem] = findItemInGroup(foundGroup, itemId);
+            if (!foundItem) {
                 return res.status(404).send('Item not found');
             }
 
-            if (foundItems[0].authorId.toString() !== userIdToken.toString()) {
+            if (foundItem.authorId.toString() !== userIdToken.toString()) {
                 return res.status(401).send('You can only modify your own items');
             }
 
@@ -237,9 +228,9 @@ router.put(
                 return res.status(404).send('You are not a member or owner of a group with the supplied id');
             }
 
-            const [itemType, foundItems] = findItemsInGroup(foundGroup, [itemId]);
+            const [itemType, foundItem] = findItemInGroup(foundGroup, itemId);
 
-            if (foundItems.length <= 0) {
+            if (!foundItem) {
                 return res.status(404).send('Item not found in the specified group');
             }
 

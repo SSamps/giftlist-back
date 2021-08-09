@@ -320,13 +320,9 @@ export async function addGroup(
     }
 }
 
-export function findItemsInGroup(
-    group: TlistGroupAny,
-    itemIdArray: Schema.Types.ObjectId[] | string[]
-): [TitemTypes | 'error', any[]] {
+export function findItemsInGroup(group: TlistGroupAny, itemIdArray: Schema.Types.ObjectId[] | string[]): any[] {
     let foundItems = [];
-
-    for (let itemId in itemIdArray) {
+    for (let itemId of itemIdArray) {
         let found = false;
         for (let item of group.listItems) {
             if (item._id.toString() === itemId.toString()) {
@@ -346,12 +342,31 @@ export function findItemsInGroup(
             }
         }
         if (!found) {
-            return ['error', []];
+            return [];
         }
     }
 
-    //TODO have to modify this.
-    return ['listItem', foundItems];
+    return [foundItems];
+}
+
+export function findItemInGroup(
+    group: TlistGroupAny,
+    itemId: Schema.Types.ObjectId | string
+): [TitemTypes | 'error', TgiftListItem | null] {
+    for (let item of group.listItems) {
+        if (item._id.toString() === itemId.toString()) {
+            return ['listItem', item];
+        }
+    }
+    if (LIST_GROUP_ALL_WITH_SECRET_ITEMS.includes(group.groupVariant)) {
+        for (let secretItem of group.secretListItems) {
+            if (secretItem._id.toString() === itemId.toString()) {
+                return ['secretListItem', secretItem];
+            }
+        }
+    }
+
+    return ['error', null];
 }
 
 // TODO change this to throw exceptions
