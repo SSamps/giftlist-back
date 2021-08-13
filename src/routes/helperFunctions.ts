@@ -20,6 +20,7 @@ import {
 import {
     LIST_GROUP_ALL_CENSORABLE,
     LIST_GROUP_ALL_NON_CENSORABLE,
+    LIST_GROUP_ALL_WITH_MESSAGES,
     LIST_GROUP_ALL_WITH_SECRET_ITEMS,
     LIST_GROUP_CHILD_VARIANTS,
     LIST_GROUP_PARENT_VARIANTS,
@@ -47,6 +48,7 @@ import { TitemTypes, TgiftListItem, TnewListItemFields } from '../models/listGro
 import { BasicListModel, BASIC_LIST } from '../models/listGroups/variants/discriminators/singular/BasicListModel';
 import { GiftListModel, GIFT_LIST } from '../models/listGroups/variants/discriminators/singular/GiftListModel';
 import { Response } from 'express';
+import { MessageBaseModel } from '../models/messages/MessageBaseModel';
 
 export interface IgroupDeletionResult {
     status: number;
@@ -71,7 +73,9 @@ export async function deleteGroupAndAnyChildGroups(
         return { status: 400, msg: 'Invalid groupId or unauthorized' };
     }
 
-    // TODO Delete all associated list items and messages
+    if (LIST_GROUP_ALL_WITH_MESSAGES.includes(foundGroup.groupVariant)) {
+        await MessageBaseModel.deleteMany({ groupId: groupId });
+    }
 
     if (!LIST_GROUP_PARENT_VARIANTS.includes(foundGroup.groupVariant)) {
         await ListGroupBaseModel.deleteOne({ _id: groupId });

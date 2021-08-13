@@ -17,6 +17,8 @@ export const LIST_GROUP_ALL_TOP_LEVEL_VARIANTS = [...LIST_GROUP_SINGLE_VARIANTS,
 
 // Has secretListItems
 export const LIST_GROUP_ALL_WITH_SECRET_ITEMS = [GIFT_LIST, GIFT_GROUP_CHILD];
+// Has messages
+export const LIST_GROUP_ALL_WITH_MESSAGES = [GIFT_LIST, GIFT_GROUP_CHILD];
 
 // All groups must fall into one of these categories
 export const LIST_GROUP_ALL_CENSORABLE = [GIFT_LIST, GIFT_GROUP_CHILD];
