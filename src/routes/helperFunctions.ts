@@ -154,9 +154,12 @@ export async function handleNewListItemRequest(
         }
     }
 
+    // TODO figure out why I have to do this. Using groupVariant as the key directly results in a TS error.
+    let groupVariantKey = 'groupVariant';
+
     let foundGroup = await ListGroupBaseModel.findOne({
         $and: [
-            { _id: groupId, groupVariant: { $in: validGroupVariants } },
+            { _id: groupId, [groupVariantKey]: { $in: validGroupVariants } },
             {
                 $or: [
                     { 'owner.userId': userIdToken, 'owner.permissions': permission },
@@ -202,9 +205,11 @@ export async function handleNewSecretListItemRequest(
         }
     }
 
+    let groupVariantKey = 'groupVariant';
+
     let foundValidGroup = await ListGroupBaseModel.findOne({
         $and: [
-            { _id: groupId, groupVariant: { $in: validGroupVariants } },
+            { _id: groupId, [groupVariantKey]: { $in: validGroupVariants } },
             {
                 $or: [
                     { 'owner.userId': userIdToken, 'owner.permissions': permission },
@@ -454,7 +459,7 @@ export function censorSingularGroup(
 }
 
 export async function findOneAndUpdateUsingDiscriminator(
-    variant: string,
+    variant: typeof BASIC_LIST | typeof GIFT_LIST | typeof GIFT_GROUP | typeof GIFT_GROUP_CHILD,
     query: Object,
     update: Object,
     options?: Object

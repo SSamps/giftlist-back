@@ -21,6 +21,7 @@ import {
     censorSingularGroup,
     deleteGroupAndAnyChildGroups,
     findAndCensorChildGroups,
+    findOneAndUpdateUsingDiscriminator,
 } from '../helperFunctions';
 import { TlistGroupAny, TlistGroupAnyCensoredAny } from '../../models/listGroups/listGroupInterfaces';
 import { LeanDocument } from 'mongoose';
@@ -36,11 +37,12 @@ router.get('/user', authMiddleware, async (req: Request, res: Response) => {
 
     const userIdToken = req.user._id;
 
+    let groupVariantKey = 'groupVariant';
     try {
         let foundGroups = await ListGroupBaseModel.find({
             $and: [
                 { $or: [{ 'owner.userId': userIdToken }, { 'members.userId': userIdToken }] },
-                { groupVariant: { $in: LIST_GROUP_ALL_TOP_LEVEL_VARIANTS } },
+                { [groupVariantKey]: { $in: LIST_GROUP_ALL_TOP_LEVEL_VARIANTS } },
             ],
         }).lean();
 
@@ -337,6 +339,56 @@ router.put(
 
             await foundGroup.update({ $pull: { members: { userId: targetUserId } } });
             return res.status(200).json({ msg: 'User kicked' });
+        } catch (err) {
+            console.log(err.message);
+            return res.status(500).send('Server error');
+        }
+    }
+);
+
+// @route PUT api/groups/:groupid/rename
+// @desc Rename a group
+// @access Private
+router.put(
+    '/:groupid/rename',
+    authMiddleware,
+    check('newName', 'newName is required').not().isEmpty(),
+    async (req: Request, res: Response) => {
+        console.log('put /api/groups/:groupid/rename hit');
+
+        const errors: Result<ValidationError> = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        const userIdToken = req.user._id;
+        const groupIdParams = req.params.groupid;
+        const { newName } = req.body;
+
+        try {
+            var foundGroup = await ListGroupBaseModel.findOne({
+                $and: [
+                    { _id: groupIdParams },
+                    {
+                        $or: [
+                            { 'owner.userId': userIdToken, 'owner.permissions': PERM_GROUP_ADMIN },
+                            { 'members.userId': userIdToken, 'owner.permissions': PERM_GROUP_ADMIN },
+                        ],
+                    },
+                ],
+            });
+
+            if (!foundGroup) {
+                return res.status(400).send('Invalid groupId or unauthorised');
+            }
+            const result = await findOneAndUpdateUsingDiscriminator(
+                foundGroup.groupVariant,
+                { _id: foundGroup._id },
+                { groupName: newName },
+                { new: true }
+            );
+
+            return res.status(200).json(result);
         } catch (err) {
             console.log(err.message);
             return res.status(500).send('Server error');

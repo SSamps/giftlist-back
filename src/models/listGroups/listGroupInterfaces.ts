@@ -7,6 +7,10 @@ import {
     TYPE_PERM_GIFT_GROUP_CHILD_ALL,
     TYPE_PERM_GIFT_LIST_ALL,
 } from './listGroupPermissions';
+import { BASIC_LIST } from './variants/discriminators/singular/BasicListModel';
+import { GIFT_LIST } from './variants/discriminators/singular/GiftListModel';
+import { GIFT_GROUP } from './variants/discriminators/parent/GiftGroupModel';
+import { GIFT_GROUP_CHILD } from './variants/discriminators/child/GiftGroupChildModel';
 
 // Base
 export class invalidGroupVariantError extends Error {
@@ -48,7 +52,7 @@ export type TlistGroupBaseFields = {
 };
 
 type TlistGroupDiscriminatorKey = {
-    groupVariant: string;
+    groupVariant: typeof BASIC_LIST | typeof GIFT_LIST | typeof GIFT_GROUP | typeof GIFT_GROUP_CHILD;
 };
 
 // Singular groups
