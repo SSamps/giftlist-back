@@ -1,31 +1,8 @@
 import express, { Router, Request, Response } from 'express';
 import { authMiddleware } from '../../middleware/auth';
-import jwt from 'jsonwebtoken';
-import sendgrid from '@sendgrid/mail';
 import { check, Result, ValidationError, validationResult } from 'express-validator';
 import { ListGroupBaseModel } from '../../models/listGroups/ListGroupBaseModel';
-import {
-    giftGroupChildMemberBasePerms,
-    giftGroupMemberBasePerms,
-    basicListMemberBasePerms,
-    giftListMemberBasePerms,
-    PERM_GROUP_INVITE,
-    PERM_GROUP_RW_MESSAGES,
-} from '../../models/listGroups/listGroupPermissions';
-import { BasicListModel, BASIC_LIST } from '../../models/listGroups/variants/discriminators/singular/BasicListModel';
-import {
-    GiftGroupChildModel,
-    GIFT_GROUP_CHILD,
-} from '../../models/listGroups/variants/discriminators/child/GiftGroupChildModel';
-import { GiftGroupModel, GIFT_GROUP } from '../../models/listGroups/variants/discriminators/parent/GiftGroupModel';
-import { GiftListModel, GIFT_LIST } from '../../models/listGroups/variants/discriminators/singular/GiftListModel';
-import {
-    IbasicListMember,
-    IgiftGroupChildMember,
-    IgiftGroupMember,
-    IgiftListMember,
-    invalidGroupVariantError,
-} from '../../models/listGroups/listGroupInterfaces';
+import { PERM_GROUP_RW_MESSAGES } from '../../models/listGroups/listGroupPermissions';
 import { LIST_GROUP_ALL_VARIANTS_WITH_MESSAGES } from '../../models/listGroups/variants/listGroupVariants';
 import { TnewUserMessageFields } from '../../models/messages/messageInterfaces';
 import { UserMessageModel } from '../../models/messages/variants/discriminators/UserMessageModel';
@@ -47,9 +24,10 @@ router.get('/:groupid/messages', authMiddleware, async (req: Request, res: Respo
     const groupIdParams = req.params.groupid;
 
     try {
+        let groupVariantKey = 'groupVariant';
         let foundGroup = await ListGroupBaseModel.findOne({
             $and: [
-                { _id: groupIdParams, groupVariant: { $in: LIST_GROUP_ALL_VARIANTS_WITH_MESSAGES } },
+                { _id: groupIdParams, [groupVariantKey]: { $in: LIST_GROUP_ALL_VARIANTS_WITH_MESSAGES } },
                 {
                     $or: [
                         { 'owner.userId': userIdToken, 'owner.permissions': PERM_GROUP_RW_MESSAGES },
@@ -94,9 +72,10 @@ router.post(
         const { body } = req.body;
 
         try {
+            let groupVariantKey = 'groupVariant';
             let foundGroup = await ListGroupBaseModel.findOne({
                 $and: [
-                    { _id: groupIdParams, groupVariant: { $in: LIST_GROUP_ALL_VARIANTS_WITH_MESSAGES } },
+                    { _id: groupIdParams, [groupVariantKey]: { $in: LIST_GROUP_ALL_VARIANTS_WITH_MESSAGES } },
                     {
                         $or: [
                             { 'owner.userId': userIdToken, 'owner.permissions': PERM_GROUP_RW_MESSAGES },
