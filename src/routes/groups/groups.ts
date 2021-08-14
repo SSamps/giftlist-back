@@ -155,12 +155,13 @@ router.post(
             return res.status(400).json({ errors: errors.array() });
         }
 
-        const userIdToken = req.user._id;
+        const tokenUserId = req.user._id;
+        const tokenDisplayName = req.user.displayName;
         const { groupVariant, groupName, parentGroupId } = req.body;
 
         let result;
         try {
-            result = await addGroup(userIdToken, groupVariant, groupName, res, parentGroupId);
+            result = await addGroup(tokenUserId, tokenDisplayName, groupVariant, groupName, res, parentGroupId);
             return result;
         } catch (err) {
             console.log(err.message);

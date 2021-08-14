@@ -140,7 +140,8 @@ router.get('/invite/verify/:groupToken', authMiddleware, async (req: Request, re
 router.post('/invite/accept/:groupToken', authMiddleware, async (req: Request, res: Response) => {
     console.log('POST /api/groups/invite/accept/:groupid hit');
 
-    const userIdToken = req.user._id;
+    const tokenUserId = req.user._id;
+    const tokenDisplayName = req.user.displayName;
     const groupToken = req.params.groupToken;
 
     let decodedGroupToken;
@@ -161,7 +162,7 @@ router.post('/invite/accept/:groupToken', authMiddleware, async (req: Request, r
         var foundGroup = await ListGroupBaseModel.findOne().and([
             { _id: groupId },
             {
-                $nor: [{ 'owner.userId': userIdToken }, { 'members.userId': userIdToken }],
+                $nor: [{ 'owner.userId': tokenUserId }, { 'members.userId': tokenUserId }],
             },
         ]);
 
@@ -174,7 +175,8 @@ router.post('/invite/accept/:groupToken', authMiddleware, async (req: Request, r
         switch (groupVariant) {
             case BASIC_LIST: {
                 let newMember: IbasicListMember = {
-                    userId: userIdToken,
+                    userId: tokenUserId,
+                    displayName: tokenDisplayName,
                     permissions: basicListMemberBasePerms,
                 };
                 await BasicListModel.findOneAndUpdate({ _id: groupId }, { $push: { members: newMember } });
@@ -182,7 +184,8 @@ router.post('/invite/accept/:groupToken', authMiddleware, async (req: Request, r
             }
             case GIFT_LIST: {
                 let newMember: IgiftListMember = {
-                    userId: userIdToken,
+                    userId: tokenUserId,
+                    displayName: tokenDisplayName,
                     permissions: giftListMemberBasePerms,
                 };
                 await GiftListModel.findOneAndUpdate({ _id: groupId }, { $push: { members: newMember } });
@@ -190,7 +193,8 @@ router.post('/invite/accept/:groupToken', authMiddleware, async (req: Request, r
             }
             case GIFT_GROUP_CHILD: {
                 let newMember: IgiftGroupChildMember = {
-                    userId: userIdToken,
+                    userId: tokenUserId,
+                    displayName: tokenDisplayName,
                     permissions: giftGroupChildMemberBasePerms,
                 };
                 await GiftGroupChildModel.findOneAndUpdate({ _id: groupId }, { $push: { members: newMember } });
@@ -198,11 +202,13 @@ router.post('/invite/accept/:groupToken', authMiddleware, async (req: Request, r
             }
             case GIFT_GROUP: {
                 let newParentMember: IgiftGroupMember = {
-                    userId: userIdToken,
+                    userId: tokenUserId,
+                    displayName: tokenDisplayName,
                     permissions: giftGroupMemberBasePerms,
                 };
                 let newChildMember: IgiftGroupChildMember = {
-                    userId: userIdToken,
+                    userId: tokenUserId,
+                    displayName: tokenDisplayName,
                     permissions: giftGroupChildMemberBasePerms,
                 };
                 await GiftGroupModel.findOneAndUpdate({ _id: groupId }, { $push: { members: newParentMember } });
@@ -216,7 +222,6 @@ router.post('/invite/accept/:groupToken', authMiddleware, async (req: Request, r
 
         return res.sendStatus(200).json({ _id: groupId });
     } catch (err) {
-        console.log(err.message);
         console.log(err);
         return res.status(500).send('Server error');
     }

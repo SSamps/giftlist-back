@@ -40,6 +40,7 @@ export class invalidParentVariantError extends Error {
 
 export interface IgroupMemberBase {
     userId: Schema.Types.ObjectId | string;
+    displayName: string;
     oldestReadMessage?: Date | undefined;
     permissions: TYPE_PERM_ALL_LIST_GROUP[];
 }

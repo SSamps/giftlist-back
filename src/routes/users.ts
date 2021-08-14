@@ -208,10 +208,23 @@ router.put(
     async (req: Request, res: Response) => {
         console.log('PUT api/users/ hit');
         try {
-            const userId = req.user._id;
+            const tokenUserId = req.user._id;
             const { displayName } = req.body;
 
-            await UserModel.findByIdAndUpdate(userId, { displayName: displayName });
+            await UserModel.findByIdAndUpdate(tokenUserId, { displayName: displayName });
+            await ListGroupBaseModel.updateMany(
+                {
+                    'members.userId': tokenUserId,
+                },
+                { 'members.$[member].displayName': displayName },
+                { arrayFilters: [{ 'member.userId': tokenUserId }] }
+            );
+            await ListGroupBaseModel.updateMany(
+                {
+                    'owner.userId': tokenUserId,
+                },
+                { 'owner.displayName': displayName }
+            );
 
             return res.status(200).send();
         } catch (err) {

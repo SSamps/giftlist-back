@@ -265,7 +265,8 @@ async function validateParentGroup(
 }
 
 export async function addGroup(
-    userIdToken: mongoose.Schema.Types.ObjectId,
+    tokenUserId: mongoose.Schema.Types.ObjectId,
+    tokenDisplayName: string,
     groupVariant: string,
     groupName: string,
     res: Response,
@@ -281,7 +282,8 @@ export async function addGroup(
         switch (groupVariant) {
             case BASIC_LIST: {
                 const owner: IbasicListMember = {
-                    userId: userIdToken,
+                    userId: tokenUserId,
+                    displayName: tokenDisplayName,
                     permissions: basicListOwnerBasePerms,
                 };
                 const newListGroupData: TnewBasicListFields = { owner, groupName };
@@ -291,7 +293,8 @@ export async function addGroup(
             }
             case GIFT_LIST: {
                 const owner: IgiftListMember = {
-                    userId: userIdToken,
+                    userId: tokenUserId,
+                    displayName: tokenDisplayName,
                     permissions: giftListOwnerBasePerms,
                 };
                 const newListGroupData: TnewGiftListFields = { owner, groupName };
@@ -301,7 +304,8 @@ export async function addGroup(
             }
             case GIFT_GROUP: {
                 const owner: IgiftGroupMember = {
-                    userId: userIdToken,
+                    userId: tokenUserId,
+                    displayName: tokenDisplayName,
                     permissions: giftGroupOwnerBasePerms,
                 };
                 const newGroupData: TnewGiftGroupFields = { owner, groupName };
@@ -310,9 +314,10 @@ export async function addGroup(
                 return res.status(200).json(newGroup);
             }
             case GIFT_GROUP_CHILD: {
-                await validateParentGroup(parentGroupId, userIdToken, groupVariant);
+                await validateParentGroup(parentGroupId, tokenUserId, groupVariant);
                 const owner: IgiftGroupChildMember = {
-                    userId: userIdToken,
+                    userId: tokenUserId,
+                    displayName: tokenDisplayName,
                     permissions: giftGroupChildOwnerBasePerms,
                 };
                 const newListGroupData: TnewGiftGroupChildFields = { owner, groupName, parentGroupId };

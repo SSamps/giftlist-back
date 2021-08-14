@@ -7,12 +7,14 @@ const ListGroupBaseSchema = new Schema(
     {
         owner: {
             userId: { type: Schema.Types.ObjectId },
+            displayName: { type: String },
             permissions: [{ type: String }],
             oldestUnreadMsg: { type: Date },
         },
         members: [
             {
                 userId: { type: Schema.Types.ObjectId },
+                displayName: { type: String },
                 permissions: [{ type: String }],
                 oldestUnreadMsg: { type: Date },
                 _id: false,
