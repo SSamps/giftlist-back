@@ -1,4 +1,5 @@
 // Groups
+//TODO add a PERM_GROUP_OWNER role which prevents the user from leaving the group
 export const PERM_CHILD_GROUP_CREATE = 'CHILD_GROUP_CREATE'; // Allowed to create child groups in this parent group
 export const PERM_GROUP_DELETE = 'GROUP_DELETE'; // Allowed to delete the group
 export const PERM_GROUP_INVITE = 'GROUP_INVITE'; // Allowed to invite others to the group
