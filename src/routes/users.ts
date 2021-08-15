@@ -296,97 +296,56 @@ router.post(
     }
 );
 
-// // @route POST api/users/resetpassword/:token
-// // @desc Reset a password using a token from an email
-// // @access Private
-// router.post('/resetpassword/:token', async (req: Request, res: Response) => {
-//     console.log('POST api/users/resetpassword/:token hit');
+// @route POST api/users/resetpassword/:token
+// @desc Reset a password using a token from an email
+// @access Private
+router.post(
+    '/resetpassword/:token',
+    check('password', 'A password of at least 8 characters is required')
+        .not()
+        .isEmpty()
+        .isString()
+        .isLength({ min: 8 }),
+    async (req: Request, res: Response) => {
+        console.log('POST api/users/resetpassword/:token hit');
 
-//     const tokenUserId = req.user._id;
-//     const tokenDisplayName = req.user.displayName;
-//     const groupToken = req.params.groupToken;
+        const resetToken = req.params.token;
+        const password = req.body.password;
 
-//     let decodedResetToken;
+        let decodedResetToken;
 
-//     try {
-//         decodedResetToken = jwt.verify(groupToken, process.env.JWT_SECRET) as IpasswordResetToken;
-//     } catch (err) {
-//         if (err.message) {
-//             return res.status(400).send(err.message);
-//         } else {
-//             return res.send(500);
-//         }
-//     }
+        try {
+            decodedResetToken = jwt.verify(resetToken, process.env.JWT_SECRET) as IpasswordResetToken;
+        } catch (err) {
+            if (err.message) {
+                return res.status(400).send(err.message);
+            } else {
+                return res.send(500);
+            }
+        }
 
-//     const { groupId } = decodedGroupToken;
+        const { userIdRequestingPassReset } = decodedResetToken;
 
-//     try {
-//         var foundGroup = await ListGroupBaseModel.findOne().and([
-//             { _id: groupId },
-//             {
-//                 $nor: [{ 'owner.userId': tokenUserId }, { 'members.userId': tokenUserId }],
-//             },
-//         ]);
+        try {
+            var foundUser = await UserModel.findById(userIdRequestingPassReset);
 
-//         if (!foundGroup) {
-//             return res.status(400).send('Invalid groupId or user already in group');
-//         }
+            if (!foundUser) {
+                return res.status(400).send('User not found');
+            }
 
-//         const { groupVariant } = foundGroup;
+            const salt: string = await bcrypt.genSalt(10);
+            const newPassword = await bcrypt.hash(password, salt);
 
-//         switch (groupVariant) {
-//             case BASIC_LIST: {
-//                 let newMember: IbasicListMember = {
-//                     userId: tokenUserId,
-//                     displayName: tokenDisplayName,
-//                     permissions: basicListMemberBasePerms,
-//                 };
-//                 await BasicListModel.findOneAndUpdate({ _id: groupId }, { $push: { members: newMember } });
-//                 break;
-//             }
-//             case GIFT_LIST: {
-//                 let newMember: IgiftListMember = {
-//                     userId: tokenUserId,
-//                     displayName: tokenDisplayName,
-//                     permissions: giftListMemberBasePerms,
-//                 };
-//                 await GiftListModel.findOneAndUpdate({ _id: groupId }, { $push: { members: newMember } });
-//                 break;
-//             }
-//             case GIFT_GROUP_CHILD: {
-//                 let newMember: IgiftGroupChildMember = {
-//                     userId: tokenUserId,
-//                     displayName: tokenDisplayName,
-//                     permissions: giftGroupChildMemberBasePerms,
-//                 };
-//                 await GiftGroupChildModel.findOneAndUpdate({ _id: groupId }, { $push: { members: newMember } });
-//                 break;
-//             }
-//             case GIFT_GROUP: {
-//                 let newParentMember: IgiftGroupMember = {
-//                     userId: tokenUserId,
-//                     displayName: tokenDisplayName,
-//                     permissions: giftGroupMemberBasePerms,
-//                 };
-//                 let newChildMember: IgiftGroupChildMember = {
-//                     userId: tokenUserId,
-//                     displayName: tokenDisplayName,
-//                     permissions: giftGroupChildMemberBasePerms,
-//                 };
-//                 await GiftGroupModel.findOneAndUpdate({ _id: groupId }, { $push: { members: newParentMember } });
-//                 await ListGroupBaseModel.updateMany({ parentGroupId: groupId }, { $push: { members: newChildMember } });
+            foundUser.password = newPassword;
 
-//                 break;
-//             }
-//             default:
-//                 throw new invalidGroupVariantError(groupVariant);
-//         }
+            await foundUser.save();
 
-//         return res.sendStatus(200).json({ _id: groupId });
-//     } catch (err) {
-//         console.log(err);
-//         return res.status(500).send('Server error');
-//     }
-// });
+            return res.send(200);
+        } catch (err) {
+            console.log(err);
+            return res.status(500).send('Server error');
+        }
+    }
+);
 
 module.exports = router;
