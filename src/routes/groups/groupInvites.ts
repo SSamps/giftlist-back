@@ -60,7 +60,7 @@ router.post(
         const groupIdParams = req.params.groupid;
 
         try {
-            var foundGroup = await ListGroupBaseModel.findOne().and([
+            const foundGroup = await ListGroupBaseModel.findOne().and([
                 { _id: groupIdParams },
                 {
                     $or: [

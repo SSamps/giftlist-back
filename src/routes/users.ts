@@ -234,4 +234,159 @@ router.put(
     }
 );
 
+interface IpasswordResetToken {
+    alg: string;
+    typ: string;
+    userIdRequestingPassReset: string;
+    iat: number;
+    exp: number;
+}
+
+// @route POST api/users/resetpassword
+// @desc Request a password reset email
+// @access Private
+router.post(
+    '/resetpassword',
+    check('email', 'email is required').not().isEmpty().isEmail(),
+    async (req: Request, res: Response) => {
+        console.log('POST api/users/resetpassword hit');
+
+        const errors: Result<ValidationError> = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        const reqEmail = req.body.email;
+
+        try {
+            const foundUser = await UserModel.findOne({ email: reqEmail });
+
+            if (!foundUser) {
+                return res.status(400).send('We could not find an account with that email address.');
+            }
+
+            const payload = {
+                userIdRequestingPassReset: foundUser._id,
+            };
+
+            const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '10m' });
+
+            const passwordResetBaseLink = 'https://giftlist.sampsy.dev/resetpassword/';
+            const passwordResetLink = passwordResetBaseLink + token;
+
+            const msg = {
+                to: foundUser.email,
+                from: {
+                    name: 'GiftList',
+                    email: 'recovery.giftlist@sampsy.dev',
+                },
+                templateId: 'd-077bcbf43c8148c7a119f24b9b231acc',
+                dynamic_template_data: {
+                    displayName: foundUser.displayName,
+                    passwordResetLink: passwordResetLink,
+                },
+            };
+
+            await sendgrid.send(msg);
+            return res.send(200);
+        } catch (err) {
+            console.log(err.response.body.errors);
+            return res.send(500);
+        }
+    }
+);
+
+// // @route POST api/users/resetpassword/:token
+// // @desc Reset a password using a token from an email
+// // @access Private
+// router.post('/resetpassword/:token', async (req: Request, res: Response) => {
+//     console.log('POST api/users/resetpassword/:token hit');
+
+//     const tokenUserId = req.user._id;
+//     const tokenDisplayName = req.user.displayName;
+//     const groupToken = req.params.groupToken;
+
+//     let decodedResetToken;
+
+//     try {
+//         decodedResetToken = jwt.verify(groupToken, process.env.JWT_SECRET) as IpasswordResetToken;
+//     } catch (err) {
+//         if (err.message) {
+//             return res.status(400).send(err.message);
+//         } else {
+//             return res.send(500);
+//         }
+//     }
+
+//     const { groupId } = decodedGroupToken;
+
+//     try {
+//         var foundGroup = await ListGroupBaseModel.findOne().and([
+//             { _id: groupId },
+//             {
+//                 $nor: [{ 'owner.userId': tokenUserId }, { 'members.userId': tokenUserId }],
+//             },
+//         ]);
+
+//         if (!foundGroup) {
+//             return res.status(400).send('Invalid groupId or user already in group');
+//         }
+
+//         const { groupVariant } = foundGroup;
+
+//         switch (groupVariant) {
+//             case BASIC_LIST: {
+//                 let newMember: IbasicListMember = {
+//                     userId: tokenUserId,
+//                     displayName: tokenDisplayName,
+//                     permissions: basicListMemberBasePerms,
+//                 };
+//                 await BasicListModel.findOneAndUpdate({ _id: groupId }, { $push: { members: newMember } });
+//                 break;
+//             }
+//             case GIFT_LIST: {
+//                 let newMember: IgiftListMember = {
+//                     userId: tokenUserId,
+//                     displayName: tokenDisplayName,
+//                     permissions: giftListMemberBasePerms,
+//                 };
+//                 await GiftListModel.findOneAndUpdate({ _id: groupId }, { $push: { members: newMember } });
+//                 break;
+//             }
+//             case GIFT_GROUP_CHILD: {
+//                 let newMember: IgiftGroupChildMember = {
+//                     userId: tokenUserId,
+//                     displayName: tokenDisplayName,
+//                     permissions: giftGroupChildMemberBasePerms,
+//                 };
+//                 await GiftGroupChildModel.findOneAndUpdate({ _id: groupId }, { $push: { members: newMember } });
+//                 break;
+//             }
+//             case GIFT_GROUP: {
+//                 let newParentMember: IgiftGroupMember = {
+//                     userId: tokenUserId,
+//                     displayName: tokenDisplayName,
+//                     permissions: giftGroupMemberBasePerms,
+//                 };
+//                 let newChildMember: IgiftGroupChildMember = {
+//                     userId: tokenUserId,
+//                     displayName: tokenDisplayName,
+//                     permissions: giftGroupChildMemberBasePerms,
+//                 };
+//                 await GiftGroupModel.findOneAndUpdate({ _id: groupId }, { $push: { members: newParentMember } });
+//                 await ListGroupBaseModel.updateMany({ parentGroupId: groupId }, { $push: { members: newChildMember } });
+
+//                 break;
+//             }
+//             default:
+//                 throw new invalidGroupVariantError(groupVariant);
+//         }
+
+//         return res.sendStatus(200).json({ _id: groupId });
+//     } catch (err) {
+//         console.log(err);
+//         return res.status(500).send('Server error');
+//     }
+// });
+
 module.exports = router;
