@@ -46,7 +46,7 @@ import {
     TnewGiftGroupFields,
     TnewGiftListFields,
 } from '../models/listGroups/listGroupInterfaces';
-import { TitemTypes, TgiftListItem, TnewListItemFields } from '../models/listGroups/listItemInterfaces';
+import { TitemTypes, IgiftListItem, InewListItemFields } from '../models/listGroups/listItemInterfaces';
 import { BasicListModel, BASIC_LIST } from '../models/listGroups/variants/discriminators/singular/BasicListModel';
 import { GiftListModel, GIFT_LIST } from '../models/listGroups/variants/discriminators/singular/GiftListModel';
 import { Response } from 'express';
@@ -123,7 +123,7 @@ const addListItem = async (
     group: TlistGroupAny,
     userId: mongoose.Schema.Types.ObjectId | string,
     itemType: 'listItems' | 'secretListItems',
-    listItemReq: TnewListItemFields,
+    listItemReq: InewListItemFields,
     res: Response
 ) => {
     if (listItemReq.body === undefined) {
@@ -133,7 +133,7 @@ const addListItem = async (
         return res.status(400).send('You must include an item links array');
     }
 
-    const newListItem: TnewListItemFields = {
+    const newListItem: InewListItemFields = {
         authorId: userId,
         body: listItemReq.body,
         links: listItemReq.links,
@@ -152,7 +152,7 @@ const addListItem = async (
 export const handleNewListItemRequest = async (
     userIdToken: mongoose.Schema.Types.ObjectId | string,
     groupId: mongoose.Schema.Types.ObjectId | string,
-    listItemReq: TnewListItemFields,
+    listItemReq: InewListItemFields,
     res: Response
 ) => {
     const validGroupVariants = [BASIC_LIST, GIFT_LIST, GIFT_GROUP_CHILD];
@@ -197,7 +197,7 @@ export const handleNewListItemRequest = async (
 export const handleNewSecretListItemRequest = async (
     userIdToken: mongoose.Schema.Types.ObjectId | string,
     groupId: mongoose.Schema.Types.ObjectId | string,
-    secretListItemReq: TnewListItemFields,
+    secretListItemReq: InewListItemFields,
     res: Response
 ) => {
     const validGroupVariants = [GIFT_LIST, GIFT_GROUP_CHILD];
@@ -391,7 +391,7 @@ export const findItemsInGroup = (group: TlistGroupAny, itemIdArray: Schema.Types
 export const findItemInGroup = (
     group: TlistGroupAny,
     itemId: Schema.Types.ObjectId | string
-): [TitemTypes | 'error', TgiftListItem | null] => {
+): [TitemTypes | 'error', IgiftListItem | null] => {
     for (let item of group.listItems) {
         if (item._id.toString() === itemId.toString()) {
             return ['listItem', item];
