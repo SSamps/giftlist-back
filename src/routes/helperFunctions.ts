@@ -57,18 +57,19 @@ export interface IgroupDeletionResult {
     msg: string;
 }
 
-export async function deleteGroupAndAnyChildGroups(
+export const findAndDeleteGroupAndAnyChildGroupsIfAllowed = async (
     userId: Schema.Types.ObjectId,
     groupId: string
-): Promise<IgroupDeletionResult> {
-    var foundGroup = await ListGroupBaseModel.findOne({
-        _id: groupId,
-        'members.userId': userId,
-        'members.permissions': PERM_GROUP_DELETE,
-    });
+): Promise<IgroupDeletionResult> => {
+    const foundGroup = await ListGroupBaseModel.findOne({ _id: groupId });
 
     if (!foundGroup) {
-        return { status: 400, msg: 'Invalid groupId or unauthorized' };
+        return { status: 404, msg: 'Group not found' };
+    }
+
+    const foundUser = findUserInGroup(foundGroup, userId);
+    if (!foundUser || !foundUser.permissions.includes(PERM_GROUP_DELETE)) {
+        return { status: 401, msg: 'Unauthorized' };
     }
 
     if (LIST_GROUP_ALL_WITH_MESSAGES.includes(foundGroup.groupVariant)) {
@@ -77,19 +78,37 @@ export async function deleteGroupAndAnyChildGroups(
 
     if (!LIST_GROUP_PARENT_VARIANTS.includes(foundGroup.groupVariant)) {
         await ListGroupBaseModel.deleteOne({ _id: groupId });
-        return { status: 200, msg: 'Group deleted' };
+        return { status: 200, msg: '' };
     } else {
         await GiftGroupModel.deleteOne({ _id: groupId });
         await GiftGroupChildModel.deleteMany({ parentGroupId: groupId });
-        return { status: 200, msg: 'Parent group and all child groups deleted' };
+        return { status: 200, msg: '' };
     }
-}
+};
 
-function hitMaxListItems(foundValidGroup: TlistGroupAny) {
+export const deleteGroupAndAnyChildGroups = async (
+    group: TlistGroupAny,
+    res: Response
+): Promise<IgroupDeletionResult> => {
+    if (LIST_GROUP_ALL_WITH_MESSAGES.includes(group.groupVariant)) {
+        await MessageBaseModel.deleteMany({ groupId: group._id });
+    }
+
+    if (!LIST_GROUP_PARENT_VARIANTS.includes(group.groupVariant)) {
+        await ListGroupBaseModel.deleteOne({ _id: group._id });
+        return { status: 200, msg: '' };
+    } else {
+        await GiftGroupModel.deleteOne({ _id: group._id });
+        await GiftGroupChildModel.deleteMany({ parentGroupId: group._id });
+        return { status: 200, msg: '' };
+    }
+};
+
+const hitMaxListItems = (foundValidGroup: TlistGroupAny) => {
     return foundValidGroup.listItems.length + 1 > foundValidGroup.maxListItems;
-}
+};
 
-function hitMaxSecretListItems(foundValidGroup: TlistGroupAny, userId: mongoose.Schema.Types.ObjectId | string) {
+const hitMaxSecretListItems = (foundValidGroup: TlistGroupAny, userId: mongoose.Schema.Types.ObjectId | string) => {
     let ownedItems = 0;
     foundValidGroup.secretListItems.forEach((item) => {
         if (item.authorId.toString() === userId.toString()) {
@@ -98,15 +117,15 @@ function hitMaxSecretListItems(foundValidGroup: TlistGroupAny, userId: mongoose.
     });
 
     return ownedItems + 1 > foundValidGroup.maxSecretListItemsEach;
-}
+};
 
-async function addListItem(
+const addListItem = async (
     group: TlistGroupAny,
     userId: mongoose.Schema.Types.ObjectId | string,
     itemType: 'listItems' | 'secretListItems',
     listItemReq: TnewListItemFields,
     res: Response
-) {
+) => {
     if (listItemReq.body === undefined) {
         return res.status(400).send('You must include an item body');
     }
@@ -128,18 +147,18 @@ async function addListItem(
     );
 
     return res.status(200).json(result);
-}
+};
 
-export async function handleNewListItemRequest(
+export const handleNewListItemRequest = async (
     userIdToken: mongoose.Schema.Types.ObjectId | string,
     groupId: mongoose.Schema.Types.ObjectId | string,
     listItemReq: TnewListItemFields,
     res: Response
-) {
-    let validGroupVariants = [BASIC_LIST, GIFT_LIST, GIFT_GROUP_CHILD];
+) => {
+    const validGroupVariants = [BASIC_LIST, GIFT_LIST, GIFT_GROUP_CHILD];
 
-    let links = listItemReq.links;
-    let body = listItemReq.body;
+    const links = listItemReq.links;
+    const body = listItemReq.body;
 
     if (body.length <= 0) {
         return res.status(400).send('You cannot supply an empty item body');
@@ -152,20 +171,19 @@ export async function handleNewListItemRequest(
     }
 
     // TODO figure out why I have to define the key this way. Using groupVariant as the key directly results in a TS error.
-    let groupVariantKey = 'groupVariant';
-
-    let foundGroup = await ListGroupBaseModel.findOne({
-        $and: [
-            { _id: groupId, [groupVariantKey]: { $in: validGroupVariants } },
-
-            { 'members.userId': userIdToken, 'members.permissions': PERM_GROUP_RW_LIST_ITEMS },
-        ],
-    });
+    const foundGroup = await ListGroupBaseModel.findOne({ _id: groupId });
 
     if (!foundGroup) {
-        return res
-            .status(400)
-            .send('User is not an owner or member of the supplied group with the correct permissions');
+        return res.status(404).send('Group not found');
+    }
+
+    if (!validGroupVariants.includes(foundGroup.groupVariant)) {
+        return res.status(400).send('Invalid group type');
+    }
+
+    const foundUser = findUserInGroup(foundGroup, userIdToken);
+    if (!foundUser || !foundUser.permissions.includes(PERM_GROUP_RW_LIST_ITEMS)) {
+        return res.status(401).send('Unauthorized');
     }
 
     if (hitMaxListItems(foundGroup)) {
@@ -174,17 +192,17 @@ export async function handleNewListItemRequest(
 
     const result = await addListItem(foundGroup, userIdToken, 'listItems', listItemReq, res);
     return result;
-}
+};
 
-export async function handleNewSecretListItemRequest(
+export const handleNewSecretListItemRequest = async (
     userIdToken: mongoose.Schema.Types.ObjectId | string,
     groupId: mongoose.Schema.Types.ObjectId | string,
     secretListItemReq: TnewListItemFields,
     res: Response
-) {
-    let validGroupVariants = [GIFT_LIST, GIFT_GROUP_CHILD];
+) => {
+    const validGroupVariants = [GIFT_LIST, GIFT_GROUP_CHILD];
 
-    let body = secretListItemReq.body;
+    const body = secretListItemReq.body;
 
     if (body.length <= 0) {
         return res.status(400).send('You cannot supply an empty item body');
@@ -197,32 +215,34 @@ export async function handleNewSecretListItemRequest(
         }
     }
 
-    let groupVariantKey = 'groupVariant';
+    const foundGroup = await ListGroupBaseModel.findOne({ _id: groupId });
 
-    let foundValidGroup = await ListGroupBaseModel.findOne({
-        $and: [
-            { _id: groupId, [groupVariantKey]: { $in: validGroupVariants } },
-            { 'members.userId': userIdToken, 'members.permissions': PERM_GROUP_RW_SECRET_LIST_ITEMS },
-        ],
-    });
-
-    if (!foundValidGroup) {
-        return res.status(400).send('');
+    if (!foundGroup) {
+        return res.status(404).send('Group not found');
     }
 
-    if (hitMaxSecretListItems(foundValidGroup, userIdToken)) {
+    if (!validGroupVariants.includes(foundGroup.groupVariant)) {
+        return res.status(400).send('Invalid group type');
+    }
+
+    const foundUser = findUserInGroup(foundGroup, userIdToken);
+    if (!foundUser || !foundUser.permissions.includes(PERM_GROUP_RW_SECRET_LIST_ITEMS)) {
+        return res.status(401).send('Unauthorized');
+    }
+
+    if (hitMaxSecretListItems(foundGroup, userIdToken)) {
         return res.status(400).send('You have reached the maximum number of secret list items');
     }
 
-    let result = await addListItem(foundValidGroup, userIdToken, 'secretListItems', secretListItemReq, res);
+    let result = await addListItem(foundGroup, userIdToken, 'secretListItems', secretListItemReq, res);
     return result;
-}
+};
 
-async function getParentAndValidateCanCreateChildren(
+const getParentAndValidateCanCreateChildren = async (
     parentGroupId: mongoose.Schema.Types.ObjectId,
     userIdToken: mongoose.Schema.Types.ObjectId,
     childGroupVariant: string
-) {
+) => {
     const foundParentGroup = await ListGroupBaseModel.findOne({
         _id: parentGroupId,
         'members.userId': userIdToken,
@@ -247,16 +267,16 @@ async function getParentAndValidateCanCreateChildren(
     }
 
     return foundParentGroup;
-}
+};
 
-export async function addGroup(
+export const addGroup = async (
     tokenUserId: mongoose.Schema.Types.ObjectId,
     tokenDisplayName: string,
     groupVariant: string,
     groupName: string,
     res: Response,
     parentGroupId: mongoose.Schema.Types.ObjectId
-) {
+) => {
     if (LIST_GROUP_CHILD_VARIANTS.includes(groupVariant)) {
         if (parentGroupId === undefined) {
             return res.status(400).json({ msg: 'Error: Child groups require a parent group' });
@@ -337,9 +357,9 @@ export async function addGroup(
         console.log(err.message);
         return res.status(500).send('Server error');
     }
-}
+};
 
-export function findItemsInGroup(group: TlistGroupAny, itemIdArray: Schema.Types.ObjectId[] | string[]): any[] {
+export const findItemsInGroup = (group: TlistGroupAny, itemIdArray: Schema.Types.ObjectId[] | string[]): any[] => {
     let foundItems = [];
     for (let itemId of itemIdArray) {
         let found = false;
@@ -366,12 +386,12 @@ export function findItemsInGroup(group: TlistGroupAny, itemIdArray: Schema.Types
     }
 
     return [foundItems];
-}
+};
 
-export function findItemInGroup(
+export const findItemInGroup = (
     group: TlistGroupAny,
     itemId: Schema.Types.ObjectId | string
-): [TitemTypes | 'error', TgiftListItem | null] {
+): [TitemTypes | 'error', TgiftListItem | null] => {
     for (let item of group.listItems) {
         if (item._id.toString() === itemId.toString()) {
             return ['listItem', item];
@@ -386,17 +406,17 @@ export function findItemInGroup(
     }
 
     return ['error', null];
-}
+};
 
 // TODO change this to throw exceptions
-export function findUserInGroup(
+export const findUserInGroup = (
     group:
         | TlistGroupAny
         | TlistGroupAnyWithChildren
         | LeanDocument<TlistGroupAny>
         | LeanDocument<TlistGroupAnyWithChildren>,
     userId: Schema.Types.ObjectId | string
-): TgroupMemberAny | null {
+): TgroupMemberAny | null => {
     for (let member of group.members) {
         if (member.userId.toString() === userId.toString()) {
             return member;
@@ -404,28 +424,28 @@ export function findUserInGroup(
     }
 
     return null;
-}
+};
 
-export function findUserPermissionsInGroup(
+export const findUserPermissionsInGroup = (
     userId: string,
     group:
         | LeanDocument<TlistGroupAny>
         | LeanDocument<TlistGroupAnyWithChildren>
         | TlistGroupAny
         | TlistGroupAnyWithChildren
-): TYPE_PERM_ALL_LIST_GROUP[] {
+): TYPE_PERM_ALL_LIST_GROUP[] => {
     let user = findUserInGroup(group, userId);
 
     if (!user) {
         throw new Error('User not found in group when checking permissions');
     }
     return user.permissions;
-}
+};
 
-export async function findAndCensorChildGroups(
+export const findAndCensorChildGroups = async (
     userId: string,
     group: LeanDocument<TlistGroupAny>
-): Promise<LeanDocument<TlistGroupAnyCensoredWithChildren>> {
+): Promise<LeanDocument<TlistGroupAnyCensoredWithChildren>> => {
     let foundChildren = await ListGroupBaseModel.find({ parentGroupId: group._id }).lean();
 
     let censoredChildren: LeanDocument<TlistGroupAnyCensoredSingular>[] = [];
@@ -433,12 +453,12 @@ export async function findAndCensorChildGroups(
         censoredChildren.push(censorSingularGroup(userId, foundChildren[i]));
     }
     return { ...group, children: censoredChildren };
-}
+};
 
-export function censorSingularGroup(
+export const censorSingularGroup = (
     userId: string,
     group: LeanDocument<TlistGroupAny> | LeanDocument<TlistGroupAnyWithChildren>
-): LeanDocument<TlistGroupAnyCensoredSingular> {
+): LeanDocument<TlistGroupAnyCensoredSingular> => {
     if (LIST_GROUP_ALL_CENSORABLE.includes(group.groupVariant)) {
         let censoredGroup: LeanDocument<TlistGroupAnyCensoredSingular> = group;
         let permissions = findUserPermissionsInGroup(userId, group);
@@ -460,14 +480,14 @@ export function censorSingularGroup(
         console.error('Invalid group variant passed to censorSingularGroup: ', { ...group });
         throw new Error('Server Error');
     }
-}
+};
 
-export async function findOneAndUpdateUsingDiscriminator(
+export const findOneAndUpdateUsingDiscriminator = async (
     variant: typeof BASIC_LIST | typeof GIFT_LIST | typeof GIFT_GROUP | typeof GIFT_GROUP_CHILD,
     query: Object,
     update: Object,
     options?: Object
-) {
+) => {
     switch (variant) {
         case BASIC_LIST: {
             return await BasicListModel.findOneAndUpdate(query, update, options);
@@ -486,4 +506,4 @@ export async function findOneAndUpdateUsingDiscriminator(
             throw new Error('Server Error');
         }
     }
-}
+};

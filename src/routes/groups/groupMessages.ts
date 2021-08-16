@@ -3,9 +3,10 @@ import { authMiddleware } from '../../middleware/auth';
 import { check, Result, ValidationError, validationResult } from 'express-validator';
 import { ListGroupBaseModel } from '../../models/listGroups/ListGroupBaseModel';
 import { PERM_GROUP_RW_MESSAGES } from '../../models/listGroups/listGroupPermissions';
-import { LIST_GROUP_ALL_VARIANTS_WITH_MESSAGES } from '../../models/listGroups/variants/listGroupVariants';
+import { LIST_GROUP_ALL_WITH_MESSAGES } from '../../models/listGroups/variants/listGroupVariants';
 import { TnewUserMessageFields } from '../../models/messages/messageInterfaces';
 import { UserMessageModel } from '../../models/messages/variants/discriminators/UserMessageModel';
+import { findUserInGroup } from '../helperFunctions';
 
 const router: Router = express.Router();
 
@@ -27,7 +28,7 @@ router.get('/:groupid/messages', authMiddleware, async (req: Request, res: Respo
         let groupVariantKey = 'groupVariant';
         let foundGroup = await ListGroupBaseModel.findOne({
             $and: [
-                { _id: groupIdParams, [groupVariantKey]: { $in: LIST_GROUP_ALL_VARIANTS_WITH_MESSAGES } },
+                { _id: groupIdParams, [groupVariantKey]: { $in: LIST_GROUP_ALL_WITH_MESSAGES } },
                 { 'members.userId': userIdToken, 'members.permissions': PERM_GROUP_RW_MESSAGES },
             ],
         });
@@ -67,18 +68,19 @@ router.post(
         const { body } = req.body;
 
         try {
-            let groupVariantKey = 'groupVariant';
-            let foundGroup = await ListGroupBaseModel.findOne({
-                $and: [
-                    { _id: groupIdParams, [groupVariantKey]: { $in: LIST_GROUP_ALL_VARIANTS_WITH_MESSAGES } },
-                    { 'members.userId': userIdToken, 'members.permissions': PERM_GROUP_RW_MESSAGES },
-                ],
-            });
+            const foundGroup = await ListGroupBaseModel.findOne({ _id: groupIdParams });
 
             if (!foundGroup) {
-                return res
-                    .status(404)
-                    .send('User is not an owner or member of the supplied group with the correct permissions');
+                return res.status(404).send('Group not found');
+            }
+
+            if (!LIST_GROUP_ALL_WITH_MESSAGES.includes(foundGroup.groupVariant)) {
+                return res.status(400).send('Invalid group type');
+            }
+
+            const foundUser = findUserInGroup(foundGroup, userIdToken);
+            if (!foundUser || !foundUser.permissions.includes(PERM_GROUP_RW_MESSAGES)) {
+                return res.status(401).send('Unauthorized');
             }
 
             const newMessageFields: TnewUserMessageFields = { author: userIdToken, groupId: groupIdParams, body: body };

@@ -7,10 +7,9 @@ import jwt from 'jsonwebtoken';
 import sendgrid from '@sendgrid/mail';
 import { unverifiedUserAuthMiddleware } from '../middleware/verificationAuth';
 import { ListGroupBaseModel } from '../models/listGroups/ListGroupBaseModel';
-import { PERM_GROUP_DELETE } from '../models/listGroups/listGroupPermissions';
-
-import { GiftGroupModel } from '../models/listGroups/variants/discriminators/parent/GiftGroupModel';
+import { PERM_GROUP_OWNER } from '../models/listGroups/listGroupPermissions';
 import { authMiddleware } from '../middleware/auth';
+import { deleteGroupAndAnyChildGroups, findUserInGroup } from './helperFunctions';
 
 sendgrid.setApiKey(process.env.SENDGRID_API_KEY);
 const router: Router = express.Router();
@@ -26,7 +25,7 @@ interface IverificationToken {
 
 async function sendVerificationEmail(newUserId: Schema.Types.ObjectId, email: string, displayName: string) {
     const payload = { newUserId: newUserId };
-    const token = await jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '3d' });
+    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '3d' });
 
     const verifyBaseLink = 'https://giftlist.sampsy.dev/verify/';
     const verifyLink = verifyBaseLink + token;
@@ -162,6 +161,7 @@ router.post('/verify/:verificationtoken', async (req: Request, res: Response) =>
     }
 });
 
+// TODO: Also post a system message to chats
 // @route DELETE api/users/
 // @desc Delete a user and all their content
 // @access Private
@@ -171,30 +171,43 @@ router.delete('/', unverifiedUserAuthMiddleware, async (req: Request, res: Respo
     const userId = req.user._id;
 
     try {
-        // delete user and groups
-        // TODO delete listitems & messages (or do something else with them)
+        const foundGroups = await ListGroupBaseModel.find({ 'members.userId': userId });
 
-        let foundOwnedParentGroups = await GiftGroupModel.find({
-            'owner.userId': userId,
-            'owner.permissions': PERM_GROUP_DELETE,
-        });
+        let ownedGroups = [];
+        let memberGroupIds = [];
 
-        for (var i = 0; i < foundOwnedParentGroups.length; i++) {
-            let parentId = foundOwnedParentGroups[i].id;
-            await ListGroupBaseModel.deleteMany({ $or: [{ parentGroupId: parentId }, { _id: parentId }] });
+        for (let group of foundGroups) {
+            let foundUser = findUserInGroup(group, userId);
+
+            if (foundUser?.permissions.includes(PERM_GROUP_OWNER)) {
+                ownedGroups.push(group._id);
+            } else {
+                memberGroupIds.push(group._id);
+            }
         }
 
-        await ListGroupBaseModel.deleteMany({
-            'owner.userId': userId,
-            'owner.permissions': PERM_GROUP_DELETE,
-        });
+        console.log('memberGroupIds: ', memberGroupIds);
+        console.log('ownedGroups: ', ownedGroups);
+
+        if (ownedGroups.length > 0) {
+            for (let group of ownedGroups) {
+                await deleteGroupAndAnyChildGroups(group, res);
+            }
+        }
+
+        if (memberGroupIds.length > 0) {
+            await ListGroupBaseModel.updateMany(
+                { _id: { $in: memberGroupIds } },
+                { $pull: { members: { userId: userId } } }
+            );
+        }
 
         await UserModel.findByIdAndDelete(userId);
 
         return res.status(200).json();
     } catch (err) {
         console.log(err.message);
-        return res.status(500).send('Server error');
+        return res.status(500).send('Internal server error');
     }
 });
 

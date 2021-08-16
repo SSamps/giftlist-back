@@ -19,6 +19,7 @@ import {
     handleNewSecretListItemRequest,
 } from '../helperFunctions';
 import { BASIC_LIST } from '../../models/listGroups/variants/discriminators/singular/BasicListModel';
+import { LIST_GROUP_ALL_WITH_ANY_ITEMS } from '../../models/listGroups/variants/listGroupVariants';
 
 const router: Router = express.Router();
 
@@ -85,10 +86,20 @@ router.delete(
         const itemsToDelete: string[] = req.body.itemsToDelete;
 
         try {
-            const foundGroup = await ListGroupBaseModel.findOne({ _id: groupId, 'members.userId': userIdToken });
+            const foundGroup = await ListGroupBaseModel.findOne({ _id: groupId });
 
             if (!foundGroup) {
-                return res.status(404).send();
+                return res.status(404).send('Group not found');
+            }
+
+            if (!LIST_GROUP_ALL_WITH_ANY_ITEMS.includes(foundGroup.groupVariant)) {
+                return res.status(400).send('Invalid group type');
+            }
+
+            const foundUser = findUserInGroup(foundGroup, userIdToken);
+
+            if (!foundUser) {
+                return res.status(401).send('Unauthorized');
             }
 
             const foundItems = findItemsInGroup(foundGroup, itemsToDelete);
@@ -142,14 +153,19 @@ router.put(
         const { body, links } = req.body;
 
         try {
-            const foundGroup = await ListGroupBaseModel.findOne({
-                _id: groupId,
-                groupVariant: { $in: [GIFT_LIST, BASIC_LIST] },
-                'members.userId': userIdToken,
-            });
+            const foundGroup = await ListGroupBaseModel.findOne({ _id: groupId });
 
             if (!foundGroup) {
-                return res.status(404).send();
+                return res.status(404).send('Group not found');
+            }
+
+            if (!LIST_GROUP_ALL_WITH_ANY_ITEMS.includes(foundGroup.groupVariant)) {
+                return res.status(400).send('Invalid group type');
+            }
+
+            const foundUser = findUserInGroup(foundGroup, userIdToken);
+            if (!foundUser) {
+                return res.status(401).send('Unauthorized');
             }
 
             const [itemType, foundItem] = findItemInGroup(foundGroup, itemId);

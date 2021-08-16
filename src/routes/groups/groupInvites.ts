@@ -25,6 +25,7 @@ import {
     IgiftListMember,
     invalidGroupVariantError,
 } from '../../models/listGroups/listGroupInterfaces';
+import { findUserInGroup } from '../helperFunctions';
 
 const router: Router = express.Router();
 sendgrid.setApiKey(process.env.SENDGRID_API_KEY);
@@ -60,16 +61,16 @@ router.post(
         const groupIdParams = req.params.groupid;
 
         try {
-            const foundGroup = await ListGroupBaseModel.findOne().and([
-                { _id: groupIdParams },
-                {
-                    'members.userId': userIdToken,
-                    'members.permissions': PERM_GROUP_INVITE,
-                },
-            ]);
+            const foundGroup = await ListGroupBaseModel.findOne({ _id: groupIdParams });
 
             if (!foundGroup) {
-                return res.status(400).send('Invalid groupId or unauthorized');
+                return res.status(400).send('Group not found');
+            }
+
+            const foundUser = findUserInGroup(foundGroup, userIdToken);
+
+            if (!foundUser || !foundUser.permissions.includes(PERM_GROUP_INVITE)) {
+                return res.status(401).send('Unauthorized');
             }
 
             const { groupName, _id } = foundGroup;
@@ -81,7 +82,7 @@ router.post(
                 groupId: _id,
             };
 
-            const token = await jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '3d' });
+            const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '3d' });
 
             const inviteBaseLink = 'https://giftlist.sampsy.dev/invite/';
             const inviteLink = inviteBaseLink + token;
@@ -156,7 +157,7 @@ router.post('/invite/accept/:groupToken', authMiddleware, async (req: Request, r
     const { groupId } = decodedGroupToken;
 
     try {
-        var foundGroup = await ListGroupBaseModel.findOne(
+        const foundGroup = await ListGroupBaseModel.findOne(
             { _id: groupId },
             {
                 $not: { 'members.userId': tokenUserId },
@@ -164,12 +165,15 @@ router.post('/invite/accept/:groupToken', authMiddleware, async (req: Request, r
         );
 
         if (!foundGroup) {
-            return res.status(400).send('Invalid groupId or user already in group');
+            return res.status(400).send('Group not found');
         }
 
-        const { groupVariant } = foundGroup;
+        const foundUser = findUserInGroup(foundGroup, tokenUserId);
+        if (foundUser) {
+            return res.status(400).send('You are already a member of the group');
+        }
 
-        switch (groupVariant) {
+        switch (foundGroup.groupVariant) {
             case BASIC_LIST: {
                 let newMember: IbasicListMember = {
                     userId: tokenUserId,
@@ -214,7 +218,7 @@ router.post('/invite/accept/:groupToken', authMiddleware, async (req: Request, r
                 break;
             }
             default:
-                throw new invalidGroupVariantError(groupVariant);
+                throw new invalidGroupVariantError(foundGroup.groupVariant);
         }
 
         return res.sendStatus(200).json({ _id: groupId });

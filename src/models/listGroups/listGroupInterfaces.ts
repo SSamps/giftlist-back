@@ -67,7 +67,7 @@ type TnewBasicListExtraFields = {
 };
 
 type TbasicListExtraFields = {
-    members: [IbasicListMember];
+    members: IbasicListMember[];
     maxListItems: Number;
     listItems: TbasicListItem[];
 };
