@@ -13,6 +13,7 @@ import {
     findItemInGroup,
     findItemsInGroup,
     findOneAndUpdateUsingDiscriminator,
+    findUserInGroup,
     findUserPermissionsInGroup,
     handleNewListItemRequest,
     handleNewSecretListItemRequest,
@@ -32,8 +33,7 @@ router.post(
         check('secretListItem', 'A list item or secret list item object is required').not().isEmpty(),
     ]),
     async (req: Request, res: Response) => {
-        console.log('POST api/groups/giftlist/:groupid/items');
-        console.log('request body: ', req.body);
+        console.log('POST api/groups/giftlist/:groupid/items hit');
 
         const errors: Result<ValidationError> = validationResult(req);
         if (!errors.isEmpty()) {
@@ -85,14 +85,7 @@ router.delete(
         const itemsToDelete: string[] = req.body.itemsToDelete;
 
         try {
-            const foundGroup = await ListGroupBaseModel.findOne({
-                $and: [
-                    { _id: groupId },
-                    {
-                        $or: [{ 'owner.userId': userIdToken }, { 'members.userId': userIdToken }],
-                    },
-                ],
-            });
+            const foundGroup = await ListGroupBaseModel.findOne({ _id: groupId, 'members.userId': userIdToken });
 
             if (!foundGroup) {
                 return res.status(404).send();
@@ -150,15 +143,9 @@ router.put(
 
         try {
             const foundGroup = await ListGroupBaseModel.findOne({
-                $and: [
-                    { _id: groupId, groupVariant: { $in: [GIFT_LIST, BASIC_LIST] } },
-                    {
-                        $or: [
-                            { 'owner.userId': userIdToken, 'owner.permissions': PERM_GROUP_RW_LIST_ITEMS },
-                            { 'members.userId': userIdToken, 'members.permissions': PERM_GROUP_RW_SECRET_LIST_ITEMS },
-                        ],
-                    },
-                ],
+                _id: groupId,
+                groupVariant: { $in: [GIFT_LIST, BASIC_LIST] },
+                'members.userId': userIdToken,
             });
 
             if (!foundGroup) {
@@ -215,17 +202,20 @@ router.put(
         const { action }: { action: 'SELECT' | 'DESELECT' } = req.body;
 
         try {
-            const foundGroup = await ListGroupBaseModel.findOne({
-                $and: [
-                    { _id: groupId, groupVariant: { $in: [BASIC_LIST, GIFT_LIST] } },
-                    {
-                        $or: [{ 'owner.userId': userIdToken }, { 'members.userId': userIdToken }],
-                    },
-                ],
-            });
+            const foundGroup = await ListGroupBaseModel.findOne({ _id: groupId });
 
             if (!foundGroup) {
-                return res.status(404).send('You are not a member or owner of a group with the supplied id');
+                return res.status(404).send('Group not found');
+            }
+
+            if (![BASIC_LIST, GIFT_LIST].includes(foundGroup.groupVariant)) {
+                return res.status(400).send('Invalid group type');
+            }
+
+            const foundUser = findUserInGroup(foundGroup, userIdToken);
+
+            if (!foundUser) {
+                return res.status(400).send('User not found in group');
             }
 
             const [itemType, foundItem] = findItemInGroup(foundGroup, itemId);
@@ -234,7 +224,7 @@ router.put(
                 return res.status(404).send('Item not found in the specified group');
             }
 
-            let userPermissions = findUserPermissionsInGroup(userIdToken.toString(), foundGroup);
+            let userPermissions = foundUser.permissions;
 
             if (itemType === 'listItem') {
                 if (!userPermissions.includes(PERM_GROUP_SELECT_LIST_ITEMS)) {

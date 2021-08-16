@@ -63,10 +63,8 @@ router.post(
             const foundGroup = await ListGroupBaseModel.findOne().and([
                 { _id: groupIdParams },
                 {
-                    $or: [
-                        { 'owner.userId': userIdToken, 'owner.permissions': PERM_GROUP_INVITE },
-                        { 'members.userId': userIdToken, 'members.permissions': PERM_GROUP_INVITE },
-                    ],
+                    'members.userId': userIdToken,
+                    'members.permissions': PERM_GROUP_INVITE,
                 },
             ]);
 
@@ -122,7 +120,6 @@ router.get('/invite/verify/:groupToken', authMiddleware, async (req: Request, re
     try {
         const decodedGroupToken = jwt.verify(groupToken, process.env.JWT_SECRET) as IinviteToken;
 
-        // TODO check the group also still exists
         const { senderName, groupName } = decodedGroupToken;
         return res.json({ senderName: senderName, groupName: groupName });
     } catch (err) {
@@ -159,12 +156,12 @@ router.post('/invite/accept/:groupToken', authMiddleware, async (req: Request, r
     const { groupId } = decodedGroupToken;
 
     try {
-        var foundGroup = await ListGroupBaseModel.findOne().and([
+        var foundGroup = await ListGroupBaseModel.findOne(
             { _id: groupId },
             {
-                $nor: [{ 'owner.userId': tokenUserId }, { 'members.userId': tokenUserId }],
-            },
-        ]);
+                $not: { 'members.userId': tokenUserId },
+            }
+        );
 
         if (!foundGroup) {
             return res.status(400).send('Invalid groupId or user already in group');

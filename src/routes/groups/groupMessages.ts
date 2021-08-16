@@ -28,12 +28,7 @@ router.get('/:groupid/messages', authMiddleware, async (req: Request, res: Respo
         let foundGroup = await ListGroupBaseModel.findOne({
             $and: [
                 { _id: groupIdParams, [groupVariantKey]: { $in: LIST_GROUP_ALL_VARIANTS_WITH_MESSAGES } },
-                {
-                    $or: [
-                        { 'owner.userId': userIdToken, 'owner.permissions': PERM_GROUP_RW_MESSAGES },
-                        { 'members.userId': userIdToken, 'members.permissions': PERM_GROUP_RW_MESSAGES },
-                    ],
-                },
+                { 'members.userId': userIdToken, 'members.permissions': PERM_GROUP_RW_MESSAGES },
             ],
         });
 
@@ -76,12 +71,7 @@ router.post(
             let foundGroup = await ListGroupBaseModel.findOne({
                 $and: [
                     { _id: groupIdParams, [groupVariantKey]: { $in: LIST_GROUP_ALL_VARIANTS_WITH_MESSAGES } },
-                    {
-                        $or: [
-                            { 'owner.userId': userIdToken, 'owner.permissions': PERM_GROUP_RW_MESSAGES },
-                            { 'members.userId': userIdToken, 'members.permissions': PERM_GROUP_RW_MESSAGES },
-                        ],
-                    },
+                    { 'members.userId': userIdToken, 'members.permissions': PERM_GROUP_RW_MESSAGES },
                 ],
             });
 
@@ -102,8 +92,9 @@ router.post(
     }
 );
 
+// TODO replace deleted message with a system message
 // @route POST api/groups/:groupid/messages/:messageid
-// @desc Delete an item from a list group
+// @desc Delete an message from a list group
 // @access Private
 router.delete('/messages/:messageid', authMiddleware, async (req: Request, res: Response) => {
     console.log('DELETE api/groups/:groupid/messages/:messageid');
@@ -112,11 +103,13 @@ router.delete('/messages/:messageid', authMiddleware, async (req: Request, res: 
     const messageIdParams = req.params.messageid;
 
     try {
-        let removedMessage = await UserMessageModel.findOneAndRemove({ _id: messageIdParams, author: userIdToken });
+        const foundMessage = await UserMessageModel.findOne({ _id: messageIdParams });
 
-        if (!removedMessage) {
-            return res.status(404).send();
+        if (foundMessage?.author !== userIdToken) {
+            return res.status(401).send('You can only delete your own messages');
         }
+
+        await UserMessageModel.findOneAndRemove({ _id: messageIdParams });
 
         return res.status(200).send();
     } catch (err) {

@@ -3,11 +3,13 @@ import { authMiddleware } from '../../middleware/auth';
 import { check, Result, ValidationError, validationResult } from 'express-validator';
 import { ListGroupBaseModel } from '../../models/listGroups/ListGroupBaseModel';
 import {
-    PERM_GROUP_ADMIN,
     PERM_MODIFIERS_ALL,
     PERM_MUTABLE_ALL,
     PERM_MODIFIER_ADD,
     PERM_MODIFIER_REMOVE,
+    PERM_GROUP_RENAME,
+    PERM_GROUP_KICK,
+    PERM_GROUP_MANAGE_PERMS,
 } from '../../models/listGroups/listGroupPermissions';
 import {
     LIST_GROUP_ALL_TOP_LEVEL_VARIANTS,
@@ -23,14 +25,14 @@ import {
     findAndCensorChildGroups,
     findOneAndUpdateUsingDiscriminator,
 } from '../helperFunctions';
-import { TlistGroupAny, TlistGroupAnyCensoredAny } from '../../models/listGroups/listGroupInterfaces';
+import { TlistGroupAnyCensoredAny } from '../../models/listGroups/listGroupInterfaces';
 import { LeanDocument } from 'mongoose';
 
 const router: Router = express.Router();
 
 // TODO will have to update this later to censor the results depending on the user's permissions
 // @route GET api/groups
-// @desc Get all top level groups a user owns or is a member of and censors them.
+// @desc Get all top level groups a user owns or is a member of and censors them before returning.
 // @access Private
 router.get('/user', authMiddleware, async (req: Request, res: Response) => {
     console.log('GET /api/groups/user hit');
@@ -40,15 +42,9 @@ router.get('/user', authMiddleware, async (req: Request, res: Response) => {
     let groupVariantKey = 'groupVariant';
     try {
         let foundGroups = await ListGroupBaseModel.find({
-            $and: [
-                { $or: [{ 'owner.userId': userIdToken }, { 'members.userId': userIdToken }] },
-                { [groupVariantKey]: { $in: LIST_GROUP_ALL_TOP_LEVEL_VARIANTS } },
-            ],
+            'members.userId': userIdToken,
+            [groupVariantKey]: { $in: LIST_GROUP_ALL_TOP_LEVEL_VARIANTS },
         }).lean();
-
-        // for each found group if it's a parent find any children and nest them under it.
-
-        //TODO redo this using permissions not ownership and factor out into a separate function. Pass the final result in rather than one by one to keep the route clean.
 
         let censoredGroups: LeanDocument<TlistGroupAnyCensoredAny>[] = [];
         for (let i = 0; i < foundGroups.length; i++) {
@@ -60,40 +56,6 @@ router.get('/user', authMiddleware, async (req: Request, res: Response) => {
         }
 
         return res.status(200).json(censoredGroups);
-    } catch (err) {
-        console.log(err.message);
-        return res.status(500).send('Server error');
-    }
-});
-
-// TODO this is a test route so remove it later
-// @route GET api/groups/user/all
-// @desc Get all groups a user owns or is a member of
-// @access Private
-router.get('/user/all', authMiddleware, async (req: Request, res: Response) => {
-    console.log('GET /api/groups/user/all hit');
-
-    const userIdToken = req.user._id;
-
-    try {
-        let foundMemberGroups = await ListGroupBaseModel.find({
-            $or: [{ 'owner.userId': userIdToken }, { 'members.userId': userIdToken }],
-        });
-        let foundOwnedGroups: TlistGroupAny[] = [];
-
-        for (var i = foundMemberGroups.length - 1; i >= 0; i--) {
-            let document = foundMemberGroups[i];
-            if (document.owner.userId.toString() === userIdToken.toString()) {
-                foundOwnedGroups.push(document);
-                foundMemberGroups.splice(i, 1);
-            }
-        }
-
-        if (foundOwnedGroups.length == 0 && foundMemberGroups.length == 0) {
-            return res.status(404).json({ msg: 'No groups found' });
-        }
-
-        return res.status(200).json({ ownedGroups: foundOwnedGroups, memberGroups: foundMemberGroups });
     } catch (err) {
         console.log(err.message);
         return res.status(500).send('Server error');
@@ -112,12 +74,8 @@ router.get('/:groupid', authMiddleware, async (req: Request, res: Response) => {
 
     try {
         let foundGroup = await ListGroupBaseModel.findOne({
-            $and: [
-                { _id: groupIdParams },
-                {
-                    $or: [{ 'owner.userId': userIdToken }, { 'members.userId': userIdToken }],
-                },
-            ],
+            _id: groupIdParams,
+            'members.userId': userIdToken,
         }).lean();
 
         if (!foundGroup) {
@@ -170,9 +128,7 @@ router.post(
     }
 );
 
-//TODO prevent users from leaving child groups
-//TODO decide how to handle items and messages when a user leaves
-
+// TODO When an individual leaves post a system message if applicable.
 // @route PUT api/groups/:groupid/leave
 // @desc Leave a group if a member
 // @access Private
@@ -192,10 +148,13 @@ router.put('/:groupid/leave', authMiddleware, async (req: Request, res: Response
             return res.status(400).send('Invalid groupId or not a member');
         }
 
+        if (LIST_GROUP_CHILD_VARIANTS.includes(foundGroup.groupVariant)) {
+            return res.status(400).send('You cannot leave child groups directly');
+        }
+
         await ListGroupBaseModel.findOneAndUpdate(
             { _id: groupIdParams },
-            { $pull: { members: { userId: userIdToken } } },
-            { new: true }
+            { $pull: { members: { userId: userIdToken } } }
         );
 
         if (LIST_GROUP_PARENT_VARIANTS.includes(foundGroup.groupVariant)) {
@@ -253,15 +212,17 @@ router.put(
         const groupIdParams = req.params.groupid;
         const { targetUserId, targetPermission, modification } = req.body;
 
+        if (userIdToken === targetUserId) {
+            return res.status(400).send('You cannot modify your own permissions');
+        }
+
         try {
             var foundGroup = await ListGroupBaseModel.findOne({
                 $and: [
                     { _id: groupIdParams },
                     {
-                        $or: [
-                            { 'owner.userId': userIdToken, 'owner.permissions': PERM_GROUP_ADMIN },
-                            { 'members.userId': userIdToken, 'owner.permissions': PERM_GROUP_ADMIN },
-                        ],
+                        'members.userId': userIdToken,
+                        'owner.permissions': PERM_GROUP_MANAGE_PERMS,
                     },
                     { 'members.userId': targetUserId },
                 ],
@@ -315,15 +276,17 @@ router.put(
         const groupIdParams = req.params.groupid;
         const { targetUserId } = req.body;
 
+        if (userIdToken === targetUserId) {
+            return res.status(400).send('You cannot kick yourself');
+        }
+
         try {
             var foundGroup = await ListGroupBaseModel.findOne({
                 $and: [
                     { _id: groupIdParams },
                     {
-                        $or: [
-                            { 'owner.userId': userIdToken, 'owner.permissions': PERM_GROUP_ADMIN },
-                            { 'members.userId': userIdToken, 'owner.permissions': PERM_GROUP_ADMIN },
-                        ],
+                        'members.userId': userIdToken,
+                        'members.permissions': PERM_GROUP_KICK,
                     },
                     { 'members.userId': targetUserId },
                 ],
@@ -371,10 +334,8 @@ router.put(
                 $and: [
                     { _id: groupIdParams },
                     {
-                        $or: [
-                            { 'owner.userId': userIdToken, 'owner.permissions': PERM_GROUP_ADMIN },
-                            { 'members.userId': userIdToken, 'owner.permissions': PERM_GROUP_ADMIN },
-                        ],
+                        'members.userId': userIdToken,
+                        'owner.permissions': PERM_GROUP_RENAME,
                     },
                 ],
             });

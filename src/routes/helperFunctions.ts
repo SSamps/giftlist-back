@@ -7,11 +7,14 @@ import { ListGroupBaseModel } from '../models/listGroups/ListGroupBaseModel';
 import { GiftGroupModel, GIFT_GROUP } from '../models/listGroups/variants/discriminators/parent/GiftGroupModel';
 import {
     basicListOwnerBasePerms,
+    giftGroupChildMemberBasePerms,
     giftGroupChildOwnerBasePerms,
+    giftGroupChildParentOwnerBasePerms,
     giftGroupOwnerBasePerms,
     giftListOwnerBasePerms,
     PERM_CHILD_GROUP_CREATE,
     PERM_GROUP_DELETE,
+    PERM_GROUP_OWNER,
     PERM_GROUP_RW_LIST_ITEMS,
     PERM_GROUP_RW_SECRET_LIST_ITEMS,
     PERM_GROUP_SELECT_LIST_ITEMS,
@@ -34,7 +37,6 @@ import {
     invalidParentError,
     invalidParentVariantError,
     TgroupMemberAny,
-    TgroupMemberTypes,
     TlistGroupAny,
     TlistGroupAnyCensoredSingular,
     TlistGroupAnyCensoredWithChildren,
@@ -59,15 +61,11 @@ export async function deleteGroupAndAnyChildGroups(
     userId: Schema.Types.ObjectId,
     groupId: string
 ): Promise<IgroupDeletionResult> {
-    var foundGroup = await ListGroupBaseModel.findOne().and([
-        { _id: groupId },
-        {
-            $or: [
-                { 'owner.userId': userId, 'owner.permissions': PERM_GROUP_DELETE },
-                { 'members.userId': userId, 'members.permissions': PERM_GROUP_DELETE },
-            ],
-        },
-    ]);
+    var foundGroup = await ListGroupBaseModel.findOne({
+        _id: groupId,
+        'members.userId': userId,
+        'members.permissions': PERM_GROUP_DELETE,
+    });
 
     if (!foundGroup) {
         return { status: 400, msg: 'Invalid groupId or unauthorized' };
@@ -138,7 +136,6 @@ export async function handleNewListItemRequest(
     listItemReq: TnewListItemFields,
     res: Response
 ) {
-    let permission = PERM_GROUP_RW_LIST_ITEMS;
     let validGroupVariants = [BASIC_LIST, GIFT_LIST, GIFT_GROUP_CHILD];
 
     let links = listItemReq.links;
@@ -154,18 +151,14 @@ export async function handleNewListItemRequest(
         }
     }
 
-    // TODO figure out why I have to do this. Using groupVariant as the key directly results in a TS error.
+    // TODO figure out why I have to define the key this way. Using groupVariant as the key directly results in a TS error.
     let groupVariantKey = 'groupVariant';
 
     let foundGroup = await ListGroupBaseModel.findOne({
         $and: [
             { _id: groupId, [groupVariantKey]: { $in: validGroupVariants } },
-            {
-                $or: [
-                    { 'owner.userId': userIdToken, 'owner.permissions': permission },
-                    { 'members.userId': userIdToken, 'members.permissions': permission },
-                ],
-            },
+
+            { 'members.userId': userIdToken, 'members.permissions': PERM_GROUP_RW_LIST_ITEMS },
         ],
     });
 
@@ -189,7 +182,6 @@ export async function handleNewSecretListItemRequest(
     secretListItemReq: TnewListItemFields,
     res: Response
 ) {
-    let permission = PERM_GROUP_RW_SECRET_LIST_ITEMS;
     let validGroupVariants = [GIFT_LIST, GIFT_GROUP_CHILD];
 
     let body = secretListItemReq.body;
@@ -210,12 +202,7 @@ export async function handleNewSecretListItemRequest(
     let foundValidGroup = await ListGroupBaseModel.findOne({
         $and: [
             { _id: groupId, [groupVariantKey]: { $in: validGroupVariants } },
-            {
-                $or: [
-                    { 'owner.userId': userIdToken, 'owner.permissions': permission },
-                    { 'members.userId': userIdToken, 'members.permissions': permission },
-                ],
-            },
+            { 'members.userId': userIdToken, 'members.permissions': PERM_GROUP_RW_SECRET_LIST_ITEMS },
         ],
     });
 
@@ -231,20 +218,16 @@ export async function handleNewSecretListItemRequest(
     return result;
 }
 
-async function validateParentGroup(
+async function getParentAndValidateCanCreateChildren(
     parentGroupId: mongoose.Schema.Types.ObjectId,
     userIdToken: mongoose.Schema.Types.ObjectId,
     childGroupVariant: string
 ) {
-    const foundParentGroup = await ListGroupBaseModel.findOne().and([
-        { _id: parentGroupId },
-        {
-            $or: [
-                { 'owner.userId': userIdToken, 'owner.permissions': PERM_CHILD_GROUP_CREATE },
-                { 'members.userId': userIdToken, 'owner.permissions': PERM_CHILD_GROUP_CREATE },
-            ],
-        },
-    ]);
+    const foundParentGroup = await ListGroupBaseModel.findOne({
+        _id: parentGroupId,
+        'members.userId': userIdToken,
+        'members.permissions': PERM_CHILD_GROUP_CREATE,
+    });
 
     if (!foundParentGroup) {
         throw new invalidParentError(parentGroupId.toString());
@@ -262,6 +245,8 @@ async function validateParentGroup(
         default:
             throw new invalidGroupVariantError(childGroupVariant);
     }
+
+    return foundParentGroup;
 }
 
 export async function addGroup(
@@ -272,7 +257,6 @@ export async function addGroup(
     res: Response,
     parentGroupId: mongoose.Schema.Types.ObjectId
 ) {
-    console.log(parentGroupId);
     if (LIST_GROUP_CHILD_VARIANTS.includes(groupVariant)) {
         if (parentGroupId === undefined) {
             return res.status(400).json({ msg: 'Error: Child groups require a parent group' });
@@ -286,7 +270,7 @@ export async function addGroup(
                     displayName: tokenDisplayName,
                     permissions: basicListOwnerBasePerms,
                 };
-                const newListGroupData: TnewBasicListFields = { owner, groupName };
+                const newListGroupData: TnewBasicListFields = { members: [owner], groupName };
                 const newListGroup = new BasicListModel(newListGroupData);
                 await newListGroup.save();
                 return res.status(200).json(newListGroup);
@@ -297,7 +281,7 @@ export async function addGroup(
                     displayName: tokenDisplayName,
                     permissions: giftListOwnerBasePerms,
                 };
-                const newListGroupData: TnewGiftListFields = { owner, groupName };
+                const newListGroupData: TnewGiftListFields = { members: [owner], groupName };
                 const newListGroup = new GiftListModel(newListGroupData);
                 await newListGroup.save();
                 return res.status(200).json(newListGroup);
@@ -308,19 +292,40 @@ export async function addGroup(
                     displayName: tokenDisplayName,
                     permissions: giftGroupOwnerBasePerms,
                 };
-                const newGroupData: TnewGiftGroupFields = { owner, groupName };
+                const newGroupData: TnewGiftGroupFields = { members: [owner], groupName };
                 const newGroup = new GiftGroupModel(newGroupData);
                 await newGroup.save();
                 return res.status(200).json(newGroup);
             }
             case GIFT_GROUP_CHILD: {
-                await validateParentGroup(parentGroupId, tokenUserId, groupVariant);
-                const owner: IgiftGroupChildMember = {
-                    userId: tokenUserId,
-                    displayName: tokenDisplayName,
-                    permissions: giftGroupChildOwnerBasePerms,
-                };
-                const newListGroupData: TnewGiftGroupChildFields = { owner, groupName, parentGroupId };
+                let foundParentGroup = await getParentAndValidateCanCreateChildren(
+                    parentGroupId,
+                    tokenUserId,
+                    groupVariant
+                );
+
+                if (!foundParentGroup) {
+                    return res.status(404).send('Parent group not found');
+                }
+
+                let members: IgiftGroupChildMember[] = foundParentGroup.members.map((parentMember) => {
+                    let childMember: IgiftGroupChildMember = {
+                        userId: parentMember.userId,
+                        displayName: parentMember.displayName,
+                        permissions: [],
+                        oldestReadMessage: undefined,
+                    };
+                    if (parentMember.userId === tokenUserId) {
+                        childMember.permissions = giftGroupChildOwnerBasePerms;
+                    } else if (parentMember.permissions.includes(PERM_GROUP_OWNER)) {
+                        childMember.permissions = giftGroupChildParentOwnerBasePerms;
+                    } else {
+                        childMember.permissions = giftGroupChildMemberBasePerms;
+                    }
+                    return { ...childMember };
+                });
+
+                const newListGroupData: TnewGiftGroupChildFields = { members: members, groupName, parentGroupId };
                 const newListGroup = new GiftGroupChildModel(newListGroupData);
                 await newListGroup.save();
                 return res.status(200).json(newListGroup);
@@ -391,20 +396,14 @@ export function findUserInGroup(
         | LeanDocument<TlistGroupAny>
         | LeanDocument<TlistGroupAnyWithChildren>,
     userId: Schema.Types.ObjectId | string
-): [TgroupMemberTypes | 'error', TgroupMemberAny | null] {
-    console.log(userId);
-    console.log(group);
-    if (group.owner.userId.toString() === userId.toString()) {
-        return ['owner', group.owner];
-    }
-
+): TgroupMemberAny | null {
     for (let member of group.members) {
         if (member.userId.toString() === userId.toString()) {
-            return ['member', member];
+            return member;
         }
     }
 
-    return ['error', null];
+    return null;
 }
 
 export function findUserPermissionsInGroup(
@@ -415,7 +414,7 @@ export function findUserPermissionsInGroup(
         | TlistGroupAny
         | TlistGroupAnyWithChildren
 ): TYPE_PERM_ALL_LIST_GROUP[] {
-    let [_, user] = findUserInGroup(group, userId);
+    let user = findUserInGroup(group, userId);
 
     if (!user) {
         throw new Error('User not found in group when checking permissions');

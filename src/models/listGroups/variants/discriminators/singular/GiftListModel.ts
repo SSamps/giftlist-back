@@ -6,12 +6,6 @@ import { TgiftListDocument } from '../../../listGroupInterfaces';
 export const GIFT_LIST = 'GIFT_LIST';
 
 const giftListSchema = new Schema<TgiftListDocument>({
-    owner: {
-        userId: { type: Schema.Types.ObjectId, required: true },
-        displayName: { type: String, required: true },
-        permissions: [{ type: String, required: true, enum: PERM_GIFT_LIST_ALL }],
-        oldestUnreadMsg: { type: Date },
-    },
     members: [
         {
             userId: { type: Schema.Types.ObjectId, required: true },
