@@ -5,18 +5,15 @@ const options = { discriminatorKey: 'groupVariant' };
 
 const ListGroupBaseSchema = new Schema(
     {
-        members: {
-            type: [
-                {
-                    userId: { type: Schema.Types.ObjectId },
-                    displayName: { type: String },
-                    permissions: [{ type: String }],
-                    oldestUnreadMsg: { type: Date },
-                    _id: false,
-                },
-            ],
-            required: true,
-        },
+        members: [
+            {
+                userId: { type: Schema.Types.ObjectId },
+                displayName: { type: String },
+                permissions: [{ type: String }],
+                oldestUnreadMsg: { type: Date },
+                _id: false,
+            },
+        ],
         parentGroupId: {
             type: Schema.Types.ObjectId,
         },

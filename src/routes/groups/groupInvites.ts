@@ -147,6 +147,7 @@ router.post('/invite/accept/:groupToken', authMiddleware, async (req: Request, r
     try {
         decodedGroupToken = jwt.verify(groupToken, process.env.JWT_SECRET) as IinviteToken;
     } catch (err) {
+        console.error(err);
         if (err.message) {
             return res.status(400).send(err.message);
         } else {
@@ -157,12 +158,7 @@ router.post('/invite/accept/:groupToken', authMiddleware, async (req: Request, r
     const { groupId } = decodedGroupToken;
 
     try {
-        const foundGroup = await ListGroupBaseModel.findOne(
-            { _id: groupId },
-            {
-                $not: { 'members.userId': tokenUserId },
-            }
-        );
+        const foundGroup = await ListGroupBaseModel.findOne({ _id: groupId });
 
         if (!foundGroup) {
             return res.status(400).send('Group not found');
@@ -221,7 +217,7 @@ router.post('/invite/accept/:groupToken', authMiddleware, async (req: Request, r
                 throw new invalidGroupVariantError(foundGroup.groupVariant);
         }
 
-        return res.sendStatus(200).json({ _id: groupId });
+        return res.status(200).json({ _id: groupId });
     } catch (err) {
         console.log(err);
         return res.status(500).send('Server error');
