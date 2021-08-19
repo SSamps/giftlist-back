@@ -65,7 +65,7 @@ router.post(
 );
 
 // @route DELETE api/groups/:groupid/items/:itemid
-// @desc Delete an item from a list group
+// @desc Delete an array of items from a list group
 // @access Private
 router.delete(
     '/:groupid/items',
