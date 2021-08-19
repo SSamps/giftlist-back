@@ -36,7 +36,7 @@ router.get('/:groupid/messages', authMiddleware, async (req: Request, res: Respo
         if (!foundGroup) {
             return res
                 .status(400)
-                .send('User is not an owner or member of the supplied group with the correct permissions');
+                .send('Error: User is not an owner or member of the supplied group with the correct permissions');
         }
 
         let foundMessages = await UserMessageModel.find({ groupId: groupIdParams });
@@ -71,16 +71,16 @@ router.post(
             const foundGroup = await ListGroupBaseModel.findOne({ _id: groupIdParams });
 
             if (!foundGroup) {
-                return res.status(404).send('Group not found');
+                return res.status(404).send('Error: Group not found');
             }
 
             if (!LIST_GROUP_ALL_WITH_MESSAGES.includes(foundGroup.groupVariant)) {
-                return res.status(400).send('Invalid group type');
+                return res.status(400).send('Error: Invalid group type');
             }
 
             const foundUser = findUserInGroup(foundGroup, userIdToken);
             if (!foundUser || !foundUser.permissions.includes(PERM_GROUP_RW_MESSAGES)) {
-                return res.status(401).send('Unauthorized');
+                return res.status(401).send('Error: Unauthorized');
             }
 
             const newMessageFields: TnewUserMessageFields = { author: userIdToken, groupId: groupIdParams, body: body };
@@ -108,7 +108,7 @@ router.delete('/messages/:messageid', authMiddleware, async (req: Request, res: 
         const foundMessage = await UserMessageModel.findOne({ _id: messageIdParams });
 
         if (foundMessage?.author !== userIdToken) {
-            return res.status(401).send('You can only delete your own messages');
+            return res.status(401).send('Error: You can only delete your own messages');
         }
 
         await UserMessageModel.findOneAndRemove({ _id: messageIdParams });

@@ -64,13 +64,13 @@ router.post(
             const foundGroup = await ListGroupBaseModel.findOne({ _id: groupIdParams });
 
             if (!foundGroup) {
-                return res.status(400).send('Group not found');
+                return res.status(400).send('Error: Group not found');
             }
 
             const foundUser = findUserInGroup(foundGroup, userIdToken);
 
             if (!foundUser || !foundUser.permissions.includes(PERM_GROUP_INVITE)) {
-                return res.status(401).send('Unauthorized');
+                return res.status(401).send('Error: Unauthorized');
             }
 
             const { groupName, _id } = foundGroup;
@@ -127,7 +127,7 @@ router.get('/invite/verify/:groupToken', authMiddleware, async (req: Request, re
         if (err.message) {
             return res.status(400).send(err.message);
         } else {
-            return res.send(500);
+            return res.status(500).send('Server Error');
         }
     }
 });
@@ -151,7 +151,7 @@ router.post('/invite/accept/:groupToken', authMiddleware, async (req: Request, r
         if (err.message) {
             return res.status(400).send(err.message);
         } else {
-            return res.send(500);
+            return res.status(500).send('Server Error');
         }
     }
 
@@ -161,12 +161,12 @@ router.post('/invite/accept/:groupToken', authMiddleware, async (req: Request, r
         const foundGroup = await ListGroupBaseModel.findOne({ _id: groupId });
 
         if (!foundGroup) {
-            return res.status(400).send('Group not found');
+            return res.status(400).send('Error: Group not found');
         }
 
         const foundUser = findUserInGroup(foundGroup, tokenUserId);
         if (foundUser) {
-            return res.status(400).send('You are already a member of the group');
+            return res.status(400).send('Error: You are already a member of the group');
         }
 
         switch (foundGroup.groupVariant) {

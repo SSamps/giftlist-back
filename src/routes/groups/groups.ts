@@ -77,12 +77,12 @@ router.get('/:groupid', authMiddleware, async (req: Request, res: Response) => {
         let foundGroup = await ListGroupBaseModel.findOne({ _id: groupIdParams }).lean();
 
         if (!foundGroup) {
-            return res.status(404).send('Group not found or unauthorised');
+            return res.status(404).send('Error: Group not found or unauthorised');
         }
 
         let foundUser = findUserInGroup(foundGroup, userIdToken);
         if (!foundUser) {
-            return res.status(401).send('You are not a member of the group');
+            return res.status(401).send('Error: You are not a member of the group');
         }
 
         let censoredGroup;
@@ -145,16 +145,16 @@ router.put('/:groupid/leave', authMiddleware, async (req: Request, res: Response
         const foundGroup = await ListGroupBaseModel.findOne({ _id: groupIdParams });
 
         if (!foundGroup) {
-            return res.status(404).send('Group not found');
+            return res.status(404).send('Error: Group not found');
         }
 
         const foundUser = findUserInGroup(foundGroup, userIdToken);
         if (!foundUser) {
-            return res.status(400).send('You are not a member of the group');
+            return res.status(400).send('Error: You are not a member of the group');
         }
 
         if (LIST_GROUP_CHILD_VARIANTS.includes(foundGroup.groupVariant)) {
-            return res.status(400).send('You cannot leave child groups directly');
+            return res.status(400).send('Error: You cannot leave child groups directly');
         }
 
         await ListGroupBaseModel.findOneAndUpdate(
@@ -218,32 +218,32 @@ router.put(
         const { targetUserId, targetPermission, modification } = req.body;
 
         if (userIdToken === targetUserId) {
-            return res.status(400).send('You cannot modify your own permissions');
+            return res.status(400).send('Error: You cannot modify your own permissions');
         }
 
         try {
             const foundGroup = await ListGroupBaseModel.findOne({ _id: groupIdParams });
 
             if (!foundGroup) {
-                return res.status(404).send('Group not found');
+                return res.status(404).send('Error: Group not found');
             }
 
             if (LIST_GROUP_CHILD_VARIANTS.includes(foundGroup.groupVariant)) {
-                return res.status(400).send('Users cannot be invited directly to child groups');
+                return res.status(400).send('Error: Users cannot be invited directly to child groups');
             }
 
             const foundRequestingUser = findUserInGroup(foundGroup, userIdToken);
             if (!foundRequestingUser || !foundRequestingUser.permissions.includes(PERM_GROUP_MANAGE_PERMS)) {
-                return res.status(401).send('Unauthorized');
+                return res.status(401).send('Error: Unauthorized');
             }
 
             const foundTargetUser = findUserInGroup(foundGroup, targetUserId);
             if (!foundTargetUser) {
-                return res.status(404).send('Target user not found in group');
+                return res.status(404).send('Error: Target user not found in group');
             }
 
             if (foundTargetUser.permissions.includes(PERM_GROUP_OWNER)) {
-                return res.status(401).send('You cannot modify permissions of the group owner');
+                return res.status(401).send('Error: You cannot modify permissions of the group owner');
             }
 
             if (modification === PERM_MODIFIER_ADD) {
@@ -286,36 +286,32 @@ router.put(
         const { targetUserId } = req.body;
 
         if (userIdToken === targetUserId) {
-            return res.status(400).send('You cannot kick yourself');
+            return res.status(400).send('Error: You cannot kick yourself');
         }
 
         try {
             const foundGroup = await ListGroupBaseModel.findOne({ _id: groupIdParams });
 
             if (!foundGroup) {
-                return res
-                    .status(400)
-                    .send(
-                        'Invalid groupId, target user not in the group or requesting user is not authorised to kick users from this group'
-                    );
+                return res.status(404).send('Error: Group not found');
             }
 
             if (LIST_GROUP_CHILD_VARIANTS.includes(foundGroup.groupVariant)) {
-                return res.status(400).send('Users cannot be kicked from child groups');
+                return res.status(400).send('Error: Users cannot be kicked from child groups');
             }
 
             const foundRequestingUser = findUserInGroup(foundGroup, userIdToken);
             if (!foundRequestingUser || !foundRequestingUser.permissions.includes(PERM_GROUP_KICK)) {
-                return res.status(401).send('Unauthorized');
+                return res.status(401).send('Error: Unauthorized');
             }
 
             const foundTargetUser = findUserInGroup(foundGroup, userIdToken);
             if (!foundTargetUser) {
-                return res.status(404).send('Target user not found in group');
+                return res.status(404).send('Error: Target user not found in group');
             }
 
             if (foundTargetUser.permissions.includes(PERM_GROUP_OWNER)) {
-                return res.status(401).send('You cannot kick the group owner');
+                return res.status(401).send('Error: You cannot kick the group owner');
             }
 
             await foundGroup.update({ $pull: { members: { userId: targetUserId } } });
@@ -350,12 +346,12 @@ router.put(
             const foundGroup = await ListGroupBaseModel.findOne({ _id: groupIdParams });
 
             if (!foundGroup) {
-                return res.status(400).send('Invalid groupId or unauthorised');
+                return res.status(400).send('Error: Group not found');
             }
 
             const foundUser = findUserInGroup(foundGroup, userIdToken);
             if (!foundUser || !foundUser.permissions.includes(PERM_GROUP_RENAME)) {
-                return res.status(401).send('Unauthorized');
+                return res.status(401).send('Error: Unauthorized');
             }
 
             const result = await findOneAndUpdateUsingDiscriminator(

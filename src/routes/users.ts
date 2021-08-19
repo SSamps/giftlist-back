@@ -71,7 +71,7 @@ router.post(
 
             let foundUser = await UserModel.findOne({ email });
             if (foundUser) {
-                return res.status(400).json({ errors: [{ msg: 'An account already exists with that email address' }] });
+                return res.status(400).send('Error: An account already exists with that email address');
             }
 
             // Encrypt the password
@@ -151,7 +151,7 @@ router.post('/verify/:verificationtoken', async (req: Request, res: Response) =>
         const verifiedUser = await UserModel.findByIdAndUpdate(newUserId, { verified: true });
 
         if (!verifiedUser) {
-            return res.status(404).json({ msg: 'User not found' });
+            return res.status(404).send('Error: User not found');
         }
 
         return res.send(200);
@@ -185,9 +185,6 @@ router.delete('/', unverifiedUserAuthMiddleware, async (req: Request, res: Respo
                 memberGroupIds.push(group._id);
             }
         }
-
-        console.log('memberGroupIds: ', memberGroupIds);
-        console.log('ownedGroups: ', ownedGroups);
 
         if (ownedGroups.length > 0) {
             for (let group of ownedGroups) {
@@ -275,7 +272,7 @@ router.post(
             const foundUser = await UserModel.findOne({ email: reqEmail });
 
             if (!foundUser) {
-                return res.status(400).send('We could not find an account with that email address.');
+                return res.status(400).send('Error: We could not find an account with that email address.');
             }
 
             const payload = {
@@ -343,7 +340,7 @@ router.post(
             var foundUser = await UserModel.findById(userIdRequestingPassReset);
 
             if (!foundUser) {
-                return res.status(400).send('User not found');
+                return res.status(400).send('Error: User not found');
             }
 
             const salt: string = await bcrypt.genSalt(10);

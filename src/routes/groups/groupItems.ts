@@ -46,7 +46,9 @@ router.post(
         const { listItem, secretListItem } = req.body;
 
         if (listItem && secretListItem) {
-            return res.status(400).send('You cannot specify a new list item and secret list item in the same request');
+            return res
+                .status(400)
+                .send('Error: You cannot specify a new list item and secret list item in the same request');
         }
 
         let result;
@@ -89,28 +91,28 @@ router.delete(
             const foundGroup = await ListGroupBaseModel.findOne({ _id: groupId });
 
             if (!foundGroup) {
-                return res.status(404).send('Group not found');
+                return res.status(404).send('Error: Group not found');
             }
 
             if (!LIST_GROUP_ALL_WITH_ANY_ITEMS.includes(foundGroup.groupVariant)) {
-                return res.status(400).send('Invalid group type');
+                return res.status(400).send('Error: Invalid group type');
             }
 
             const foundUser = findUserInGroup(foundGroup, userIdToken);
 
             if (!foundUser) {
-                return res.status(401).send('Unauthorized');
+                return res.status(401).send('Error: Unauthorized');
             }
 
             const foundItems = findItemsInGroup(foundGroup, itemsToDelete);
             if (foundItems.length <= 0) {
-                return res.status(404).send('Item not found');
+                return res.status(404).send('Error: Item not found');
             }
 
             if (foundGroup.groupVariant === GIFT_LIST) {
                 for (let i = 0; i < foundItems.length; i++) {
                     if (foundItems[i].authorId.toString() !== userIdToken.toString()) {
-                        return res.status(401).send('You can only delete your own items in a Gift List');
+                        return res.status(401).send('Error: You can only delete your own items in a Gift List');
                     }
                 }
             }
@@ -156,25 +158,25 @@ router.put(
             const foundGroup = await ListGroupBaseModel.findOne({ _id: groupId });
 
             if (!foundGroup) {
-                return res.status(404).send('Group not found');
+                return res.status(404).send('Error: Group not found');
             }
 
             if (!LIST_GROUP_ALL_WITH_ANY_ITEMS.includes(foundGroup.groupVariant)) {
-                return res.status(400).send('Invalid group type');
+                return res.status(400).send('Error: Invalid group type');
             }
 
             const foundUser = findUserInGroup(foundGroup, userIdToken);
             if (!foundUser) {
-                return res.status(401).send('Unauthorized');
+                return res.status(401).send('Error: Unauthorized');
             }
 
             const [itemType, foundItem] = findItemInGroup(foundGroup, itemId);
             if (!foundItem) {
-                return res.status(404).send('Item not found');
+                return res.status(404).send('Error: Item not found');
             }
 
             if (foundItem.authorId.toString() !== userIdToken.toString()) {
-                return res.status(401).send('You can only modify your own items');
+                return res.status(401).send('Error: You can only modify your own items');
             }
 
             let queryItemType = itemType + 's';
@@ -221,34 +223,36 @@ router.put(
             const foundGroup = await ListGroupBaseModel.findOne({ _id: groupId });
 
             if (!foundGroup) {
-                return res.status(404).send('Group not found');
+                return res.status(404).send('Error: Group not found');
             }
 
             if (![BASIC_LIST, GIFT_LIST].includes(foundGroup.groupVariant)) {
-                return res.status(400).send('Invalid group type');
+                return res.status(400).send('Error: Invalid group type');
             }
 
             const foundUser = findUserInGroup(foundGroup, userIdToken);
 
             if (!foundUser) {
-                return res.status(400).send('User not found in group');
+                return res.status(400).send('Error: User not found in group');
             }
 
             const [itemType, foundItem] = findItemInGroup(foundGroup, itemId);
 
             if (!foundItem) {
-                return res.status(404).send('Item not found in the specified group');
+                return res.status(404).send('Error: Item not found in the specified group');
             }
 
             let userPermissions = foundUser.permissions;
 
             if (itemType === 'listItem') {
                 if (!userPermissions.includes(PERM_GROUP_SELECT_LIST_ITEMS)) {
-                    return res.status(401).send('You are not authorised to select list items in this group');
+                    return res.status(401).send('Error: You are not authorised to select list items in this group');
                 }
             } else if (itemType === 'secretListItem') {
                 if (!userPermissions.includes(PERM_GROUP_SELECT_SECRET_LIST_ITEMS)) {
-                    return res.status(401).send('You are not authorised to select secret list items in this group');
+                    return res
+                        .status(401)
+                        .send('Error: You are not authorised to select secret list items in this group');
                 }
             }
 

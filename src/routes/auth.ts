@@ -41,13 +41,13 @@ router.post(
             // See if user exists in the database
             let foundUser = await UserModel.findOne({ email });
             if (!foundUser) {
-                return res.status(400).json({ errors: [{ msg: 'Your email or password is incorrect.' }] });
+                return res.status(400).send('Error: Your email or password is incorrect.');
             }
 
             // Check if the password is correct
             const isMatch = await bcrypt.compare(password, foundUser.password);
             if (!isMatch) {
-                return res.status(400).json({ errors: [{ msg: 'Your email or password is incorrect.' }] });
+                return res.status(400).send('Error: Your email or password is incorrect.');
             }
 
             // Return a jwt and a cut down user

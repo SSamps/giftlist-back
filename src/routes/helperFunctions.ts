@@ -161,12 +161,12 @@ export const handleNewListItemRequest = async (
     const body = listItemReq.body;
 
     if (body.length <= 0) {
-        return res.status(400).send('You cannot supply an empty item body');
+        return res.status(400).send('Error: You cannot supply an empty item body');
     }
 
     for (let i = 0; i < links.length; i++) {
         if (links[i].length <= 0) {
-            return res.status(400).send('You cannot supply empty links');
+            return res.status(400).send('Error: You cannot supply empty links');
         }
     }
 
@@ -174,20 +174,20 @@ export const handleNewListItemRequest = async (
     const foundGroup = await ListGroupBaseModel.findOne({ _id: groupId });
 
     if (!foundGroup) {
-        return res.status(404).send('Group not found');
+        return res.status(404).send('Error: Group not found');
     }
 
     if (!validGroupVariants.includes(foundGroup.groupVariant)) {
-        return res.status(400).send('Invalid group type');
+        return res.status(400).send('Error: Invalid group type');
     }
 
     const foundUser = findUserInGroup(foundGroup, userIdToken);
     if (!foundUser || !foundUser.permissions.includes(PERM_GROUP_RW_LIST_ITEMS)) {
-        return res.status(401).send('Unauthorized');
+        return res.status(401).send('Error: Unauthorized');
     }
 
     if (hitMaxListItems(foundGroup)) {
-        return res.status(400).send('You have reached the maximum number of list items');
+        return res.status(400).send('Error: You have reached the maximum number of list items');
     }
 
     const result = await addListItem(foundGroup, userIdToken, 'listItems', listItemReq, res);
@@ -205,33 +205,33 @@ export const handleNewSecretListItemRequest = async (
     const body = secretListItemReq.body;
 
     if (body.length <= 0) {
-        return res.status(400).send('You cannot supply an empty item body');
+        return res.status(400).send('Error: You cannot supply an empty item body');
     }
 
     let links = secretListItemReq.links;
     for (let i = 0; i < links.length; i++) {
         if (links[i].length <= 0) {
-            return res.status(400).send('You cannot supply empty links');
+            return res.status(400).send('Error: You cannot supply empty links');
         }
     }
 
     const foundGroup = await ListGroupBaseModel.findOne({ _id: groupId });
 
     if (!foundGroup) {
-        return res.status(404).send('Group not found');
+        return res.status(404).send('Error: Group not found');
     }
 
     if (!validGroupVariants.includes(foundGroup.groupVariant)) {
-        return res.status(400).send('Invalid group type');
+        return res.status(400).send('Error: Invalid group type');
     }
 
     const foundUser = findUserInGroup(foundGroup, userIdToken);
     if (!foundUser || !foundUser.permissions.includes(PERM_GROUP_RW_SECRET_LIST_ITEMS)) {
-        return res.status(401).send('Unauthorized');
+        return res.status(401).send('Error: Unauthorized');
     }
 
     if (hitMaxSecretListItems(foundGroup, userIdToken)) {
-        return res.status(400).send('You have reached the maximum number of secret list items');
+        return res.status(400).send('Error: You have reached the maximum number of secret list items');
     }
 
     let result = await addListItem(foundGroup, userIdToken, 'secretListItems', secretListItemReq, res);
@@ -279,7 +279,7 @@ export const addGroup = async (
 ) => {
     if (LIST_GROUP_CHILD_VARIANTS.includes(groupVariant)) {
         if (parentGroupId === undefined) {
-            return res.status(400).json({ msg: 'Error: Child groups require a parent group' });
+            return res.status(400).send('Error: Child groups require a parent group');
         }
     }
     try {
@@ -325,7 +325,7 @@ export const addGroup = async (
                 );
 
                 if (!foundParentGroup) {
-                    return res.status(404).send('Parent group not found');
+                    return res.status(404).send('Error: Parent group not found');
                 }
 
                 let members: IgiftGroupChildMember[] = foundParentGroup.members.map((parentMember) => {
