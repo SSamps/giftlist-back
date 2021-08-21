@@ -385,7 +385,7 @@ export const findItemsInGroup = (group: TlistGroupAny, itemIdArray: Schema.Types
         }
     }
 
-    return [foundItems];
+    return foundItems;
 };
 
 export const findItemInGroup = (
