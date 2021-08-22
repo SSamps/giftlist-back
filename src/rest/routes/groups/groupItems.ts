@@ -1,14 +1,14 @@
 import express, { Router, Request, Response } from 'express';
 import { authMiddleware } from '../../middleware/auth';
 import { check, Result, ValidationError, validationResult, oneOf } from 'express-validator';
-import { ListGroupBaseModel } from '../../models/listGroups/ListGroupBaseModel';
+import { ListGroupBaseModel } from '../../../models/listGroups/ListGroupBaseModel';
 import {
     PERM_GROUP_RW_LIST_ITEMS,
     PERM_GROUP_RW_SECRET_LIST_ITEMS,
     PERM_GROUP_SELECT_LIST_ITEMS,
     PERM_GROUP_SELECT_SECRET_LIST_ITEMS,
-} from '../../models/listGroups/listGroupPermissions';
-import { GIFT_LIST } from '../../models/listGroups/variants/discriminators/singular/GiftListModel';
+} from '../../../models/listGroups/listGroupPermissions';
+import { GIFT_LIST } from '../../../models/listGroups/variants/discriminators/singular/GiftListModel';
 import {
     findItemInGroup,
     findItemsInGroup,
@@ -18,8 +18,8 @@ import {
     handleNewListItemRequest,
     handleNewSecretListItemRequest,
 } from '../helperFunctions';
-import { BASIC_LIST } from '../../models/listGroups/variants/discriminators/singular/BasicListModel';
-import { LIST_GROUP_ALL_WITH_ANY_ITEMS } from '../../models/listGroups/variants/listGroupVariants';
+import { BASIC_LIST } from '../../../models/listGroups/variants/discriminators/singular/BasicListModel';
+import { LIST_GROUP_ALL_WITH_ANY_ITEMS } from '../../../models/listGroups/variants/listGroupVariants';
 
 const router: Router = express.Router();
 

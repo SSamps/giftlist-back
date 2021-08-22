@@ -1,11 +1,11 @@
 import express, { Router, Request, Response } from 'express';
 import { authMiddleware } from '../../middleware/auth';
 import { check, Result, ValidationError, validationResult } from 'express-validator';
-import { ListGroupBaseModel } from '../../models/listGroups/ListGroupBaseModel';
-import { PERM_GROUP_RW_MESSAGES } from '../../models/listGroups/listGroupPermissions';
-import { LIST_GROUP_ALL_WITH_MESSAGES } from '../../models/listGroups/variants/listGroupVariants';
-import { TnewUserMessageFields } from '../../models/messages/messageInterfaces';
-import { UserMessageModel } from '../../models/messages/variants/discriminators/UserMessageModel';
+import { ListGroupBaseModel } from '../../../models/listGroups/ListGroupBaseModel';
+import { PERM_GROUP_RW_MESSAGES } from '../../../models/listGroups/listGroupPermissions';
+import { LIST_GROUP_ALL_WITH_MESSAGES } from '../../../models/listGroups/variants/listGroupVariants';
+import { TnewUserMessageFields } from '../../../models/messages/messageInterfaces';
+import { UserMessageModel } from '../../../models/messages/variants/discriminators/UserMessageModel';
 import { findUserInGroup } from '../helperFunctions';
 
 const router: Router = express.Router();

@@ -1,13 +1,13 @@
 import express, { Router, Request, Response } from 'express';
 import { check, validationResult, Result, ValidationError } from 'express-validator';
 import { Schema } from 'mongoose';
-import { IUserCensoredProps, IUser, IUserProps, UserModel } from '../models/User';
+import { IUserCensoredProps, IUser, IUserProps, UserModel } from '../../models/User';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import sendgrid from '@sendgrid/mail';
 import { unverifiedUserAuthMiddleware } from '../middleware/verificationAuth';
-import { ListGroupBaseModel } from '../models/listGroups/ListGroupBaseModel';
-import { PERM_GROUP_OWNER } from '../models/listGroups/listGroupPermissions';
+import { ListGroupBaseModel } from '../../models/listGroups/ListGroupBaseModel';
+import { PERM_GROUP_OWNER } from '../../models/listGroups/listGroupPermissions';
 import { authMiddleware } from '../middleware/auth';
 import { deleteGroupAndAnyChildGroups, findUserInGroup } from './helperFunctions';
 

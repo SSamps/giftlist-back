@@ -1,5 +1,5 @@
 import express, { Router, Request, Response } from 'express';
-import { IUserCensoredProps, IUserProps, UserModel } from '../models/User';
+import { IUserCensoredProps, IUserProps, UserModel } from '../../models/User';
 import { check, validationResult, Result, ValidationError } from 'express-validator';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';

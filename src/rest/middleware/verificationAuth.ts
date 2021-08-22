@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
-import { IUserCensoredProps, UserModel } from '../models/User';
+import { IUserCensoredProps, UserModel } from '../../models/User';
 
 interface IauthToken {
     alg: string;

@@ -1,7 +1,7 @@
 import express, { Router, Request, Response } from 'express';
 import { authMiddleware } from '../../middleware/auth';
 import { check, Result, ValidationError, validationResult } from 'express-validator';
-import { ListGroupBaseModel } from '../../models/listGroups/ListGroupBaseModel';
+import { ListGroupBaseModel } from '../../../models/listGroups/ListGroupBaseModel';
 import {
     PERM_MODIFIERS_ALL,
     PERM_MUTABLE_ALL,
@@ -11,13 +11,13 @@ import {
     PERM_GROUP_KICK,
     PERM_GROUP_MANAGE_PERMS,
     PERM_GROUP_OWNER,
-} from '../../models/listGroups/listGroupPermissions';
+} from '../../../models/listGroups/listGroupPermissions';
 import {
     LIST_GROUP_ALL_TOP_LEVEL_VARIANTS,
     LIST_GROUP_ALL_VARIANTS,
     LIST_GROUP_CHILD_VARIANTS,
     LIST_GROUP_PARENT_VARIANTS,
-} from '../../models/listGroups/variants/listGroupVariants';
+} from '../../../models/listGroups/variants/listGroupVariants';
 
 import {
     addGroup,
@@ -27,7 +27,7 @@ import {
     findOneAndUpdateUsingDiscriminator,
     findUserInGroup,
 } from '../helperFunctions';
-import { TlistGroupAnyCensoredAny } from '../../models/listGroups/listGroupInterfaces';
+import { TlistGroupAnyCensoredAny } from '../../../models/listGroups/listGroupInterfaces';
 import { LeanDocument } from 'mongoose';
 
 const router: Router = express.Router();
