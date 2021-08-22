@@ -6,11 +6,15 @@
 
 // Other Imports
 import express, { Application } from 'express';
+import http from 'http';
+import { Server } from 'socket.io';
 import connectDB from './db';
 import cors from 'cors';
 
-// Express configuration
+// Express and socket.io configuration
 const app: Application = express();
+const server = http.createServer(app);
+const io = new Server(server);
 const PORT: string | number = process.env.PORT || 5000;
 
 // Connect to database
@@ -28,8 +32,16 @@ app.use('/api/groups', require('./routes/groups/groupMessages'));
 app.use('/api/groups', require('./routes/groups/groupItems'));
 app.use('/api/groups', require('./routes/groups/groupInvites'));
 
+io.on('connection', (socket) => {
+    console.log('a user connected to the socket');
+
+    socket.on('disconnect', () => {
+        console.log('a user disconnected from the socket');
+    });
+});
+
 // Start app
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log('Server started on port ' + PORT);
 });
 
