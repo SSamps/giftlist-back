@@ -3,8 +3,6 @@ import { authMiddleware } from '../../middleware/auth';
 import { check, Result, ValidationError, validationResult, oneOf } from 'express-validator';
 import { ListGroupBaseModel } from '../../../models/listGroups/ListGroupBaseModel';
 import {
-    PERM_GROUP_RW_LIST_ITEMS,
-    PERM_GROUP_RW_SECRET_LIST_ITEMS,
     PERM_GROUP_SELECT_LIST_ITEMS,
     PERM_GROUP_SELECT_SECRET_LIST_ITEMS,
 } from '../../../models/listGroups/listGroupPermissions';
@@ -14,7 +12,6 @@ import {
     findItemsInGroup,
     findOneAndUpdateUsingDiscriminator,
     findUserInGroup,
-    findUserPermissionsInGroup,
     handleNewListItemRequest,
     handleNewSecretListItemRequest,
 } from '../helperFunctions';

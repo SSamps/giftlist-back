@@ -10,7 +10,10 @@ import http from 'http';
 import { Server } from 'socket.io';
 import connectDB from './db';
 import cors from 'cors';
-import something from './sockets/test';
+import listGroupChatSocketHandler from './sockets/listGroupChatSocketHandler';
+
+// Connect to database
+connectDB(process.env.MONGO_URI);
 
 // Express configuration
 const app: Application = express();
@@ -32,10 +35,7 @@ app.use('/api/groups', require('./routes/groups/groupInvites'));
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*', methods: '*' } });
 
-something(io);
-
-// Connect to database
-connectDB(process.env.MONGO_URI);
+listGroupChatSocketHandler(io);
 
 // Start app
 server.listen(PORT, () => {

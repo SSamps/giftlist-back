@@ -16,16 +16,14 @@ export const socketAuthMiddleware = async (
     socket: Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap>,
     next: (err?: ExtendedError | undefined) => void
 ) => {
-    // Get token from header
     const token = socket.handshake.auth.token;
-    // Check if not token
+
     if (!token) {
         console.log('no token');
         next(new Error('Unauthorized: missing x-auth-token'));
         return;
     }
 
-    // Verify token
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET) as IauthToken;
 
