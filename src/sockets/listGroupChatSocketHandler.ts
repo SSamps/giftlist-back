@@ -1,5 +1,7 @@
 import { Server } from 'socket.io';
 import { DefaultEventsMap } from 'socket.io/dist/typed-events';
+import { TnewUserMessageFields } from '../models/messages/messageInterfaces';
+import { UserMessageModel } from '../models/messages/variants/discriminators/UserMessageModel';
 import { IUserCensoredProps } from '../models/User';
 import { socketAuthMiddleware } from './middleware/authMiddleware';
 import { socketGroupMiddleware } from './middleware/groupMiddleware';
@@ -13,16 +15,29 @@ const listGroupChatSocketHandler = (io: Server<DefaultEventsMap, DefaultEventsMa
         const groupId = socket.handshake.query.groupId as string;
         io.emit(`you have connected to the chat functionality ${user.displayName}`);
 
-        socket.on('giftListChat:joinRoom', () => {
+        socket.on('giftListChat:joinRoom', async () => {
             console.log('joining: ', groupId);
             socket.join(groupId);
-            socket.emit('giftListChat:joinRoom-success');
             socket.broadcast.to(groupId).emit('giftListChat:message', `${user.displayName} has joined the chat`);
+
+            const foundMessages = await UserMessageModel.find({ groupId: groupId });
+
+            socket.emit('giftListChat:joinRoom-success', foundMessages);
         });
 
-        socket.on('Button clicked', (data) => {
-            console.log('someone clicked the button');
-            io.to(groupId).emit('giftListChat:message', "I'm the backend telling you someone clicked the button");
+        socket.on('Button clicked', async () => {
+            const newMessageFields: TnewUserMessageFields = {
+                author: user._id,
+                groupId: groupId,
+                body: 'Test message from the test button',
+            };
+            const newMessage = new UserMessageModel(newMessageFields);
+            try {
+                const savedMessage = await newMessage.save();
+                io.to(groupId).emit('giftListChat:message', savedMessage);
+            } catch (err) {
+                console.error(err);
+            }
         });
 
         socket.on('disconnect', () => {
