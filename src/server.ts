@@ -10,15 +10,11 @@ import http from 'http';
 import { Server } from 'socket.io';
 import connectDB from './db';
 import cors from 'cors';
+import something from './sockets/test';
 
-// Express and socket.io configuration
+// Express configuration
 const app: Application = express();
-const server = http.createServer(app);
-const io = new Server(server);
 const PORT: string | number = process.env.PORT || 5000;
-
-// Connect to database
-connectDB(process.env.MONGO_URI);
 
 // // Init middleware
 app.use(express.json() as express.RequestHandler);
@@ -32,13 +28,14 @@ app.use('/api/groups', require('./routes/groups/groupMessages'));
 app.use('/api/groups', require('./routes/groups/groupItems'));
 app.use('/api/groups', require('./routes/groups/groupInvites'));
 
-io.on('connection', (socket) => {
-    console.log('a user connected to the socket');
+// Socket.io configuration
+const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: '*', methods: '*' } });
 
-    socket.on('disconnect', () => {
-        console.log('a user disconnected from the socket');
-    });
-});
+something(io);
+
+// Connect to database
+connectDB(process.env.MONGO_URI);
 
 // Start app
 server.listen(PORT, () => {
