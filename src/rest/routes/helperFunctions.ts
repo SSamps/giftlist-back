@@ -51,6 +51,8 @@ import { BasicListModel, BASIC_LIST } from '../../models/listGroups/variants/dis
 import { GiftListModel, GIFT_LIST } from '../../models/listGroups/variants/discriminators/singular/GiftListModel';
 import { Response } from 'express';
 import { MessageBaseModel } from '../../models/messages/MessageBaseModel';
+import { SystemMessageModel } from '../../models/messages/variants/discriminators/SystemMessageModel';
+import { TnewSystemMessageFields } from '../../models/messages/messageInterfaces';
 
 export interface IgroupDeletionResult {
     status: number;
@@ -304,6 +306,14 @@ export const addGroup = async (
                 const newListGroupData: TnewGiftListFields = { members: [owner], groupName };
                 const newListGroup = new GiftListModel(newListGroupData);
                 await newListGroup.save();
+
+                const newMessageFields: TnewSystemMessageFields = {
+                    groupId: newListGroup._id,
+                    body: `${tokenDisplayName} created the list`,
+                };
+                const newMessage = new SystemMessageModel(newMessageFields);
+                await newMessage.save();
+
                 return res.status(200).json(newListGroup);
             }
             case GIFT_GROUP: {
@@ -348,6 +358,15 @@ export const addGroup = async (
                 const newListGroupData: TnewGiftGroupChildFields = { members: members, groupName, parentGroupId };
                 const newListGroup = new GiftGroupChildModel(newListGroupData);
                 await newListGroup.save();
+
+                const newMessageFields: TnewSystemMessageFields = {
+                    groupId: newListGroup._id,
+                    body: `${tokenDisplayName} created the list`,
+                };
+
+                const newMessage = new SystemMessageModel(newMessageFields);
+                await newMessage.save();
+
                 return res.status(200).json(newListGroup);
             }
             default:

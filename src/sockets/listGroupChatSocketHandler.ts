@@ -1,5 +1,6 @@
 import { Server } from 'socket.io';
 import { DefaultEventsMap } from 'socket.io/dist/typed-events';
+import { MessageBaseModel } from '../models/messages/MessageBaseModel';
 import { TnewUserMessageFields } from '../models/messages/messageInterfaces';
 import { UserMessageModel } from '../models/messages/variants/discriminators/UserMessageModel';
 import { IUserCensoredProps } from '../models/User';
@@ -20,7 +21,7 @@ const listGroupChatSocketHandler = (io: Server<DefaultEventsMap, DefaultEventsMa
             socket.join(groupId);
             socket.broadcast.to(groupId).emit('giftListChat:message', `${user.displayName} has joined the chat`);
 
-            const foundMessages = await UserMessageModel.find({ groupId: groupId });
+            const foundMessages = await MessageBaseModel.find({ groupId: groupId });
 
             socket.emit('giftListChat:joinRoom-success', foundMessages);
         });

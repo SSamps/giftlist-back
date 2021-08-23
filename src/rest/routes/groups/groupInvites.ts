@@ -26,6 +26,8 @@ import {
     invalidGroupVariantError,
 } from '../../../models/listGroups/listGroupInterfaces';
 import { findUserInGroup } from '../helperFunctions';
+import { SystemMessageModel } from '../../../models/messages/variants/discriminators/SystemMessageModel';
+import { TnewSystemMessageFields } from '../../../models/messages/messageInterfaces';
 
 const router: Router = express.Router();
 sendgrid.setApiKey(process.env.SENDGRID_API_KEY);
@@ -186,6 +188,14 @@ router.post('/invite/accept/:groupToken', authMiddleware, async (req: Request, r
                     permissions: giftListMemberBasePerms,
                 };
                 await GiftListModel.findOneAndUpdate({ _id: groupId }, { $push: { members: newMember } });
+
+                const newMessageFields: TnewSystemMessageFields = {
+                    groupId: groupId,
+                    body: `${tokenDisplayName} joined`,
+                };
+                const newMessage = new SystemMessageModel(newMessageFields);
+                await newMessage.save();
+
                 break;
             }
             case GIFT_GROUP_CHILD: {

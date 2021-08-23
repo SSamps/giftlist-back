@@ -32,9 +32,9 @@ import { LeanDocument } from 'mongoose';
 
 const router: Router = express.Router();
 
-// @route GET api/groups
-// @desc Get all top level groups a user owns or is a member of and censors them before returning.
-// @access Private
+// // @route GET api/groups/user
+// // @desc Get all top level groups a user owns or is a member of and censors them before returning.
+// // @access Private
 router.get('/user', authMiddleware, async (req: Request, res: Response) => {
     console.log('GET /api/groups/user hit');
 
