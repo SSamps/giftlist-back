@@ -229,12 +229,6 @@ router.put(
                 { 'members.$[member].displayName': displayName },
                 { arrayFilters: [{ 'member.userId': tokenUserId }] }
             );
-            await ListGroupBaseModel.updateMany(
-                {
-                    'owner.userId': tokenUserId,
-                },
-                { 'owner.displayName': displayName }
-            );
 
             return res.status(200).send();
         } catch (err) {

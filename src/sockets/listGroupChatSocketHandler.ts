@@ -25,16 +25,16 @@ const listGroupChatSocketHandler = (io: Server<DefaultEventsMap, DefaultEventsMa
             socket.emit('giftListChat:joinRoom-success', foundMessages);
         });
 
-        socket.on('giftListChat:postMessage', async () => {
+        socket.on('giftListChat:postMessage', async (body) => {
             const newMessageFields: TnewUserMessageFields = {
                 author: user._id,
                 groupId: groupId,
-                body: 'Test message from the test button',
+                body: body,
             };
             const newMessage = new UserMessageModel(newMessageFields);
             try {
                 const savedMessage = await newMessage.save();
-                io.to(groupId).emit('giftListChat:postMessage-success', savedMessage);
+                io.to(groupId).emit('giftListChat:newMessage', savedMessage);
             } catch (err) {
                 console.error(err);
             }
