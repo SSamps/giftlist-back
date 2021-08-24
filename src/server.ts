@@ -11,9 +11,17 @@ import { Server } from 'socket.io';
 import connectDB from './db';
 import cors from 'cors';
 import listGroupChatSocketHandler from './sockets/listGroupChatSocketHandler';
+import { createAdapter } from '@socket.io/redis-adapter';
+import { createClient } from 'redis';
+
+// Env Vars
+const MONGO_URI = process.env.MONGO_URI;
+const REDIS_HOST = process.env.REDIS_HOST;
+const REDIS_PORT = process.env.REDIS_PORT ? parseInt(process.env.REDIS_PORT) : undefined;
+const REDIS_PASSWORD = process.env.REDIS_PASSWORD;
 
 // Connect to database
-connectDB(process.env.MONGO_URI);
+connectDB(MONGO_URI);
 
 // Express configuration
 const app: Application = express();
@@ -34,7 +42,9 @@ app.use('/api/groups', require('./rest/routes/groups/groupInvites'));
 // Socket.io configuration
 const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*', methods: '*' } });
-
+const pubClient = createClient({ host: REDIS_HOST, port: REDIS_PORT, password: REDIS_PASSWORD });
+const subClient = pubClient.duplicate();
+io.adapter(createAdapter(pubClient, subClient));
 listGroupChatSocketHandler(io);
 
 // Start app
