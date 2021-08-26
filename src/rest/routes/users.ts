@@ -201,7 +201,7 @@ router.delete('/', unverifiedUserAuthMiddleware, async (req: Request, res: Respo
 
         await UserModel.findByIdAndDelete(userId);
 
-        return res.status(200).json();
+        return res.status(200).send();
     } catch (err) {
         console.log(err.message);
         return res.status(500).send('Internal server error');
@@ -221,7 +221,14 @@ router.put(
             const tokenUserId = req.user._id;
             const { displayName } = req.body;
 
-            await UserModel.findByIdAndUpdate(tokenUserId, { displayName: displayName });
+            const updatedUser = await UserModel.findByIdAndUpdate(
+                tokenUserId,
+                { displayName: displayName },
+                { new: true }
+            );
+            if (!updatedUser) {
+                return res.status(500).send('Server error');
+            }
             await ListGroupBaseModel.updateMany(
                 {
                     'members.userId': tokenUserId,
@@ -230,7 +237,15 @@ router.put(
                 { arrayFilters: [{ 'member.userId': tokenUserId }] }
             );
 
-            return res.status(200).send();
+            let user: IUserCensoredProps = {
+                _id: updatedUser._id,
+                displayName: updatedUser.displayName,
+                email: updatedUser.email,
+                registrationDate: updatedUser.registrationDate,
+                verified: updatedUser.verified,
+            };
+
+            return res.status(200).json(user);
         } catch (err) {
             console.log(err.message);
             return res.status(500).send('Server error: ' + err.message);

@@ -43,7 +43,7 @@ export async function unverifiedUserAuthMiddleware(req: Request, res: Response, 
             return res.status(401).json({ msg: 'Unauthorized' });
         }
 
-        var user: IUserCensoredProps = {
+        let user: IUserCensoredProps = {
             _id: foundUser._id,
             displayName: foundUser.displayName,
             email: foundUser.email,
