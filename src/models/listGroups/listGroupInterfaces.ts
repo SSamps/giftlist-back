@@ -134,6 +134,12 @@ export type TnewGiftGroupFields = TlistGroupBaseFields & TnewGiftGroupExtraField
 export type TgiftGroupFields = TlistGroupBaseFields & TgiftGroupExtraFields;
 export type TgiftGroupDocument = Document & TgiftGroupFields;
 
+type TgroupChildren = {
+    children: LeanDocument<TlistGroupAnyCensoredSingular>[];
+};
+
+export type TgiftGroupDocumentWithChildren = Document & TgiftGroupFields & TgroupChildren;
+
 // Child groups
 
 export interface IgiftGroupChildMember extends IgroupMemberBase {
@@ -176,10 +182,6 @@ export type TgiftGroupChildFieldsCensored = TlistGroupBaseFields & TgiftGroupChi
 
 type TlistGroupAnyBase = TbasicListFields & TgiftListFields & TgiftGroupFields & TgiftGroupChildFields;
 export type TlistGroupAny = Document & TlistGroupAnyBase & TlistGroupDiscriminatorKey;
-
-type TgroupChildren = {
-    children: LeanDocument<TlistGroupAnyCensoredSingular>[];
-};
 
 export type TlistGroupAnyWithChildren = TlistGroupAny & TgroupChildren;
 

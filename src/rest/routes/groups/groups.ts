@@ -23,11 +23,17 @@ import {
     addGroup,
     censorSingularGroup,
     findAndDeleteGroupAndAnyChildGroupsIfAllowed,
-    findAndCensorChildGroups,
+    findAndAddCensoredChildGroups,
     findOneAndUpdateUsingDiscriminator,
     findUserInGroup,
 } from '../helperFunctions';
-import { TlistGroupAnyCensoredAny } from '../../../models/listGroups/listGroupInterfaces';
+import {
+    TbasicListDocument,
+    TgiftGroupChildDocument,
+    TgiftGroupDocument,
+    TgiftListDocument,
+    TlistGroupAnyCensoredAny,
+} from '../../../models/listGroups/listGroupInterfaces';
 import { LeanDocument } from 'mongoose';
 
 const router: Router = express.Router();
@@ -47,10 +53,10 @@ router.get('/user', authMiddleware, async (req: Request, res: Response) => {
             [groupVariantKey]: { $in: LIST_GROUP_ALL_TOP_LEVEL_VARIANTS },
         }).lean();
 
-        let censoredGroups: LeanDocument<TlistGroupAnyCensoredAny>[] = [];
+        let censoredGroups = [];
         for (let i = 0; i < foundGroups.length; i++) {
             if (LIST_GROUP_PARENT_VARIANTS.includes(foundGroups[i].groupVariant)) {
-                censoredGroups.push(await findAndCensorChildGroups(userIdToken.toString(), foundGroups[i]));
+                censoredGroups.push(await findAndAddCensoredChildGroups(userIdToken.toString(), foundGroups[i]));
             } else {
                 censoredGroups.push(censorSingularGroup(userIdToken.toString(), foundGroups[i]));
             }
@@ -87,7 +93,7 @@ router.get('/:groupid', authMiddleware, async (req: Request, res: Response) => {
 
         let censoredGroup;
         if (LIST_GROUP_PARENT_VARIANTS.includes(foundGroup.groupVariant)) {
-            censoredGroup = await findAndCensorChildGroups(userIdToken.toString(), foundGroup);
+            censoredGroup = await findAndAddCensoredChildGroups(userIdToken.toString(), foundGroup);
         } else {
             censoredGroup = censorSingularGroup(userIdToken.toString(), foundGroup);
         }
@@ -315,6 +321,7 @@ router.put(
             }
 
             await foundGroup.update({ $pull: { members: { userId: targetUserId } } });
+
             return res.status(200);
         } catch (err) {
             console.log(err.message);
@@ -354,14 +361,29 @@ router.put(
                 return res.status(401).send('Error: Unauthorized');
             }
 
-            const result = await findOneAndUpdateUsingDiscriminator(
+            const updatedGroup = await findOneAndUpdateUsingDiscriminator(
                 foundGroup.groupVariant,
                 { _id: foundGroup._id },
                 { groupName: newName },
                 { new: true }
             );
 
-            return res.status(200).json(result);
+            if (!updatedGroup) {
+                return res.status(500).send('Server error');
+            }
+
+            let censoredGroup;
+            if (LIST_GROUP_PARENT_VARIANTS.includes(foundGroup.groupVariant)) {
+                censoredGroup = await findAndAddCensoredChildGroups(
+                    userIdToken.toString(),
+                    foundGroup as TgiftGroupDocument
+                );
+            } else {
+                //@ts-ignore
+                censoredGroup = censorSingularGroup(userIdToken.toString(), foundGroup);
+            }
+
+            return res.status(200).json(censoredGroup);
         } catch (err) {
             console.log(err.message);
             return res.status(500).send('Server error');

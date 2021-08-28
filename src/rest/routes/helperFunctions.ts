@@ -34,6 +34,8 @@ import {
     invalidGroupVariantError,
     invalidParentError,
     invalidParentVariantError,
+    TgiftGroupDocument,
+    TgiftGroupDocumentWithChildren,
     TgroupMemberAny,
     TlistGroupAny,
     TlistGroupAnyCensoredSingular,
@@ -459,10 +461,10 @@ export const findUserPermissionsInGroup = (
     return user.permissions;
 };
 
-export const findAndCensorChildGroups = async (
+export const findAndAddCensoredChildGroups = async (
     userId: string,
-    group: LeanDocument<TlistGroupAny>
-): Promise<LeanDocument<TlistGroupAnyCensoredWithChildren>> => {
+    group: LeanDocument<TgiftGroupDocument>
+): Promise<LeanDocument<TgiftGroupDocumentWithChildren>> => {
     let foundChildren = await ListGroupBaseModel.find({ parentGroupId: group._id }).lean();
 
     let censoredChildren: LeanDocument<TlistGroupAnyCensoredSingular>[] = [];
@@ -474,7 +476,7 @@ export const findAndCensorChildGroups = async (
 
 export const censorSingularGroup = (
     userId: string,
-    group: LeanDocument<TlistGroupAny> | LeanDocument<TlistGroupAnyWithChildren>
+    group: LeanDocument<TlistGroupAny>
 ): LeanDocument<TlistGroupAnyCensoredSingular> => {
     if (LIST_GROUP_ALL_CENSORABLE.includes(group.groupVariant)) {
         let censoredGroup: LeanDocument<TlistGroupAnyCensoredSingular> = group;
