@@ -471,6 +471,7 @@ export const findAndAddCensoredChildGroups = async (
     for (let i = 0; i < foundChildren.length; i++) {
         censoredChildren.push(censorSingularGroup(userId, foundChildren[i]));
     }
+
     return { ...group, children: censoredChildren };
 };
 
@@ -509,16 +510,16 @@ export const findOneAndUpdateUsingDiscriminator = async (
 ) => {
     switch (variant) {
         case BASIC_LIST: {
-            return await BasicListModel.findOneAndUpdate(query, update, options);
+            return await BasicListModel.findOneAndUpdate(query, update, options).lean();
         }
         case GIFT_LIST: {
-            return await GiftListModel.findOneAndUpdate(query, update, options);
+            return await GiftListModel.findOneAndUpdate(query, update, options).lean();
         }
         case GIFT_GROUP: {
-            return await GiftGroupModel.findOneAndUpdate(query, update, options);
+            return await GiftGroupModel.findOneAndUpdate(query, update, options).lean();
         }
         case GIFT_GROUP_CHILD: {
-            return await GiftGroupChildModel.findOneAndUpdate(query, update, options);
+            return await GiftGroupChildModel.findOneAndUpdate(query, update, options).lean();
         }
         default: {
             console.error('Invalid group variant of ', variant, ' passed to findOneAndUpdateUsingDiscriminator');
