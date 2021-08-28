@@ -11,7 +11,12 @@ const userMessageSchema = new Schema<TuserMessageDocument>({
     author: {
         type: Schema.Types.ObjectId,
     },
-    creationDate: { type: Date, default: Date.now },
+    creationDate: {
+        type: Date,
+        default: () => {
+            return new Date();
+        },
+    },
     body: { type: String },
 });
 

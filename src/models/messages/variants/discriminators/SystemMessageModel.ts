@@ -8,7 +8,12 @@ const systemMessageSchema = new Schema<TsystemMessageDocument>({
     groupId: {
         type: Schema.Types.ObjectId,
     },
-    creationDate: { type: Date, default: Date.now },
+    creationDate: {
+        type: Date,
+        default: () => {
+            return new Date();
+        },
+    },
     body: { type: String },
 });
 

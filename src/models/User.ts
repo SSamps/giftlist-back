@@ -32,8 +32,18 @@ export const UserSchema = new Schema({
     displayName: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
-    registrationDate: { type: Date, default: Date.now },
-    oldestValidJWT: { type: Date, default: Date.now },
+    registrationDate: {
+        type: Date,
+        default: () => {
+            return new Date();
+        },
+    },
+    oldestValidJWT: {
+        type: Date,
+        default: () => {
+            return new Date();
+        },
+    },
     verified: { type: Boolean, default: false },
 });
 

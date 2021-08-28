@@ -219,7 +219,10 @@ router.post('/invite/accept/:groupToken', authMiddleware, async (req: Request, r
                     permissions: giftGroupChildMemberBasePerms,
                 };
                 await GiftGroupModel.findOneAndUpdate({ _id: groupId }, { $push: { members: newParentMember } });
-                await ListGroupBaseModel.updateMany({ parentGroupId: groupId }, { $push: { members: newChildMember } });
+                await GiftGroupChildModel.updateMany(
+                    { parentGroupId: groupId },
+                    { $push: { members: newChildMember } }
+                );
 
                 break;
             }

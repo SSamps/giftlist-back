@@ -18,7 +18,12 @@ const ListGroupBaseSchema = new Schema(
             type: Schema.Types.ObjectId,
         },
         groupName: { type: String, required: true },
-        creationDate: { type: Date, default: Date.now },
+        creationDate: {
+            type: Date,
+            default: () => {
+                return new Date();
+            },
+        },
     },
     options
 );

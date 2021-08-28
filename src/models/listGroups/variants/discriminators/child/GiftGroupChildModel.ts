@@ -19,21 +19,31 @@ const giftGroupChildSchema = new Schema<TgiftGroupChildDocument>({
         type: Schema.Types.ObjectId,
         required: true,
     },
-    maxListItems: { type: Number, required: true, default: 20 },
+    maxListItems: { type: 'Number', required: true, default: 20 },
     listItems: [
         {
             authorId: { type: Schema.Types.ObjectId },
-            creationDate: { type: Date, default: Date.now },
+            creationDate: {
+                type: Date,
+                default: () => {
+                    return new Date();
+                },
+            },
             body: { type: String },
             link: { type: String },
             selectedBy: [{ type: Schema.Types.ObjectId }],
         },
     ],
-    maxSecretListItemsEach: { type: Number, required: true, default: 5 },
+    maxSecretListItemsEach: { type: 'Number', required: true, default: 5 },
     secretListItems: [
         {
             authorId: { type: Schema.Types.ObjectId },
-            creationDate: { type: Date, default: Date.now },
+            creationDate: {
+                type: Date,
+                default: () => {
+                    return new Date();
+                },
+            },
             body: { type: String },
             link: { type: String },
             selectedBy: [{ type: Schema.Types.ObjectId }],

@@ -15,11 +15,16 @@ const basicListSchema = new Schema<TbasicListDocument>({
             _id: false,
         },
     ],
-    maxListItems: { type: Number, required: true, default: 50 },
+    maxListItems: { type: 'Number', required: true, default: 50 },
     listItems: [
         {
             authorId: { type: Schema.Types.ObjectId },
-            creationDate: { type: Date, default: Date.now },
+            creationDate: {
+                type: Date,
+                default: () => {
+                    return new Date();
+                },
+            },
             body: { type: String },
             links: [{ type: String }],
             selected: { type: Boolean, default: false },
