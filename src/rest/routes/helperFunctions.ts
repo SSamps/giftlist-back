@@ -9,12 +9,10 @@ import {
     basicListOwnerBasePerms,
     giftGroupChildMemberBasePerms,
     giftGroupChildOwnerBasePerms,
-    giftGroupChildParentOwnerBasePerms,
     giftGroupOwnerBasePerms,
     giftListOwnerBasePerms,
     PERM_CHILD_GROUP_CREATE,
     PERM_GROUP_DELETE,
-    PERM_GROUP_OWNER,
     PERM_GROUP_RW_LIST_ITEMS,
     PERM_GROUP_RW_SECRET_LIST_ITEMS,
     PERM_GROUP_SELECT_LIST_ITEMS,
@@ -345,11 +343,11 @@ export const addGroup = async (
                         permissions: [],
                         oldestReadMessage: undefined,
                     };
-                    if (parentMember.userId === tokenUserId) {
+                    if (parentMember.userId.toString() === tokenUserId.toString()) {
                         childMember.permissions = giftGroupChildOwnerBasePerms;
-                    } else if (parentMember.permissions.includes(PERM_GROUP_OWNER)) {
-                        childMember.permissions = giftGroupChildParentOwnerBasePerms;
                     } else {
+                        console.log(parentMember.userId);
+                        console.log(tokenUserId);
                         childMember.permissions = giftGroupChildMemberBasePerms;
                     }
                     return { ...childMember };

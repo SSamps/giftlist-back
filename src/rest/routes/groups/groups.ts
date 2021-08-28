@@ -113,7 +113,7 @@ router.post(
 
         const errors: Result<ValidationError> = validationResult(req);
         if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
+            return res.status(400).json({ errors: errors.array().toString() });
         }
 
         const tokenUserId = req.user._id;
