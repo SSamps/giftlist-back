@@ -223,7 +223,7 @@ router.put(
                 return res.status(404).send('Error: Group not found');
             }
 
-            if (![BASIC_LIST, GIFT_LIST].includes(foundGroup.groupVariant)) {
+            if (!LIST_GROUP_ALL_WITH_ANY_ITEMS.includes(foundGroup.groupVariant)) {
                 return res.status(400).send('Error: Invalid group type');
             }
 
