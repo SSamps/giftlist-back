@@ -38,6 +38,7 @@ app.use('/api/groups', require('./rest/routes/groups/groups'));
 app.use('/api/groups', require('./rest/routes/groups/groupMessages'));
 app.use('/api/groups', require('./rest/routes/groups/groupItems'));
 app.use('/api/groups', require('./rest/routes/groups/groupInvites'));
+app.use('/api/admin', require('./rest/routes/admin'));
 
 // Socket.io configuration
 const server = http.createServer(app);
