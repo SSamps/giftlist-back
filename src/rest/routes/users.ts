@@ -17,6 +17,10 @@ import {
     VALIDATION_USER_EMAIL_MIN_LENGTH,
     VALIDATION_USER_PASSWORD_MAX_LENGTH,
     VALIDATION_USER_PASSWORD_MIN_LENGTH,
+    VALIDATION_USER_PASSWORD_MIN_LOWERCASE,
+    VALIDATION_USER_PASSWORD_MIN_NUMBER,
+    VALIDATION_USER_PASSWORD_MIN_SYMBOL,
+    VALIDATION_USER_PASSWORD_MIN_UPPERCASE,
 } from '../../models/validation';
 
 sendgrid.setApiKey(process.env.SENDGRID_API_KEY);
@@ -70,12 +74,18 @@ router.post(
         .isLength({ min: VALIDATION_USER_DISPLAY_NAME_MIN_LENGTH, max: VALIDATION_USER_DISPLAY_NAME_MAX_LENGTH }),
     check(
         'password',
-        `Please supply a password between ${VALIDATION_USER_PASSWORD_MIN_LENGTH} and ${VALIDATION_USER_PASSWORD_MAX_LENGTH} characters long.`
+        `Passwords must be between ${VALIDATION_USER_PASSWORD_MIN_LENGTH} and ${VALIDATION_USER_PASSWORD_MAX_LENGTH} characters with at least ${VALIDATION_USER_PASSWORD_MIN_UPPERCASE} uppercase, ${VALIDATION_USER_PASSWORD_MIN_LOWERCASE} lowercase and ${VALIDATION_USER_PASSWORD_MIN_NUMBER} number.`
     )
         .not()
         .isEmpty()
-        .isString()
-        .isLength({ min: VALIDATION_USER_PASSWORD_MIN_LENGTH, max: VALIDATION_USER_PASSWORD_MAX_LENGTH }),
+        .isLength({ max: VALIDATION_USER_PASSWORD_MAX_LENGTH })
+        .isStrongPassword({
+            minLength: VALIDATION_USER_PASSWORD_MIN_LENGTH,
+            minLowercase: VALIDATION_USER_PASSWORD_MIN_LOWERCASE,
+            minUppercase: VALIDATION_USER_PASSWORD_MIN_UPPERCASE,
+            minNumbers: VALIDATION_USER_PASSWORD_MIN_NUMBER,
+            minSymbols: VALIDATION_USER_PASSWORD_MIN_SYMBOL,
+        }),
     check(
         'email',
         `Please supply an email between ${VALIDATION_USER_EMAIL_MIN_LENGTH} and ${VALIDATION_USER_EMAIL_MAX_LENGTH} characters long.`
@@ -361,12 +371,18 @@ router.post(
     '/resetpassword/:token',
     check(
         'password',
-        `Please supply a password between ${VALIDATION_USER_PASSWORD_MIN_LENGTH} and ${VALIDATION_USER_PASSWORD_MAX_LENGTH} characters long.`
+        `Passwords must be between ${VALIDATION_USER_PASSWORD_MIN_LENGTH} and ${VALIDATION_USER_PASSWORD_MAX_LENGTH} characters with at least ${VALIDATION_USER_PASSWORD_MIN_UPPERCASE} uppercase, ${VALIDATION_USER_PASSWORD_MIN_LOWERCASE} lowercase and ${VALIDATION_USER_PASSWORD_MIN_NUMBER} number.`
     )
         .not()
         .isEmpty()
-        .isString()
-        .isLength({ min: VALIDATION_USER_PASSWORD_MIN_LENGTH, max: VALIDATION_USER_PASSWORD_MAX_LENGTH }),
+        .isLength({ max: VALIDATION_USER_PASSWORD_MAX_LENGTH })
+        .isStrongPassword({
+            minLength: VALIDATION_USER_PASSWORD_MIN_LENGTH,
+            minLowercase: VALIDATION_USER_PASSWORD_MIN_LOWERCASE,
+            minUppercase: VALIDATION_USER_PASSWORD_MIN_UPPERCASE,
+            minNumbers: VALIDATION_USER_PASSWORD_MIN_NUMBER,
+            minSymbols: VALIDATION_USER_PASSWORD_MIN_SYMBOL,
+        }),
     async (req: Request, res: Response) => {
         console.log('POST api/users/resetpassword/:token hit');
 
