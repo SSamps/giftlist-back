@@ -36,11 +36,12 @@ import {
     TlistGroupAnyCensoredAny,
 } from '../../../models/listGroups/listGroupInterfaces';
 import { LeanDocument } from 'mongoose';
+import { VALIDATION_GROUP_NAME_MAX_LENGTH, VALIDATION_GROUP_NAME_MIN_LENGTH } from '../../../models/validation';
 
 const router: Router = express.Router();
 
 // // @route GET api/groups/user
-// // @desc Get all top level groups a user owns or is a member of and censors them before returning.
+// // @desc Get all top level groups a user owns or is a member of and censor them before returning.
 // // @access Private
 router.get('/user', authMiddleware, async (req: Request, res: Response) => {
     console.log('GET /api/groups/user hit');
@@ -112,9 +113,16 @@ router.get('/:groupid', authMiddleware, async (req: Request, res: Response) => {
 router.post(
     '/',
     authMiddleware,
-    check('groupName', 'groupName is required').not().isEmpty(),
-    check('groupVariant', 'groupVariant is required').not().isEmpty(),
-    check('groupVariant', 'groupVariant is not a valid group type').isIn(LIST_GROUP_ALL_VARIANTS),
+    check(
+        'groupName',
+        `groupName must be between ${VALIDATION_GROUP_NAME_MIN_LENGTH} and ${VALIDATION_GROUP_NAME_MAX_LENGTH} characters long.`
+    )
+        .not()
+        .isEmpty()
+        .isString()
+        .isLength({ min: VALIDATION_GROUP_NAME_MIN_LENGTH, max: VALIDATION_GROUP_NAME_MAX_LENGTH }),
+    check('groupVariant', 'groupVariant is required.').not().isEmpty(),
+    check('groupVariant', 'Supplied groupVariant is not a valid group type.').isIn(LIST_GROUP_ALL_VARIANTS),
     async (req: Request, res: Response) => {
         console.log('POST /api/groups hit');
 
@@ -340,7 +348,14 @@ router.put(
 router.put(
     '/:groupid/rename',
     authMiddleware,
-    check('newName', 'newName is required').not().isEmpty(),
+    check(
+        'newName',
+        `groupName must be between ${VALIDATION_GROUP_NAME_MIN_LENGTH} and ${VALIDATION_GROUP_NAME_MAX_LENGTH} characters long.`
+    )
+        .not()
+        .isEmpty()
+        .isString()
+        .isLength({ min: VALIDATION_GROUP_NAME_MIN_LENGTH, max: VALIDATION_GROUP_NAME_MAX_LENGTH }),
     async (req: Request, res: Response) => {
         console.log('put /api/groups/:groupid/rename hit');
 

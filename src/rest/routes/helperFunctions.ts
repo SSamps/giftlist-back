@@ -126,20 +126,14 @@ const addListItem = async (
     group: TlistGroupAny,
     userId: mongoose.Schema.Types.ObjectId | string,
     itemType: 'listItems' | 'secretListItems',
-    listItemReq: InewListItemFields,
+    body: string,
+    links: string[],
     res: Response
 ) => {
-    if (listItemReq.body === undefined) {
-        return res.status(400).send('You must include an item body');
-    }
-    if (listItemReq.links === undefined) {
-        return res.status(400).send('You must include an item links array');
-    }
-
     const newListItem: InewListItemFields = {
         authorId: userId,
-        body: listItemReq.body,
-        links: listItemReq.links,
+        body: body,
+        links: links,
     };
 
     const result = await findOneAndUpdateUsingDiscriminator(
@@ -155,23 +149,11 @@ const addListItem = async (
 export const handleNewListItemRequest = async (
     userIdToken: mongoose.Schema.Types.ObjectId | string,
     groupId: mongoose.Schema.Types.ObjectId | string,
-    listItemReq: InewListItemFields,
+    body: string,
+    links: string[],
     res: Response
 ) => {
     const validGroupVariants = [BASIC_LIST, GIFT_LIST, GIFT_GROUP_CHILD];
-
-    const links = listItemReq.links;
-    const body = listItemReq.body;
-
-    if (body.length <= 0) {
-        return res.status(400).send('Error: You cannot supply an empty item body');
-    }
-
-    for (let i = 0; i < links.length; i++) {
-        if (links[i].length <= 0) {
-            return res.status(400).send('Error: You cannot supply empty links');
-        }
-    }
 
     // TODO figure out why I have to define the key this way. Using groupVariant as the key directly results in a TS error.
     const foundGroup = await ListGroupBaseModel.findOne({ _id: groupId });
@@ -193,30 +175,18 @@ export const handleNewListItemRequest = async (
         return res.status(400).send('Error: You have reached the maximum number of list items');
     }
 
-    const result = await addListItem(foundGroup, userIdToken, 'listItems', listItemReq, res);
+    const result = await addListItem(foundGroup, userIdToken, 'listItems', body, links, res);
     return result;
 };
 
 export const handleNewSecretListItemRequest = async (
     userIdToken: mongoose.Schema.Types.ObjectId | string,
     groupId: mongoose.Schema.Types.ObjectId | string,
-    secretListItemReq: InewListItemFields,
+    body: string,
+    links: string[],
     res: Response
 ) => {
     const validGroupVariants = [GIFT_LIST, GIFT_GROUP_CHILD];
-
-    const body = secretListItemReq.body;
-
-    if (body.length <= 0) {
-        return res.status(400).send('Error: You cannot supply an empty item body');
-    }
-
-    let links = secretListItemReq.links;
-    for (let i = 0; i < links.length; i++) {
-        if (links[i].length <= 0) {
-            return res.status(400).send('Error: You cannot supply empty links');
-        }
-    }
 
     const foundGroup = await ListGroupBaseModel.findOne({ _id: groupId });
 
@@ -237,7 +207,7 @@ export const handleNewSecretListItemRequest = async (
         return res.status(400).send('Error: You have reached the maximum number of secret list items');
     }
 
-    let result = await addListItem(foundGroup, userIdToken, 'secretListItems', secretListItemReq, res);
+    let result = await addListItem(foundGroup, userIdToken, 'secretListItems', body, links, res);
     return result;
 };
 

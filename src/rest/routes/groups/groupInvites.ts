@@ -28,6 +28,7 @@ import {
 import { findUserInGroup, formatValidatorErrArrayAsMsgString } from '../helperFunctions';
 import { SystemMessageModel } from '../../../models/messages/variants/discriminators/SystemMessageModel';
 import { TnewSystemMessageFields } from '../../../models/messages/messageInterfaces';
+import { VALIDATION_USER_EMAIL_MAX_LENGTH, VALIDATION_USER_EMAIL_MIN_LENGTH } from '../../../models/validation';
 
 const router: Router = express.Router();
 sendgrid.setApiKey(process.env.SENDGRID_API_KEY);
@@ -48,9 +49,11 @@ interface IinviteToken {
 router.post(
     '/:groupid/invite/send',
     authMiddleware,
-    check('invitedEmails', 'invitedEmails is required.').not().isEmpty(),
-    check('invitedEmails', 'invitedEmails must be an array.').isArray(),
-    check('invitedEmails.*', 'invitedEmails must contain only emails.').isEmail(),
+    check('invitedEmails', 'An invitedEmails array is required.').not().isEmpty().isArray(),
+    check(
+        'invitedEmails.*',
+        `invitedEmails must contain only emails between ${VALIDATION_USER_EMAIL_MIN_LENGTH} and ${VALIDATION_USER_EMAIL_MAX_LENGTH} characters long.`
+    ).isEmail(),
     async (req: Request, res: Response) => {
         console.log('POST /api/groups/:groupid/invite/send hit');
 

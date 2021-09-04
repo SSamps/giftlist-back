@@ -7,6 +7,7 @@ import { LIST_GROUP_ALL_WITH_MESSAGES } from '../../../models/listGroups/variant
 import { TnewUserMessageFields } from '../../../models/messages/messageInterfaces';
 import { UserMessageModel } from '../../../models/messages/variants/discriminators/UserMessageModel';
 import { findUserInGroup, formatValidatorErrArrayAsMsgString } from '../helperFunctions';
+import { VALIDATION_MESSAGE_MAX_LENGTH, VALIDATION_MESSAGE_MIN_LENGTH } from '../../../models/validation';
 
 const router: Router = express.Router();
 
@@ -16,7 +17,14 @@ const router: Router = express.Router();
 router.post(
     '/:groupid/messages',
     authMiddleware,
-    check('body', 'A list item body is required').not().isEmpty(),
+    check(
+        'body',
+        `body must be between ${VALIDATION_MESSAGE_MIN_LENGTH} and ${VALIDATION_MESSAGE_MAX_LENGTH} characters long.`
+    )
+        .not()
+        .isEmpty()
+        .isString()
+        .isLength({ min: VALIDATION_MESSAGE_MIN_LENGTH, max: VALIDATION_MESSAGE_MAX_LENGTH }),
     async (req: Request, res: Response) => {
         console.log('POST api/groups/:groupid/messages');
 

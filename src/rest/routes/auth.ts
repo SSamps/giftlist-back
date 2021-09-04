@@ -27,7 +27,7 @@ router.get('/', unverifiedUserAuthMiddleware, async (req, res) => {
 router.post(
     '/',
     check('email', 'An email is required').not().isEmpty(),
-    check('password', 'A password is required').exists(),
+    check('password', 'A password is required').not().isEmpty(),
     async (req: Request, res: Response) => {
         console.log('POST api/auth hit');
         const errors: Result<ValidationError> = validationResult(req);

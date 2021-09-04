@@ -10,6 +10,14 @@ import { ListGroupBaseModel } from '../../models/listGroups/ListGroupBaseModel';
 import { PERM_GROUP_OWNER } from '../../models/listGroups/listGroupPermissions';
 import { authMiddleware } from '../middleware/auth';
 import { deleteGroupAndAnyChildGroups, findUserInGroup, formatValidatorErrArrayAsMsgString } from './helperFunctions';
+import {
+    VALIDATION_USER_DISPLAY_NAME_MAX_LENGTH,
+    VALIDATION_USER_DISPLAY_NAME_MIN_LENGTH,
+    VALIDATION_USER_EMAIL_MAX_LENGTH,
+    VALIDATION_USER_EMAIL_MIN_LENGTH,
+    VALIDATION_USER_PASSWORD_MAX_LENGTH,
+    VALIDATION_USER_PASSWORD_MIN_LENGTH,
+} from '../../models/validation';
 
 sendgrid.setApiKey(process.env.SENDGRID_API_KEY);
 const router: Router = express.Router();
@@ -52,10 +60,31 @@ async function sendVerificationEmail(newUserId: Schema.Types.ObjectId, email: st
 // @access Public
 router.post(
     '/',
-    check('displayName', 'Display name is required').not().isEmpty(),
-    check('email', 'Please include a valid email').not().isEmpty(),
-    check('email', 'Please include a valid email').isEmail(),
-    check('password', 'Please provide a password with 8 or more characters').isLength({ min: 8 }),
+    check(
+        'displayName',
+        `Please supply a display name between ${VALIDATION_USER_DISPLAY_NAME_MIN_LENGTH} and ${VALIDATION_USER_DISPLAY_NAME_MAX_LENGTH} characters long.`
+    )
+        .not()
+        .isEmpty()
+        .isString()
+        .isLength({ min: VALIDATION_USER_DISPLAY_NAME_MIN_LENGTH, max: VALIDATION_USER_DISPLAY_NAME_MAX_LENGTH }),
+    check(
+        'password',
+        `Please supply a password between ${VALIDATION_USER_PASSWORD_MIN_LENGTH} and ${VALIDATION_USER_PASSWORD_MAX_LENGTH} characters long.`
+    )
+        .not()
+        .isEmpty()
+        .isString()
+        .isLength({ min: VALIDATION_USER_PASSWORD_MIN_LENGTH, max: VALIDATION_USER_PASSWORD_MAX_LENGTH }),
+    check(
+        'email',
+        `Please supply an email between ${VALIDATION_USER_EMAIL_MIN_LENGTH} and ${VALIDATION_USER_EMAIL_MAX_LENGTH} characters long.`
+    )
+        .not()
+        .isEmpty()
+        .isEmail()
+        .isLength({ min: VALIDATION_USER_EMAIL_MIN_LENGTH, max: VALIDATION_USER_EMAIL_MAX_LENGTH }),
+
     async (req: Request, res: Response) => {
         console.log('POST api/users hit');
         const errors: Result<ValidationError> = validationResult(req);
@@ -215,7 +244,14 @@ router.delete('/', unverifiedUserAuthMiddleware, async (req: Request, res: Respo
 router.put(
     '/',
     authMiddleware,
-    check('displayName', 'Display name is required').not().isEmpty(),
+    check(
+        'displayName',
+        `Display name must be between ${VALIDATION_USER_DISPLAY_NAME_MIN_LENGTH} and ${VALIDATION_USER_DISPLAY_NAME_MAX_LENGTH} characters long.`
+    )
+        .not()
+        .isEmpty()
+        .isString()
+        .isLength({ min: VALIDATION_USER_DISPLAY_NAME_MIN_LENGTH, max: VALIDATION_USER_DISPLAY_NAME_MAX_LENGTH }),
     async (req: Request, res: Response) => {
         console.log('PUT api/users/ hit');
         try {
@@ -323,11 +359,14 @@ router.post(
 // @access Private
 router.post(
     '/resetpassword/:token',
-    check('password', 'A password of at least 8 characters is required')
+    check(
+        'password',
+        `Please supply a password between ${VALIDATION_USER_PASSWORD_MIN_LENGTH} and ${VALIDATION_USER_PASSWORD_MAX_LENGTH} characters long.`
+    )
         .not()
         .isEmpty()
         .isString()
-        .isLength({ min: 8 }),
+        .isLength({ min: VALIDATION_USER_PASSWORD_MIN_LENGTH, max: VALIDATION_USER_PASSWORD_MAX_LENGTH }),
     async (req: Request, res: Response) => {
         console.log('POST api/users/resetpassword/:token hit');
 

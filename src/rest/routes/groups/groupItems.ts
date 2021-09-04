@@ -18,23 +18,40 @@ import {
 } from '../helperFunctions';
 import { BASIC_LIST } from '../../../models/listGroups/variants/discriminators/singular/BasicListModel';
 import { LIST_GROUP_ALL_WITH_ANY_ITEMS } from '../../../models/listGroups/variants/listGroupVariants';
+import {
+    VALIDATION_ITEM_BODY_MAX_LENGTH,
+    VALIDATION_ITEM_BODY_MIN_LENGTH,
+    VALIDATION_ITEM_LINK_MAX_LENGTH,
+    VALIDATION_ITEM_LINK_MIN_LENGTH,
+} from '../../../models/validation';
 
 const router: Router = express.Router();
 
 // @route POST api/groups/:groupid/items
 // @desc Add an item to a list group
-// @access Private
+// @access Privates
 router.post(
     '/:groupid/items',
     authMiddleware,
-    oneOf([
-        check('listItem', 'A list item or secret list item object is required').not().isEmpty(),
-        check('secretListItem', 'A list item or secret list item object is required').not().isEmpty(),
-    ]),
+    check('type', 'item type must be either listItem or secretListItem').isIn(['listItem', 'secretListItem']),
+    check(
+        'body',
+        `An item must be between ${VALIDATION_ITEM_BODY_MIN_LENGTH} and ${VALIDATION_ITEM_BODY_MAX_LENGTH} characters long.`
+    )
+        .isString()
+        .isLength({ min: VALIDATION_ITEM_BODY_MIN_LENGTH, max: VALIDATION_ITEM_BODY_MAX_LENGTH }),
+    check('links', 'You must supply a links array.').isArray(),
+    check(
+        'links.*',
+        `Links must be between ${VALIDATION_ITEM_LINK_MIN_LENGTH} and ${VALIDATION_ITEM_LINK_MAX_LENGTH} characters long.`
+    )
+        .isString()
+        .isLength({ min: VALIDATION_ITEM_LINK_MIN_LENGTH, max: VALIDATION_ITEM_LINK_MAX_LENGTH }),
     async (req: Request, res: Response) => {
         console.log('POST api/groups/giftlist/:groupid/items hit');
 
         const errors: Result<ValidationError> = validationResult(req);
+        console.log(errors.array());
         if (!errors.isEmpty()) {
             const errMsg = formatValidatorErrArrayAsMsgString(errors.array());
             return res.status(400).send('Error:' + errMsg);
@@ -42,20 +59,14 @@ router.post(
 
         const userIdToken = req.user._id;
         const groupId = req.params.groupid;
-        const { listItem, secretListItem } = req.body;
-
-        if (listItem && secretListItem) {
-            return res
-                .status(400)
-                .send('Error: You cannot specify a new list item and secret list item in the same request');
-        }
+        const { type, body, links } = req.body;
 
         let result;
         try {
-            if (listItem) {
-                result = await handleNewListItemRequest(userIdToken, groupId, listItem, res);
-            } else if (secretListItem) {
-                result = await handleNewSecretListItemRequest(userIdToken, groupId, secretListItem, res);
+            if (type === 'listItem') {
+                result = await handleNewListItemRequest(userIdToken, groupId, body, links, res);
+            } else {
+                result = await handleNewSecretListItemRequest(userIdToken, groupId, body, links, res);
             }
             return result;
         } catch (err) {
@@ -71,8 +82,7 @@ router.post(
 router.delete(
     '/:groupid/items',
     authMiddleware,
-    check('itemsToDelete', 'You must specify an array of items ids to delete').isArray(),
-    check('itemsToDelete', 'You must specify a populated array of items ids to delete').not().isEmpty(),
+    check('itemsToDelete', 'You must specify an array of items ids to delete').isArray().not().isEmpty(),
     check('itemsToDelete.*', 'You must specify an array of items ids to delete').isString(),
     async (req: Request, res: Response) => {
         console.log('DELETE api/groups/:groupid/items');
@@ -138,9 +148,21 @@ router.delete(
 router.put(
     '/:groupid/items/:itemid',
     authMiddleware,
-    check('body', 'A list item body is required').not().isEmpty(),
-    check('links', 'A list item body is required').isArray(),
-    check('links.*', 'All links must be strings').isString(),
+    check(
+        'body',
+        `An item must be between ${VALIDATION_ITEM_BODY_MIN_LENGTH} and ${VALIDATION_ITEM_BODY_MAX_LENGTH} characters long.`
+    )
+        .not()
+        .isEmpty()
+        .isString()
+        .isLength({ min: VALIDATION_ITEM_BODY_MIN_LENGTH, max: VALIDATION_ITEM_BODY_MAX_LENGTH }),
+    check('links', 'An array of links is required').isArray(),
+    check(
+        'links.*',
+        `Links must be between ${VALIDATION_ITEM_LINK_MIN_LENGTH} and ${VALIDATION_ITEM_LINK_MAX_LENGTH} characters long.`
+    )
+        .isString()
+        .isLength({ min: VALIDATION_ITEM_LINK_MIN_LENGTH, max: VALIDATION_ITEM_LINK_MAX_LENGTH }),
     async (req: Request, res: Response) => {
         console.log('PUT api/groups/:groupid/items:itemid');
 
