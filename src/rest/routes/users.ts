@@ -386,6 +386,13 @@ router.post(
     async (req: Request, res: Response) => {
         console.log('POST api/users/resetpassword/:token hit');
 
+        const errors: Result<ValidationError> = validationResult(req);
+
+        if (!errors.isEmpty()) {
+            const errMsg = formatValidatorErrArrayAsMsgString(errors.array({ onlyFirstError: true }));
+            return res.status(400).send('Error:' + errMsg);
+        }
+
         const resetToken = req.params.token;
         const password = req.body.password;
 
