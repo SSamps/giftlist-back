@@ -1,4 +1,5 @@
 import { Schema } from 'mongoose';
+import { VALIDATION_MESSAGE_MAX_LENGTH, VALIDATION_MESSAGE_MIN_LENGTH } from '../../../validation';
 import { MessageBaseModel } from '../../MessageBaseModel';
 import { TuserMessageDocument } from '../../messageInterfaces';
 
@@ -17,7 +18,7 @@ const userMessageSchema = new Schema<TuserMessageDocument>({
             return new Date();
         },
     },
-    body: { type: String },
+    body: { type: String, minlength: VALIDATION_MESSAGE_MIN_LENGTH, maxlength: VALIDATION_MESSAGE_MAX_LENGTH },
 });
 
 export const UserMessageModel = MessageBaseModel.discriminator(USER_MESSAGE, userMessageSchema);

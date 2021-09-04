@@ -1,4 +1,12 @@
 import { Document, Schema, model } from 'mongoose';
+import {
+    VALIDATION_USER_DISPLAY_NAME_MAX_LENGTH,
+    VALIDATION_USER_DISPLAY_NAME_MIN_LENGTH,
+    VALIDATION_USER_EMAIL_MAX_LENGTH,
+    VALIDATION_USER_EMAIL_MIN_LENGTH,
+    VALIDATION_USER_PASSWORD_MAX_LENGTH,
+    VALIDATION_USER_PASSWORD_MIN_LENGTH,
+} from './validation';
 
 export interface IUserCensoredProps {
     displayName: string;
@@ -29,9 +37,25 @@ export interface IUser extends Document {
 }
 
 export const UserSchema = new Schema({
-    displayName: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    displayName: {
+        type: String,
+        required: true,
+        minlength: VALIDATION_USER_DISPLAY_NAME_MIN_LENGTH,
+        maxlength: VALIDATION_USER_DISPLAY_NAME_MAX_LENGTH,
+    },
+    email: {
+        type: String,
+        required: true,
+        unique: true,
+        minlength: VALIDATION_USER_EMAIL_MIN_LENGTH,
+        maxlength: VALIDATION_USER_EMAIL_MAX_LENGTH,
+    },
+    password: {
+        type: String,
+        required: true,
+        minlength: VALIDATION_USER_PASSWORD_MIN_LENGTH,
+        maxlength: VALIDATION_USER_PASSWORD_MAX_LENGTH,
+    },
     registrationDate: {
         type: Date,
         default: () => {

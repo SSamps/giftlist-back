@@ -2,6 +2,12 @@ import { Schema } from 'mongoose';
 import { ListGroupBaseModel } from '../../../ListGroupBaseModel';
 import { PERM_GIFT_LIST_ALL } from '../../../listGroupPermissions';
 import { TgiftListDocument } from '../../../listGroupInterfaces';
+import {
+    VALIDATION_ITEM_BODY_MAX_LENGTH,
+    VALIDATION_ITEM_BODY_MIN_LENGTH,
+    VALIDATION_ITEM_LINK_MAX_LENGTH,
+    VALIDATION_ITEM_LINK_MIN_LENGTH,
+} from '../../../../validation';
 
 export const GIFT_LIST = 'GIFT_LIST';
 
@@ -25,8 +31,18 @@ const giftListSchema = new Schema<TgiftListDocument>({
                     return new Date();
                 },
             },
-            body: { type: String },
-            links: [{ type: String }],
+            body: {
+                type: String,
+                minlength: VALIDATION_ITEM_BODY_MIN_LENGTH,
+                maxlength: VALIDATION_ITEM_BODY_MAX_LENGTH,
+            },
+            links: [
+                {
+                    type: String,
+                    minlength: VALIDATION_ITEM_LINK_MIN_LENGTH,
+                    maxlength: VALIDATION_ITEM_LINK_MAX_LENGTH,
+                },
+            ],
             selectedBy: [{ type: Schema.Types.ObjectId }],
         },
     ],
@@ -40,8 +56,18 @@ const giftListSchema = new Schema<TgiftListDocument>({
                     return new Date();
                 },
             },
-            body: { type: String },
-            links: [{ type: String }],
+            body: {
+                type: String,
+                minlength: VALIDATION_ITEM_BODY_MIN_LENGTH,
+                maxlength: VALIDATION_ITEM_BODY_MAX_LENGTH,
+            },
+            links: [
+                {
+                    type: String,
+                    minlength: VALIDATION_ITEM_LINK_MIN_LENGTH,
+                    maxlength: VALIDATION_ITEM_LINK_MAX_LENGTH,
+                },
+            ],
             selectedBy: [{ type: Schema.Types.ObjectId }],
         },
     ],
