@@ -4,6 +4,7 @@ import { check, validationResult, Result, ValidationError } from 'express-valida
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { unverifiedUserAuthMiddleware } from '../middleware/verificationAuth';
+import { formatValidatorErrArrayAsMsgString } from './helperFunctions';
 
 const router: Router = express.Router();
 
@@ -32,7 +33,8 @@ router.post(
         const errors: Result<ValidationError> = validationResult(req);
 
         if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
+            const errMsg = formatValidatorErrArrayAsMsgString(errors.array());
+            return res.status(400).send('Error:' + errMsg);
         }
 
         let { email, password }: IUserProps = req.body;

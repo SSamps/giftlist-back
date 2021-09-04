@@ -9,7 +9,7 @@ import { unverifiedUserAuthMiddleware } from '../middleware/verificationAuth';
 import { ListGroupBaseModel } from '../../models/listGroups/ListGroupBaseModel';
 import { PERM_GROUP_OWNER } from '../../models/listGroups/listGroupPermissions';
 import { authMiddleware } from '../middleware/auth';
-import { deleteGroupAndAnyChildGroups, findUserInGroup } from './helperFunctions';
+import { deleteGroupAndAnyChildGroups, findUserInGroup, formatValidatorErrArrayAsMsgString } from './helperFunctions';
 
 sendgrid.setApiKey(process.env.SENDGRID_API_KEY);
 const router: Router = express.Router();
@@ -61,7 +61,8 @@ router.post(
         const errors: Result<ValidationError> = validationResult(req);
 
         if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
+            const errMsg = formatValidatorErrArrayAsMsgString(errors.array());
+            return res.status(400).send('Error:' + errMsg);
         }
 
         let { displayName, email, password }: IUserProps = req.body;
@@ -271,8 +272,10 @@ router.post(
         console.log('POST api/users/resetpassword hit');
 
         const errors: Result<ValidationError> = validationResult(req);
+
         if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
+            const errMsg = formatValidatorErrArrayAsMsgString(errors.array());
+            return res.status(400).send('Error:' + errMsg);
         }
 
         const reqEmail = req.body.email;

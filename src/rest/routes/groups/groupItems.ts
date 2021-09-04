@@ -12,6 +12,7 @@ import {
     findItemsInGroup,
     findOneAndUpdateUsingDiscriminator,
     findUserInGroup,
+    formatValidatorErrArrayAsMsgString,
     handleNewListItemRequest,
     handleNewSecretListItemRequest,
 } from '../helperFunctions';
@@ -35,7 +36,8 @@ router.post(
 
         const errors: Result<ValidationError> = validationResult(req);
         if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
+            const errMsg = formatValidatorErrArrayAsMsgString(errors.array());
+            return res.status(400).send('Error:' + errMsg);
         }
 
         const userIdToken = req.user._id;
@@ -77,7 +79,8 @@ router.delete(
 
         const errors: Result<ValidationError> = validationResult(req);
         if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
+            const errMsg = formatValidatorErrArrayAsMsgString(errors.array());
+            return res.status(400).send('Error:' + errMsg);
         }
 
         const userIdToken = req.user._id;
@@ -143,7 +146,8 @@ router.put(
 
         const errors: Result<ValidationError> = validationResult(req);
         if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
+            const errMsg = formatValidatorErrArrayAsMsgString(errors.array());
+            return res.status(400).send('Error:' + errMsg);
         }
 
         const userIdToken = req.user._id;
@@ -208,7 +212,8 @@ router.put(
 
         const errors: Result<ValidationError> = validationResult(req);
         if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
+            const errMsg = formatValidatorErrArrayAsMsgString(errors.array());
+            return res.status(400).send('Error:' + errMsg);
         }
 
         const userIdToken = req.user._id;

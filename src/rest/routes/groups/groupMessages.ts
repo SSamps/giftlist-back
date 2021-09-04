@@ -6,47 +6,9 @@ import { PERM_GROUP_RW_MESSAGES } from '../../../models/listGroups/listGroupPerm
 import { LIST_GROUP_ALL_WITH_MESSAGES } from '../../../models/listGroups/variants/listGroupVariants';
 import { TnewUserMessageFields } from '../../../models/messages/messageInterfaces';
 import { UserMessageModel } from '../../../models/messages/variants/discriminators/UserMessageModel';
-import { findUserInGroup } from '../helperFunctions';
+import { findUserInGroup, formatValidatorErrArrayAsMsgString } from '../helperFunctions';
 
 const router: Router = express.Router();
-
-// @route GET api/groups/:groupid/messages
-// @desc TEST ROUTE. Gets all messages in a group. Later will add this functionality to the group route.
-// @access Private
-router.get('/:groupid/messages', authMiddleware, async (req: Request, res: Response) => {
-    console.log('GET api/groups/:groupid/messages');
-
-    const errors: Result<ValidationError> = validationResult(req);
-    if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-    }
-
-    const userIdToken = req.user._id;
-    const groupIdParams = req.params.groupid;
-
-    try {
-        let groupVariantKey = 'groupVariant';
-        let foundGroup = await ListGroupBaseModel.findOne({
-            $and: [
-                { _id: groupIdParams, [groupVariantKey]: { $in: LIST_GROUP_ALL_WITH_MESSAGES } },
-                { 'members.userId': userIdToken, 'members.permissions': PERM_GROUP_RW_MESSAGES },
-            ],
-        });
-
-        if (!foundGroup) {
-            return res
-                .status(400)
-                .send('Error: User is not an owner or member of the supplied group with the correct permissions');
-        }
-
-        let foundMessages = await UserMessageModel.find({ groupId: groupIdParams });
-
-        return res.status(200).json({ messages: foundMessages });
-    } catch (err) {
-        console.log(err);
-        return res.status(500).send('Internal server error');
-    }
-});
 
 // @route POST api/groups/:groupid/messages
 // @desc Post a message to a list group
@@ -60,7 +22,8 @@ router.post(
 
         const errors: Result<ValidationError> = validationResult(req);
         if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
+            const errMsg = formatValidatorErrArrayAsMsgString(errors.array());
+            return res.status(400).send('Error:' + errMsg);
         }
 
         const userIdToken = req.user._id;

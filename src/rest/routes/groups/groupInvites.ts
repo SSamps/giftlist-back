@@ -25,7 +25,7 @@ import {
     IgiftListMember,
     invalidGroupVariantError,
 } from '../../../models/listGroups/listGroupInterfaces';
-import { findUserInGroup } from '../helperFunctions';
+import { findUserInGroup, formatValidatorErrArrayAsMsgString } from '../helperFunctions';
 import { SystemMessageModel } from '../../../models/messages/variants/discriminators/SystemMessageModel';
 import { TnewSystemMessageFields } from '../../../models/messages/messageInterfaces';
 
@@ -48,15 +48,17 @@ interface IinviteToken {
 router.post(
     '/:groupid/invite/send',
     authMiddleware,
-    check('invitedEmails', 'invitedEmails is required').not().isEmpty(),
-    check('invitedEmails', 'invitedEmails must be an array').isArray(),
-    check('invitedEmails.*', 'invitedEmails must contain only emails').isEmail(),
+    check('invitedEmails', 'invitedEmails is required.').not().isEmpty(),
+    check('invitedEmails', 'invitedEmails must be an array.').isArray(),
+    check('invitedEmails.*', 'invitedEmails must contain only emails.').isEmail(),
     async (req: Request, res: Response) => {
         console.log('POST /api/groups/:groupid/invite/send hit');
 
         const errors: Result<ValidationError> = validationResult(req);
+
         if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
+            const errMsg = formatValidatorErrArrayAsMsgString(errors.array());
+            return res.status(400).send('Error:' + errMsg);
         }
 
         const userIdToken = req.user._id;

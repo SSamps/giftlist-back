@@ -26,6 +26,7 @@ import {
     findAndAddCensoredChildGroups,
     findOneAndUpdateUsingDiscriminator,
     findUserInGroup,
+    formatValidatorErrArrayAsMsgString,
 } from '../helperFunctions';
 import {
     TbasicListDocument,
@@ -119,7 +120,8 @@ router.post(
 
         const errors: Result<ValidationError> = validationResult(req);
         if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array().toString() });
+            const errMsg = formatValidatorErrArrayAsMsgString(errors.array());
+            return res.status(400).send('Error:' + errMsg);
         }
 
         const tokenUserId = req.user._id;
@@ -216,7 +218,8 @@ router.put(
 
         const errors: Result<ValidationError> = validationResult(req);
         if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
+            const errMsg = formatValidatorErrArrayAsMsgString(errors.array());
+            return res.status(400).send('Error:' + errMsg);
         }
 
         const userIdToken = req.user._id;
@@ -284,7 +287,8 @@ router.put(
 
         const errors: Result<ValidationError> = validationResult(req);
         if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
+            const errMsg = formatValidatorErrArrayAsMsgString(errors.array());
+            return res.status(400).send('Error:' + errMsg);
         }
 
         const userIdToken = req.user._id;
@@ -342,7 +346,8 @@ router.put(
 
         const errors: Result<ValidationError> = validationResult(req);
         if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
+            const errMsg = formatValidatorErrArrayAsMsgString(errors.array());
+            return res.status(400).send('Error:' + errMsg);
         }
 
         const userIdToken = req.user._id;

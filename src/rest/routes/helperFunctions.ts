@@ -53,6 +53,7 @@ import { Response } from 'express';
 import { MessageBaseModel } from '../../models/messages/MessageBaseModel';
 import { SystemMessageModel } from '../../models/messages/variants/discriminators/SystemMessageModel';
 import { TnewSystemMessageFields } from '../../models/messages/messageInterfaces';
+import { ValidationError } from 'express-validator';
 
 export interface IgroupDeletionResult {
     status: number;
@@ -526,4 +527,14 @@ export const findOneAndUpdateUsingDiscriminator = async (
             throw new Error('Server Error');
         }
     }
+};
+
+export const formatValidatorErrArrayAsMsgString = (errorArray: ValidationError[]) => {
+    let errString: string = '';
+
+    for (let i = 0; i < errorArray.length; i++) {
+        errString = errString + ' ' + errorArray[i].msg;
+    }
+
+    return errString;
 };
