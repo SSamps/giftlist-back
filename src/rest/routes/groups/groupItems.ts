@@ -199,7 +199,7 @@ router.put(
                 return res.status(404).send('Error: Item not found');
             }
 
-            if (foundItem.authorId.toString() !== userIdToken.toString()) {
+            if (foundItem.authorId.toString() !== userIdToken.toString() && foundGroup.groupVariant !== 'BASIC_LIST') {
                 return res.status(401).send('Error: You can only modify your own items');
             }
 
