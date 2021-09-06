@@ -51,11 +51,16 @@ export interface IgroupMemberBase {
     permissions: TYPE_PERM_ALL_LIST_GROUP[];
 }
 
-export interface IlistGroupBaseFields {
-    groupName: string;
-    creationDate?: Date;
+export interface IlistGroupBaseDefaultFields {
+    creationDate: Date;
     _id: Schema.Types.ObjectId | string;
 }
+
+export interface IListGroupBaseRequiredFields {
+    groupName: string;
+}
+
+export type IlistGroupBaseFields = IlistGroupBaseDefaultFields & IListGroupBaseRequiredFields;
 
 // Singular groups
 // Basic Lists
@@ -76,7 +81,7 @@ interface IbasicListExtraFields {
     groupVariant: typeof BASIC_LIST;
 }
 
-export type TnewBasicListFields = IlistGroupBaseFields & InewBasicListExtraFields;
+export type TnewBasicListFields = IListGroupBaseRequiredFields & InewBasicListExtraFields;
 
 export type TbasicListFields = IlistGroupBaseFields & IbasicListExtraFields;
 export type TbasicListDocument = Document & TbasicListFields;
@@ -113,7 +118,7 @@ interface IgiftListExtraFieldsCensored {
     groupVariant: typeof GIFT_LIST;
 }
 
-export type TnewGiftListFields = IlistGroupBaseFields & InewGiftListExtraFields;
+export type TnewGiftListFields = IListGroupBaseRequiredFields & InewGiftListExtraFields;
 
 export type TgiftListFields = IlistGroupBaseFields & IgiftListExtraFields;
 export type TgiftListDocument = Document & TgiftListFields;
@@ -136,7 +141,7 @@ interface IgiftGroupExtraFields {
     groupVariant: typeof GIFT_GROUP;
 }
 
-export type TnewGiftGroupFields = IlistGroupBaseFields & InewGiftGroupExtraFields;
+export type TnewGiftGroupFields = IListGroupBaseRequiredFields & InewGiftGroupExtraFields;
 
 export type TgiftGroupFields = IlistGroupBaseFields & IgiftGroupExtraFields;
 export type TgiftGroupDocument = Document & TgiftGroupFields;
@@ -180,7 +185,7 @@ interface IgiftGroupChildExtraFieldsCensored {
     groupVariant: typeof GIFT_GROUP_CHILD;
 }
 
-export type TnewGiftGroupChildFields = IlistGroupBaseFields & InewGiftGroupChildExtraFields;
+export type TnewGiftGroupChildFields = IListGroupBaseRequiredFields & InewGiftGroupChildExtraFields;
 
 export type TgiftGroupChildFields = IlistGroupBaseFields & IgiftGroupChildExtraFields;
 export type TgiftGroupChildDocument = Document & TgiftGroupChildFields;
