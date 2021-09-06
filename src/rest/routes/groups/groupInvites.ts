@@ -24,7 +24,7 @@ import {
     IgiftGroupMember,
     IgiftListMember,
 } from '../../../models/listGroups/listGroupInterfaces';
-import { findUserInGroup, formatValidatorErrArrayAsMsgString } from '../helperFunctions';
+import { findUserInGroup, formatValidatorErrArrayAsMsgString } from '../../../misc/helperFunctions';
 import { SystemMessageModel } from '../../../models/messages/variants/discriminators/SystemMessageModel';
 import { TnewSystemMessageFields } from '../../../models/messages/messageInterfaces';
 import { VALIDATION_USER_EMAIL_MAX_LENGTH, VALIDATION_USER_EMAIL_MIN_LENGTH } from '../../../models/validation';

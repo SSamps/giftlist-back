@@ -6,7 +6,7 @@ import { PERM_GROUP_RW_MESSAGES } from '../../../models/listGroups/listGroupPerm
 import { LIST_GROUP_ALL_WITH_MESSAGES } from '../../../models/listGroups/variants/listGroupVariants';
 import { TnewUserMessageFields } from '../../../models/messages/messageInterfaces';
 import { UserMessageModel } from '../../../models/messages/variants/discriminators/UserMessageModel';
-import { findUserInGroup, formatValidatorErrArrayAsMsgString } from '../helperFunctions';
+import { findUserInGroup, formatValidatorErrArrayAsMsgString } from '../../../misc/helperFunctions';
 import { VALIDATION_MESSAGE_MAX_LENGTH, VALIDATION_MESSAGE_MIN_LENGTH } from '../../../models/validation';
 
 const router: Router = express.Router();

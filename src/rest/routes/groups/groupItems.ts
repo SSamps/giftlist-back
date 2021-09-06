@@ -15,7 +15,7 @@ import {
     formatValidatorErrArrayAsMsgString,
     handleNewListItemRequest,
     handleNewSecretListItemRequest,
-} from '../helperFunctions';
+} from '../../../misc/helperFunctions';
 import { BASIC_LIST } from '../../../models/listGroups/variants/discriminators/singular/BasicListModel';
 import {
     VALIDATION_ITEM_BODY_MAX_LENGTH,

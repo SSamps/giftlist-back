@@ -3,7 +3,7 @@ import { Socket } from 'socket.io/dist/socket';
 import { DefaultEventsMap } from 'socket.io/dist/typed-events';
 import { ExtendedError } from 'socket.io/dist/namespace';
 import { ListGroupBaseModel } from '../../models/listGroups/ListGroupBaseModel';
-import { findUserInGroup } from '../../rest/routes/helperFunctions';
+import { findUserInGroup } from '../../misc/helperFunctions';
 
 export interface socketWithUser extends Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap> {
     data: {

@@ -4,7 +4,7 @@ import { check, validationResult, Result, ValidationError } from 'express-valida
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { unverifiedUserAuthMiddleware } from '../middleware/verificationAuth';
-import { formatValidatorErrArrayAsMsgString } from './helperFunctions';
+import { formatValidatorErrArrayAsMsgString } from '../../misc/helperFunctions';
 
 const router: Router = express.Router();
 

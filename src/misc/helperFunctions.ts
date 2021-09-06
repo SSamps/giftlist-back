@@ -2,9 +2,9 @@ import mongoose, { LeanDocument, Schema } from 'mongoose';
 import {
     GiftGroupChildModel,
     GIFT_GROUP_CHILD,
-} from '../../models/listGroups/variants/discriminators/child/GiftGroupChildModel';
-import { ListGroupBaseModel } from '../../models/listGroups/ListGroupBaseModel';
-import { GiftGroupModel, GIFT_GROUP } from '../../models/listGroups/variants/discriminators/parent/GiftGroupModel';
+} from '../models/listGroups/variants/discriminators/child/GiftGroupChildModel';
+import { ListGroupBaseModel } from '../models/listGroups/ListGroupBaseModel';
+import { GiftGroupModel, GIFT_GROUP } from '../models/listGroups/variants/discriminators/parent/GiftGroupModel';
 import {
     basicListOwnerBasePerms,
     giftGroupChildMemberBasePerms,
@@ -17,13 +17,13 @@ import {
     PERM_GROUP_RW_SECRET_LIST_ITEMS,
     PERM_GROUP_SELECT_LIST_ITEMS,
     TYPE_PERM_ALL_LIST_GROUP,
-} from '../../models/listGroups/listGroupPermissions';
+} from '../models/listGroups/listGroupPermissions';
 import {
     LIST_GROUP_ALL_NON_CENSORABLE,
     LIST_GROUP_ALL_WITH_MESSAGES,
     LIST_GROUP_CHILD_VARIANTS,
     LIST_GROUP_PARENT_VARIANTS,
-} from '../../models/listGroups/variants/listGroupVariants';
+} from '../models/listGroups/variants/listGroupVariants';
 import {
     IbasicListMember,
     IgiftGroupChildMember,
@@ -50,14 +50,14 @@ import {
     TgiftGroupWithChildrenFields,
     TlistGroupAnyFields,
     groupVariantHasRegularItems,
-} from '../../models/listGroups/listGroupInterfaces';
-import { TitemTypes, IgiftListItem, InewListItemFields } from '../../models/listGroups/listItemInterfaces';
-import { BasicListModel, BASIC_LIST } from '../../models/listGroups/variants/discriminators/singular/BasicListModel';
-import { GiftListModel, GIFT_LIST } from '../../models/listGroups/variants/discriminators/singular/GiftListModel';
+} from '../models/listGroups/listGroupInterfaces';
+import { TitemTypes, IgiftListItem, InewListItemFields } from '../models/listGroups/listItemInterfaces';
+import { BasicListModel, BASIC_LIST } from '../models/listGroups/variants/discriminators/singular/BasicListModel';
+import { GiftListModel, GIFT_LIST } from '../models/listGroups/variants/discriminators/singular/GiftListModel';
 import { Response } from 'express';
-import { MessageBaseModel } from '../../models/messages/MessageBaseModel';
-import { SystemMessageModel } from '../../models/messages/variants/discriminators/SystemMessageModel';
-import { TnewSystemMessageFields } from '../../models/messages/messageInterfaces';
+import { MessageBaseModel } from '../models/messages/MessageBaseModel';
+import { SystemMessageModel } from '../models/messages/variants/discriminators/SystemMessageModel';
+import { TnewSystemMessageFields } from '../models/messages/messageInterfaces';
 import { ValidationError } from 'express-validator';
 
 export interface IgroupDeletionResult {

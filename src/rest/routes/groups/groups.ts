@@ -27,7 +27,7 @@ import {
     findOneAndUpdateUsingDiscriminator,
     findUserInGroup,
     formatValidatorErrArrayAsMsgString,
-} from '../helperFunctions';
+} from '../../../misc/helperFunctions';
 import { groupVariantIsAParent } from '../../../models/listGroups/listGroupInterfaces';
 import { VALIDATION_GROUP_NAME_MAX_LENGTH, VALIDATION_GROUP_NAME_MIN_LENGTH } from '../../../models/validation';
 

@@ -9,7 +9,11 @@ import { unverifiedUserAuthMiddleware } from '../middleware/verificationAuth';
 import { ListGroupBaseModel } from '../../models/listGroups/ListGroupBaseModel';
 import { PERM_GROUP_OWNER } from '../../models/listGroups/listGroupPermissions';
 import { authMiddleware } from '../middleware/auth';
-import { deleteGroupAndAnyChildGroups, findUserInGroup, formatValidatorErrArrayAsMsgString } from './helperFunctions';
+import {
+    deleteGroupAndAnyChildGroups,
+    findUserInGroup,
+    formatValidatorErrArrayAsMsgString,
+} from '../../misc/helperFunctions';
 import {
     VALIDATION_USER_DISPLAY_NAME_MAX_LENGTH,
     VALIDATION_USER_DISPLAY_NAME_MIN_LENGTH,
