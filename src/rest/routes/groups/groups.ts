@@ -33,9 +33,9 @@ import { VALIDATION_GROUP_NAME_MAX_LENGTH, VALIDATION_GROUP_NAME_MIN_LENGTH } fr
 
 const router: Router = express.Router();
 
-// // @route GET api/groups/user
-// // @desc Get all top level groups a user owns or is a member of and censor them before returning.
-// // @access Private
+// @route GET api/groups/user
+// @desc Get all top level groups a user owns or is a member of and censor them before returning.
+// @access Private
 router.get('/user', authMiddleware, async (req: Request, res: Response) => {
     console.log('GET /api/groups/user hit');
 
@@ -60,7 +60,7 @@ router.get('/user', authMiddleware, async (req: Request, res: Response) => {
 
         return res.status(200).json(censoredGroups);
     } catch (err) {
-        console.log(err.message);
+        console.error('Error inside GET /api/groups/user: ' + err.message);
         return res.status(500).send('Server error');
     }
 });
@@ -96,7 +96,7 @@ router.get('/:groupid', authMiddleware, async (req: Request, res: Response) => {
 
         return res.status(200).json(censoredGroup);
     } catch (err) {
-        console.log(err.message);
+        console.error('Error inside GET /api/groups/:groupid: ' + err.message);
         return res.status(500).send('Server error');
     }
 });
@@ -135,7 +135,7 @@ router.post(
             result = await addGroup(tokenUserId, tokenDisplayName, groupVariant, groupName, res, parentGroupId);
             return result;
         } catch (err) {
-            console.log(err.message);
+            console.error('Error inside POST /api/groups: ' + err.message);
             return res.status(500).send('Server error');
         }
     }
@@ -180,7 +180,7 @@ router.put('/:groupid/leave', authMiddleware, async (req: Request, res: Response
         }
         return res.status(200).send('Successfully left group');
     } catch (err) {
-        console.log(err.message);
+        console.error('Error inside PUT /api/groups/:groupid/leave: ' + err.message);
         return res.status(500).send('Server error');
     }
 });
@@ -199,142 +199,10 @@ router.delete('/:groupid/delete', authMiddleware, async (req: Request, res: Resp
 
         return res.status(status).send(msg);
     } catch (err) {
-        console.log(err.message);
+        console.error('Error inside DELETE /api/groups/:groupid/delete: ' + err.message);
         return res.status(500).send('Server error');
     }
 });
-
-// @route PUT api/groups/:groupid/permission
-// @desc Modify the permissions for users in a group
-// @access Private
-router.put(
-    '/:groupid/permission',
-    authMiddleware,
-    check('targetUserId', 'targetUserId is required').not().isEmpty(),
-    check('targetPermission', 'targetPermission is required').not().isEmpty(),
-    check('targetPermission', 'targetPermission cannot be modified').isIn(PERM_MUTABLE_ALL),
-    check('modification', 'modification is required').not().isEmpty(),
-    check('modification', 'Invalid permission modifier').isIn(PERM_MODIFIERS_ALL),
-    async (req: Request, res: Response) => {
-        console.log('PUT /api/groups/:groupid/permission hit');
-
-        const errors: Result<ValidationError> = validationResult(req);
-        if (!errors.isEmpty()) {
-            const errMsg = formatValidatorErrArrayAsMsgString(errors.array());
-            return res.status(400).send('Error:' + errMsg);
-        }
-
-        const userIdToken = req.user._id;
-        const groupIdParams = req.params.groupid;
-        const { targetUserId, targetPermission, modification } = req.body;
-
-        if (userIdToken === targetUserId) {
-            return res.status(400).send('Error: You cannot modify your own permissions');
-        }
-
-        try {
-            const foundGroup = await ListGroupBaseModel.findOne({ _id: groupIdParams });
-
-            if (!foundGroup) {
-                return res.status(404).send('Error: Group not found');
-            }
-
-            if (LIST_GROUP_CHILD_VARIANTS.includes(foundGroup.groupVariant)) {
-                return res.status(400).send('Error: Users cannot be invited directly to child groups');
-            }
-
-            const foundRequestingUser = findUserInGroup(foundGroup, userIdToken);
-            if (!foundRequestingUser || !foundRequestingUser.permissions.includes(PERM_GROUP_MANAGE_PERMS)) {
-                return res.status(401).send('Error: Unauthorized');
-            }
-
-            const foundTargetUser = findUserInGroup(foundGroup, targetUserId);
-            if (!foundTargetUser) {
-                return res.status(404).send('Error: Target user not found in group');
-            }
-
-            if (foundTargetUser.permissions.includes(PERM_GROUP_OWNER)) {
-                return res.status(401).send('Error: You cannot modify permissions of the group owner');
-            }
-
-            if (modification === PERM_MODIFIER_ADD) {
-                await foundGroup.update(
-                    { $addToSet: { 'members.$[member].permissions': targetPermission } },
-                    { arrayFilters: [{ 'member.userId': targetUserId }] }
-                );
-            } else if (modification === PERM_MODIFIER_REMOVE) {
-                await foundGroup.update(
-                    { $pull: { 'members.$[member].permissions': targetPermission } },
-                    { arrayFilters: [{ 'member.userId': targetUserId }] }
-                );
-            }
-
-            return res.status(200).json({ msg: 'Permissions updated' });
-        } catch (err) {
-            console.log(err.message);
-            return res.status(500).send('Server error');
-        }
-    }
-);
-
-// @route PUT api/groups/:groupid/kick
-// @desc Kick a user from a group
-// @access Private
-router.put(
-    '/:groupid/kick',
-    authMiddleware,
-    check('targetUserId', 'targetUserId is required').not().isEmpty(),
-    async (req: Request, res: Response) => {
-        console.log('PUT /api/groups/:groupid/kick hit');
-
-        const errors: Result<ValidationError> = validationResult(req);
-        if (!errors.isEmpty()) {
-            const errMsg = formatValidatorErrArrayAsMsgString(errors.array());
-            return res.status(400).send('Error:' + errMsg);
-        }
-
-        const userIdToken = req.user._id;
-        const groupIdParams = req.params.groupid;
-        const { targetUserId } = req.body;
-
-        if (userIdToken === targetUserId) {
-            return res.status(400).send('Error: You cannot kick yourself');
-        }
-
-        try {
-            const foundGroup = await ListGroupBaseModel.findOne({ _id: groupIdParams });
-
-            if (!foundGroup) {
-                return res.status(404).send('Error: Group not found');
-            }
-
-            if (LIST_GROUP_CHILD_VARIANTS.includes(foundGroup.groupVariant)) {
-                return res.status(400).send('Error: Users cannot be kicked from child groups');
-            }
-
-            const foundRequestingUser = findUserInGroup(foundGroup, userIdToken);
-            if (!foundRequestingUser || !foundRequestingUser.permissions.includes(PERM_GROUP_KICK)) {
-                return res.status(401).send('Error: Unauthorized');
-            }
-
-            const foundTargetUser = findUserInGroup(foundGroup, userIdToken);
-            if (!foundTargetUser) {
-                return res.status(404).send('Error: Target user not found in group');
-            }
-
-            if (foundTargetUser.permissions.includes(PERM_GROUP_OWNER)) {
-                return res.status(401).send('Error: You cannot kick the group owner');
-            }
-
-            await foundGroup.update({ $pull: { members: { userId: targetUserId } } });
-
-            return res.status(200);
-        } catch (err) {
-            console.log(err.message);
-            return res.status(500).send('Internal server error');
-        }
-    }
-);
 
 // @route PUT api/groups/:groupid/rename
 // @desc Rename a group
@@ -395,10 +263,144 @@ router.put(
 
             return res.status(200).json(censoredGroup);
         } catch (err) {
-            console.log(err.message);
+            console.error('Error inside PUT /api/groups/:groupid/rename: ' + err.message);
             return res.status(500).send('Server error');
         }
     }
 );
+
+// @route PUT api/groups/:groupid/permission
+// @desc Modify the permissions for users in a group
+// @access Private
+// Note this is not currently used on the front end
+// router.put(
+//     '/:groupid/permission',
+//     authMiddleware,
+//     check('targetUserId', 'targetUserId is required').not().isEmpty(),
+//     check('targetPermission', 'targetPermission is required').not().isEmpty(),
+//     check('targetPermission', 'targetPermission cannot be modified').isIn(PERM_MUTABLE_ALL),
+//     check('modification', 'modification is required').not().isEmpty(),
+//     check('modification', 'Invalid permission modifier').isIn(PERM_MODIFIERS_ALL),
+//     async (req: Request, res: Response) => {
+//         console.log('PUT /api/groups/:groupid/permission hit');
+
+//         const errors: Result<ValidationError> = validationResult(req);
+//         if (!errors.isEmpty()) {
+//             const errMsg = formatValidatorErrArrayAsMsgString(errors.array());
+//             return res.status(400).send('Error:' + errMsg);
+//         }
+
+//         const userIdToken = req.user._id;
+//         const groupIdParams = req.params.groupid;
+//         const { targetUserId, targetPermission, modification } = req.body;
+
+//         if (userIdToken === targetUserId) {
+//             return res.status(400).send('Error: You cannot modify your own permissions');
+//         }
+
+//         try {
+//             const foundGroup = await ListGroupBaseModel.findOne({ _id: groupIdParams });
+
+//             if (!foundGroup) {
+//                 return res.status(404).send('Error: Group not found');
+//             }
+
+//             if (LIST_GROUP_CHILD_VARIANTS.includes(foundGroup.groupVariant)) {
+//                 return res.status(400).send('Error: Users cannot be invited directly to child groups');
+//             }
+
+//             const foundRequestingUser = findUserInGroup(foundGroup, userIdToken);
+//             if (!foundRequestingUser || !foundRequestingUser.permissions.includes(PERM_GROUP_MANAGE_PERMS)) {
+//                 return res.status(401).send('Error: Unauthorized');
+//             }
+
+//             const foundTargetUser = findUserInGroup(foundGroup, targetUserId);
+//             if (!foundTargetUser) {
+//                 return res.status(404).send('Error: Target user not found in group');
+//             }
+
+//             if (foundTargetUser.permissions.includes(PERM_GROUP_OWNER)) {
+//                 return res.status(401).send('Error: You cannot modify permissions of the group owner');
+//             }
+
+//             if (modification === PERM_MODIFIER_ADD) {
+//                 await foundGroup.update(
+//                     { $addToSet: { 'members.$[member].permissions': targetPermission } },
+//                     { arrayFilters: [{ 'member.userId': targetUserId }] }
+//                 );
+//             } else if (modification === PERM_MODIFIER_REMOVE) {
+//                 await foundGroup.update(
+//                     { $pull: { 'members.$[member].permissions': targetPermission } },
+//                     { arrayFilters: [{ 'member.userId': targetUserId }] }
+//                 );
+//             }
+
+//             return res.status(200).json({ msg: 'Permissions updated' });
+//         } catch (err) {
+//             console.error('Error inside PUT /api/groups/:groupid/permission: ' + err.message);
+//             return res.status(500).send('Server error');
+//         }
+//     }
+// );
+
+// @route PUT api/groups/:groupid/kick
+// @desc Kick a user from a group
+// @access Private
+// Note this is not currently used on the front end
+// router.put(
+//     '/:groupid/kick',
+//     authMiddleware,
+//     check('targetUserId', 'targetUserId is required').not().isEmpty(),
+//     async (req: Request, res: Response) => {
+//         console.log('PUT /api/groups/:groupid/kick hit');
+
+//         const errors: Result<ValidationError> = validationResult(req);
+//         if (!errors.isEmpty()) {
+//             const errMsg = formatValidatorErrArrayAsMsgString(errors.array());
+//             return res.status(400).send('Error:' + errMsg);
+//         }
+
+//         const userIdToken = req.user._id;
+//         const groupIdParams = req.params.groupid;
+//         const { targetUserId } = req.body;
+
+//         if (userIdToken === targetUserId) {
+//             return res.status(400).send('Error: You cannot kick yourself');
+//         }
+
+//         try {
+//             const foundGroup = await ListGroupBaseModel.findOne({ _id: groupIdParams });
+
+//             if (!foundGroup) {
+//                 return res.status(404).send('Error: Group not found');
+//             }
+
+//             if (LIST_GROUP_CHILD_VARIANTS.includes(foundGroup.groupVariant)) {
+//                 return res.status(400).send('Error: Users cannot be kicked from child groups');
+//             }
+
+//             const foundRequestingUser = findUserInGroup(foundGroup, userIdToken);
+//             if (!foundRequestingUser || !foundRequestingUser.permissions.includes(PERM_GROUP_KICK)) {
+//                 return res.status(401).send('Error: Unauthorized');
+//             }
+
+//             const foundTargetUser = findUserInGroup(foundGroup, userIdToken);
+//             if (!foundTargetUser) {
+//                 return res.status(404).send('Error: Target user not found in group');
+//             }
+
+//             if (foundTargetUser.permissions.includes(PERM_GROUP_OWNER)) {
+//                 return res.status(401).send('Error: You cannot kick the group owner');
+//             }
+
+//             await foundGroup.update({ $pull: { members: { userId: targetUserId } } });
+
+//             return res.status(200);
+//         } catch (err) {
+//             console.error('Error inside PUT /api/groups/:groupid/kick: ' + err.message);
+//             return res.status(500).send('Internal server error');
+//         }
+//     }
+// );
 
 module.exports = router;

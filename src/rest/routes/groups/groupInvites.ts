@@ -23,7 +23,6 @@ import {
     IgiftGroupChildMember,
     IgiftGroupMember,
     IgiftListMember,
-    invalidGroupVariantError,
 } from '../../../models/listGroups/listGroupInterfaces';
 import { findUserInGroup, formatValidatorErrArrayAsMsgString } from '../helperFunctions';
 import { SystemMessageModel } from '../../../models/messages/variants/discriminators/SystemMessageModel';
@@ -111,7 +110,7 @@ router.post(
             await sendgrid.send(msg);
             return res.send(200);
         } catch (err) {
-            console.log(err);
+            console.error('Error inside POST /api/groups/:groupid/invite/send: ' + err.message);
             return res.send(500);
         }
     }
@@ -131,11 +130,8 @@ router.get('/invite/verify/:groupToken', authMiddleware, async (req: Request, re
         const { senderName, groupName } = decodedGroupToken;
         return res.json({ senderName: senderName, groupName: groupName });
     } catch (err) {
-        if (err.message) {
-            return res.status(400).send(err.message);
-        } else {
-            return res.status(500).send('Server Error');
-        }
+        console.error('Error inside GET /api/groups/invite/verify/:groupToken: ' + err.message);
+        return res.status(500).send('Server Error');
     }
 });
 
@@ -143,7 +139,7 @@ router.get('/invite/verify/:groupToken', authMiddleware, async (req: Request, re
 // @desc Accept an invite
 // @access Private
 router.post('/invite/accept/:groupToken', authMiddleware, async (req: Request, res: Response) => {
-    console.log('POST /api/groups/invite/accept/:groupid hit');
+    console.log('POST /api/groups/invite/accept/:groupToken hit');
 
     const tokenUserId = req.user._id;
     const tokenDisplayName = req.user.displayName;
@@ -234,7 +230,7 @@ router.post('/invite/accept/:groupToken', authMiddleware, async (req: Request, r
 
         return res.status(200).json({ _id: groupId });
     } catch (err) {
-        console.log(err);
+        console.error('Error inside POST /api/groups/invite/accept/:groupToken: ' + err.message);
         return res.status(500).send('Server error');
     }
 });

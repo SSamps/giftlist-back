@@ -17,14 +17,13 @@ import {
     handleNewSecretListItemRequest,
 } from '../helperFunctions';
 import { BASIC_LIST } from '../../../models/listGroups/variants/discriminators/singular/BasicListModel';
-import { LIST_GROUP_ALL_WITH_ANY_ITEMS } from '../../../models/listGroups/variants/listGroupVariants';
 import {
     VALIDATION_ITEM_BODY_MAX_LENGTH,
     VALIDATION_ITEM_BODY_MIN_LENGTH,
     VALIDATION_ITEM_LINK_MAX_LENGTH,
     VALIDATION_ITEM_LINK_MIN_LENGTH,
 } from '../../../models/validation';
-import { groupVariantHasAnyItems, groupVariantHasSecretItems } from '../../../models/listGroups/listGroupInterfaces';
+import { groupVariantHasAnyItems } from '../../../models/listGroups/listGroupInterfaces';
 
 const router: Router = express.Router();
 
@@ -49,7 +48,7 @@ router.post(
         .isString()
         .isLength({ min: VALIDATION_ITEM_LINK_MIN_LENGTH, max: VALIDATION_ITEM_LINK_MAX_LENGTH }),
     async (req: Request, res: Response) => {
-        console.log('POST api/groups/giftlist/:groupid/items hit');
+        console.log('POST api/groups/:groupid/items hit');
 
         const errors: Result<ValidationError> = validationResult(req);
         if (!errors.isEmpty()) {
@@ -70,7 +69,7 @@ router.post(
             }
             return result;
         } catch (err) {
-            console.log(err);
+            console.error('Error inside POST api/groups/:groupid/items: ' + err.message);
             return res.status(500).send('Internal server error');
         }
     }
@@ -136,7 +135,7 @@ router.delete(
 
             return res.status(200).json(result);
         } catch (err) {
-            console.log(err);
+            console.error('Error inside DELETE api/groups/:groupid/items: ' + err.message);
             return res.status(500).send('Internal server error');
         }
     }
@@ -215,7 +214,7 @@ router.put(
 
             return res.status(200).json(result);
         } catch (err) {
-            console.log(err);
+            console.error('Error inside PUT api/groups/:groupid/items:itemid: ' + err.message);
             return res.status(500).send('Internal server error');
         }
     }
@@ -306,7 +305,7 @@ router.put(
 
             return res.status(200).json(result);
         } catch (err) {
-            console.log(err);
+            console.error('Error inside PUT api/groups/:groupid/items/:itemid/select: ' + err.message);
             return res.status(500).send('Internal server error');
         }
     }

@@ -156,7 +156,7 @@ router.post(
                 return res.json({ token, user });
             });
         } catch (err) {
-            console.error(err.message);
+            console.error('Error inside POST api/users: ' + err.message);
             return res.status(500).send('Server error');
         }
     }
@@ -171,7 +171,7 @@ router.post('/sendverification', unverifiedUserAuthMiddleware, async (req: Reque
         await sendVerificationEmail(req.user._id, req.user.email, req.user.displayName);
         return res.sendStatus(200);
     } catch (err) {
-        console.error('POST api/users/sendverification:', err.message);
+        console.error('Error inside POST api/users/sendverification: ' + err.message);
         return res.status(500).send('Server error');
     }
 });
@@ -196,7 +196,7 @@ router.post('/verify/:verificationtoken', async (req: Request, res: Response) =>
 
         return res.send(200);
     } catch (err) {
-        console.error(err.message);
+        console.error('Error inside POST api/users/verify/:verificationtoken: ' + err.message);
         return res.status(500).send('Server error');
     }
 });
@@ -243,7 +243,7 @@ router.delete('/', unverifiedUserAuthMiddleware, async (req: Request, res: Respo
 
         return res.status(200).send();
     } catch (err) {
-        console.log(err.message);
+        console.error('Error inside DELETE api/users/: ' + err.message);
         return res.status(500).send('Internal server error');
     }
 });
@@ -294,7 +294,7 @@ router.put(
 
             return res.status(200).json(user);
         } catch (err) {
-            console.log(err.message);
+            console.error('Error inside PUT api/users/: ' + err.message);
             return res.status(500).send('Server error: ' + err.message);
         }
     }
@@ -358,7 +358,7 @@ router.post(
             await sendgrid.send(msg);
             return res.send(200);
         } catch (err) {
-            console.log(err.message);
+            console.error('Error inside POST api/users/resetpassword: ' + err.message);
             return res.send(500);
         }
     }
@@ -426,7 +426,7 @@ router.post(
 
             return res.send(200);
         } catch (err) {
-            console.log(err);
+            console.error('Error inside POST api/users/resetpassword/:token: ' + err.message);
             return res.status(500).send('Server error');
         }
     }

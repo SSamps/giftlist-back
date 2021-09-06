@@ -16,7 +16,7 @@ router.get('/', unverifiedUserAuthMiddleware, async (req, res) => {
         console.log('GET api/auth hit');
         return res.json(req.user);
     } catch (err) {
-        console.error(err.message);
+        console.error('Error inside GET api/auth: ' + err.message);
         return res.status(500).send('Server error');
     }
 });
@@ -73,7 +73,7 @@ router.post(
                 return res.json({ token, user });
             });
         } catch (err) {
-            console.error(err.message);
+            console.error('Error inside POST api/auth: ' + err.message);
             return res.status(500).send('Server error');
         }
     }

@@ -59,18 +59,18 @@ router.post(
             await newMessage.save();
             return res.status(200).send();
         } catch (err) {
-            console.log(err);
+            console.error('Error inside POST api/groups/:groupid/messages: ' + err.message);
             return res.status(500).send('Internal server error');
         }
     }
 );
 
 // TODO replace deleted message with a system message
-// @route POST api/groups/:groupid/messages/:messageid
+// @route POST api/groups/messages/:messageid
 // @desc Delete an message from a list group
 // @access Private
 router.delete('/messages/:messageid', authMiddleware, async (req: Request, res: Response) => {
-    console.log('DELETE api/groups/:groupid/messages/:messageid');
+    console.log('DELETE api/groups/messages/:messageid');
 
     const userIdToken = req.user._id;
     const messageIdParams = req.params.messageid;
@@ -86,7 +86,7 @@ router.delete('/messages/:messageid', authMiddleware, async (req: Request, res: 
 
         return res.status(200).send();
     } catch (err) {
-        console.log(err);
+        console.error('Error inside DELETE api/groups/messages/:messageid: ' + err.message);
         return res.status(500).send('Internal server error');
     }
 });
