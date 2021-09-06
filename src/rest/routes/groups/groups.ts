@@ -28,14 +28,7 @@ import {
     findUserInGroup,
     formatValidatorErrArrayAsMsgString,
 } from '../helperFunctions';
-import {
-    TbasicListDocument,
-    TgiftGroupChildDocument,
-    TgiftGroupDocument,
-    TgiftListDocument,
-    TlistGroupAnyCensoredAny,
-} from '../../../models/listGroups/listGroupInterfaces';
-import { LeanDocument } from 'mongoose';
+import { groupIsAParent } from '../../../models/listGroups/listGroupInterfaces';
 import { VALIDATION_GROUP_NAME_MAX_LENGTH, VALIDATION_GROUP_NAME_MIN_LENGTH } from '../../../models/validation';
 
 const router: Router = express.Router();
@@ -57,10 +50,11 @@ router.get('/user', authMiddleware, async (req: Request, res: Response) => {
 
         let censoredGroups = [];
         for (let i = 0; i < foundGroups.length; i++) {
-            if (LIST_GROUP_PARENT_VARIANTS.includes(foundGroups[i].groupVariant)) {
-                censoredGroups.push(await findAndAddCensoredChildGroups(userIdToken.toString(), foundGroups[i]));
+            let group = foundGroups[i];
+            if (groupIsAParent(group)) {
+                censoredGroups.push(await findAndAddCensoredChildGroups(userIdToken.toString(), group));
             } else {
-                censoredGroups.push(censorSingularGroup(userIdToken.toString(), foundGroups[i]));
+                censoredGroups.push(censorSingularGroup(userIdToken.toString(), group));
             }
         }
 
@@ -94,7 +88,7 @@ router.get('/:groupid', authMiddleware, async (req: Request, res: Response) => {
         }
 
         let censoredGroup;
-        if (LIST_GROUP_PARENT_VARIANTS.includes(foundGroup.groupVariant)) {
+        if (groupIsAParent(foundGroup)) {
             censoredGroup = await findAndAddCensoredChildGroups(userIdToken.toString(), foundGroup);
         } else {
             censoredGroup = censorSingularGroup(userIdToken.toString(), foundGroup);

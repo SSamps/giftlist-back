@@ -228,11 +228,8 @@ router.post('/invite/accept/:groupToken', authMiddleware, async (req: Request, r
                     { parentGroupId: groupId },
                     { $push: { members: newChildMember } }
                 );
-
                 break;
             }
-            default:
-                throw new invalidGroupVariantError(foundGroup.groupVariant);
         }
 
         return res.status(200).json({ _id: groupId });

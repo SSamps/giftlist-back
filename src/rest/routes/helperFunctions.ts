@@ -39,12 +39,15 @@ import {
     TgroupMemberAny,
     TlistGroupAnyDocument,
     TlistGroupAnyCensoredSingular,
-    TlistGroupAnyCensoredWithChildren,
     TlistGroupAnyWithChildren,
     TnewBasicListFields,
     TnewGiftGroupChildFields,
     TnewGiftGroupFields,
     TnewGiftListFields,
+    TlistGroupAnyWithItemsFields,
+    TlistGroupAnyWithSecretItemsFields,
+    groupHasItems,
+    groupHasSecretItems,
 } from '../../models/listGroups/listGroupInterfaces';
 import { TitemTypes, IgiftListItem, InewListItemFields } from '../../models/listGroups/listItemInterfaces';
 import { BasicListModel, BASIC_LIST } from '../../models/listGroups/variants/discriminators/singular/BasicListModel';
@@ -107,12 +110,12 @@ export const deleteGroupAndAnyChildGroups = async (
     }
 };
 
-const hitMaxListItems = (foundValidGroup: TlistGroupAnyDocument) => {
+const hitMaxListItems = (foundValidGroup: TlistGroupAnyWithItemsFields) => {
     return foundValidGroup.listItems.length + 1 > foundValidGroup.maxListItems;
 };
 
 const hitMaxSecretListItems = (
-    foundValidGroup: TlistGroupAnyDocument,
+    foundValidGroup: TlistGroupAnyWithSecretItemsFields,
     userId: mongoose.Schema.Types.ObjectId | string
 ) => {
     let ownedItems = 0;
@@ -156,16 +159,13 @@ export const handleNewListItemRequest = async (
     links: string[],
     res: Response
 ) => {
-    const validGroupVariants = [BASIC_LIST, GIFT_LIST, GIFT_GROUP_CHILD];
-
-    // TODO figure out why I have to define the key this way. Using groupVariant as the key directly results in a TS error.
     const foundGroup = await ListGroupBaseModel.findOne({ _id: groupId });
 
     if (!foundGroup) {
         return res.status(404).send('Error: Group not found');
     }
 
-    if (!validGroupVariants.includes(foundGroup.groupVariant)) {
+    if (!groupHasItems(foundGroup)) {
         return res.status(400).send('Error: Invalid group type');
     }
 
@@ -189,15 +189,13 @@ export const handleNewSecretListItemRequest = async (
     links: string[],
     res: Response
 ) => {
-    const validGroupVariants = [GIFT_LIST, GIFT_GROUP_CHILD];
-
     const foundGroup = await ListGroupBaseModel.findOne({ _id: groupId });
 
     if (!foundGroup) {
         return res.status(404).send('Error: Group not found');
     }
 
-    if (!validGroupVariants.includes(foundGroup.groupVariant)) {
+    if (!groupHasSecretItems(foundGroup)) {
         return res.status(400).send('Error: Invalid group type');
     }
 
@@ -385,7 +383,7 @@ export const findItemsInGroup = (
 };
 
 export const findItemInGroup = (
-    group: TlistGroupAnyDocument,
+    group: TlistGroupAnyWithItemsFields | TlistGroupAnyWithSecretItemsFields,
     itemId: Schema.Types.ObjectId | string
 ): [TitemTypes | 'error', IgiftListItem | null] => {
     for (let item of group.listItems) {
@@ -393,7 +391,7 @@ export const findItemInGroup = (
             return ['listItem', item];
         }
     }
-    if (LIST_GROUP_ALL_WITH_SECRET_ITEMS.includes(group.groupVariant)) {
+    if (groupHasSecretItems(group)) {
         for (let secretItem of group.secretListItems) {
             if (secretItem._id.toString() === itemId.toString()) {
                 return ['secretListItem', secretItem];
@@ -404,7 +402,6 @@ export const findItemInGroup = (
     return ['error', null];
 };
 
-// TODO change this to throw exceptions
 export const findUserInGroup = (
     group:
         | TlistGroupAnyDocument
