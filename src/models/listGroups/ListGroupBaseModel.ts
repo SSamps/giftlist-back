@@ -1,6 +1,6 @@
 import { Schema, model } from 'mongoose';
 import { VALIDATION_GROUP_NAME_MAX_LENGTH, VALIDATION_GROUP_NAME_MIN_LENGTH } from '../validation';
-import { TlistGroupAny } from './listGroupInterfaces';
+import { TlistGroupAnyDocument } from './listGroupInterfaces';
 
 const options = { discriminatorKey: 'groupVariant' };
 
@@ -34,4 +34,4 @@ const ListGroupBaseSchema = new Schema(
     options
 );
 
-export const ListGroupBaseModel = model<TlistGroupAny>('ListGroup', ListGroupBaseSchema);
+export const ListGroupBaseModel = model<TlistGroupAnyDocument>('ListGroup', ListGroupBaseSchema);

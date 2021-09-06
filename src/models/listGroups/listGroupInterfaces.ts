@@ -45,14 +45,10 @@ export interface IgroupMemberBase {
     permissions: TYPE_PERM_ALL_LIST_GROUP[];
 }
 
-export type TlistGroupBaseFields = {
+export interface IlistGroupBaseFields {
     groupName: string;
     creationDate?: Date;
-};
-
-type TlistGroupDiscriminatorKey = {
-    groupVariant: typeof BASIC_LIST | typeof GIFT_LIST | typeof GIFT_GROUP | typeof GIFT_GROUP_CHILD;
-};
+}
 
 // Singular groups
 // Basic Lists
@@ -61,20 +57,21 @@ export interface IbasicListMember extends IgroupMemberBase {
     permissions: TYPE_PERM_BASIC_LIST_ALL[];
 }
 
-type TnewBasicListExtraFields = {
+interface InewBasicListExtraFields {
     members: IbasicListMember[];
     maxListItems?: Number;
-};
+}
 
-type TbasicListExtraFields = {
+interface IbasicListExtraFields {
     members: IbasicListMember[];
     maxListItems: Number;
     listItems: IbasicListItem[];
-};
+    groupVariant: typeof BASIC_LIST;
+}
 
-export type TnewBasicListFields = TlistGroupBaseFields & TnewBasicListExtraFields;
+export type TnewBasicListFields = IlistGroupBaseFields & InewBasicListExtraFields;
 
-export type TbasicListFields = TlistGroupBaseFields & TbasicListExtraFields;
+export type TbasicListFields = IlistGroupBaseFields & IbasicListExtraFields;
 export type TbasicListDocument = Document & TbasicListFields;
 
 // Gift Lists
@@ -83,36 +80,38 @@ export interface IgiftListMember extends IgroupMemberBase {
     permissions: TYPE_PERM_GIFT_LIST_ALL[];
 }
 
-type TnewGiftListExtraFields = {
+interface InewGiftListExtraFields {
     members: IgiftListMember[];
     maxListItems?: Number;
     listItems?: IgiftListItem[];
     maxSecretListItemsEach?: Number;
     secretListItems?: IgiftListItem[];
-};
+}
 
-type TgiftListExtraFields = {
+interface IgiftListExtraFields {
     members: IgiftListMember[];
     maxListItems: Number;
     listItems: IgiftListItem[];
     maxSecretListItemsEach: Number;
     secretListItems: IgiftListItem[];
-};
+    groupVariant: typeof GIFT_LIST;
+}
 
-type TgiftListExtraFieldsCensored = {
+interface IgiftListExtraFieldsCensored {
     members: IgiftListMember[];
     maxListItems: Number;
     listItems: IgiftListItemCensored[];
     maxSecretListItemsEach: Number;
     secretListItems: IgiftListItemCensored[] | undefined;
-};
+    groupVariant: typeof GIFT_LIST;
+}
 
-export type TnewGiftListFields = TlistGroupBaseFields & TnewGiftListExtraFields;
+export type TnewGiftListFields = IlistGroupBaseFields & InewGiftListExtraFields;
 
-export type TgiftListFields = TlistGroupBaseFields & TgiftListExtraFields;
+export type TgiftListFields = IlistGroupBaseFields & IgiftListExtraFields;
 export type TgiftListDocument = Document & TgiftListFields;
 
-export type TgiftListFieldsCensored = TlistGroupBaseFields & TgiftListExtraFieldsCensored;
+export type TgiftListFieldsCensored = IlistGroupBaseFields & IgiftListExtraFieldsCensored;
 
 // Parent groups
 // Gift Groups
@@ -121,24 +120,25 @@ export interface IgiftGroupMember extends IgroupMemberBase {
     permissions: TYPE_PERM_GIFT_GROUP_ALL[];
 }
 
-type TnewGiftGroupExtraFields = {
+interface InewGiftGroupExtraFields {
     members: IgiftGroupMember[];
-};
+}
 
-type TgiftGroupExtraFields = {
+interface IgiftGroupExtraFields {
     members: IgiftGroupMember[];
-};
+    groupVariant: typeof GIFT_GROUP;
+}
 
-export type TnewGiftGroupFields = TlistGroupBaseFields & TnewGiftGroupExtraFields;
+export type TnewGiftGroupFields = IlistGroupBaseFields & InewGiftGroupExtraFields;
 
-export type TgiftGroupFields = TlistGroupBaseFields & TgiftGroupExtraFields;
+export type TgiftGroupFields = IlistGroupBaseFields & IgiftGroupExtraFields;
 export type TgiftGroupDocument = Document & TgiftGroupFields;
 
-type TgroupChildren = {
+interface IgroupChildren {
     children: LeanDocument<TlistGroupAnyCensoredSingular>[];
-};
+}
 
-export type TgiftGroupDocumentWithChildren = Document & TgiftGroupFields & TgroupChildren;
+export type TgiftGroupDocumentWithChildren = Document & TgiftGroupFields & IgroupChildren;
 
 // Child groups
 
@@ -146,52 +146,55 @@ export interface IgiftGroupChildMember extends IgroupMemberBase {
     permissions: TYPE_PERM_GIFT_GROUP_CHILD_ALL[];
 }
 
-type TnewGiftGroupChildExtraFields = {
+interface InewGiftGroupChildExtraFields {
     members: IgiftGroupChildMember[];
     parentGroupId: Schema.Types.ObjectId | string;
     maxListItems?: Number;
     maxSecretListItemsEach?: Number;
-};
+}
 
-type TgiftGroupChildExtraFields = {
+interface IgiftGroupChildExtraFields {
     members: IgiftGroupChildMember[];
     parentGroupId: Schema.Types.ObjectId | string;
     maxListItems: Number;
     listItems: IgiftListItem[];
     maxSecretListItemsEach: Number;
     secretListItems: IgiftListItem[];
-};
+    groupVariant: typeof GIFT_GROUP_CHILD;
+}
 
-type TgiftGroupChildExtraFieldsCensored = {
+interface IgiftGroupChildExtraFieldsCensored {
     members: IgiftGroupChildMember[];
     parentGroupId: Schema.Types.ObjectId | string;
     maxListItems: Number;
     listItems: IgiftListItemCensored[];
     maxSecretListItemsEach: Number;
     secretListItems: IgiftListItemCensored[] | undefined;
-};
+    groupVariant: typeof GIFT_GROUP_CHILD;
+}
 
-export type TnewGiftGroupChildFields = TlistGroupBaseFields & TnewGiftGroupChildExtraFields;
+export type TnewGiftGroupChildFields = IlistGroupBaseFields & InewGiftGroupChildExtraFields;
 
-export type TgiftGroupChildFields = TlistGroupBaseFields & TgiftGroupChildExtraFields;
+export type TgiftGroupChildFields = IlistGroupBaseFields & IgiftGroupChildExtraFields;
 export type TgiftGroupChildDocument = Document & TgiftGroupChildFields;
 
-export type TgiftGroupChildFieldsCensored = TlistGroupBaseFields & TgiftGroupChildExtraFieldsCensored;
+export type TgiftGroupChildFieldsCensored = IlistGroupBaseFields & IgiftGroupChildExtraFieldsCensored;
 
 // Aggregated
 
-type TlistGroupAnyBase = TbasicListFields & TgiftListFields & TgiftGroupFields & TgiftGroupChildFields;
-export type TlistGroupAny = Document & TlistGroupAnyBase & TlistGroupDiscriminatorKey;
+type TlistGroupAnyFields = TbasicListFields | TgiftListFields | TgiftGroupFields | TgiftGroupChildFields;
+export type TlistGroupAnyDocument = Document & TlistGroupAnyFields;
 
-export type TlistGroupAnyWithChildren = TlistGroupAny & TgroupChildren;
+export type TlistGroupAnyWithChildren = TlistGroupAnyDocument & IgroupChildren;
 
-export type TgroupMemberAny = IbasicListMember & IgiftListMember & IgiftGroupMember & IgiftGroupChildMember;
+export type TgroupMemberAny = IbasicListMember | IgiftListMember | IgiftGroupMember | IgiftGroupChildMember;
 
-type TlistGroupAnyBaseCensored = TbasicListFields &
-    TgiftListFieldsCensored &
-    TgiftGroupFields &
-    TgiftGroupChildFieldsCensored;
-export type TlistGroupAnyCensoredSingular = Document & TlistGroupAnyBaseCensored & TlistGroupDiscriminatorKey;
-export type TlistGroupAnyCensoredWithChildren = TlistGroupAnyCensoredSingular & TgroupChildren;
+type TlistGroupAnyFieldsCensored =
+    | TbasicListFields
+    | TgiftListFieldsCensored
+    | TgiftGroupFields
+    | TgiftGroupChildFieldsCensored;
+export type TlistGroupAnyCensoredSingular = Document & TlistGroupAnyFieldsCensored;
+export type TlistGroupAnyCensoredWithChildren = TlistGroupAnyCensoredSingular & IgroupChildren;
 
 export type TlistGroupAnyCensoredAny = TlistGroupAnyCensoredSingular | TlistGroupAnyCensoredWithChildren;

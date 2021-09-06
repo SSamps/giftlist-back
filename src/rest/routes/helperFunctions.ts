@@ -37,7 +37,7 @@ import {
     TgiftGroupDocument,
     TgiftGroupDocumentWithChildren,
     TgroupMemberAny,
-    TlistGroupAny,
+    TlistGroupAnyDocument,
     TlistGroupAnyCensoredSingular,
     TlistGroupAnyCensoredWithChildren,
     TlistGroupAnyWithChildren,
@@ -90,7 +90,7 @@ export const findAndDeleteGroupAndAnyChildGroupsIfAllowed = async (
 };
 
 export const deleteGroupAndAnyChildGroups = async (
-    group: TlistGroupAny,
+    group: TlistGroupAnyDocument,
     res: Response
 ): Promise<IgroupDeletionResult> => {
     if (LIST_GROUP_ALL_WITH_MESSAGES.includes(group.groupVariant)) {
@@ -107,11 +107,14 @@ export const deleteGroupAndAnyChildGroups = async (
     }
 };
 
-const hitMaxListItems = (foundValidGroup: TlistGroupAny) => {
+const hitMaxListItems = (foundValidGroup: TlistGroupAnyDocument) => {
     return foundValidGroup.listItems.length + 1 > foundValidGroup.maxListItems;
 };
 
-const hitMaxSecretListItems = (foundValidGroup: TlistGroupAny, userId: mongoose.Schema.Types.ObjectId | string) => {
+const hitMaxSecretListItems = (
+    foundValidGroup: TlistGroupAnyDocument,
+    userId: mongoose.Schema.Types.ObjectId | string
+) => {
     let ownedItems = 0;
     foundValidGroup.secretListItems.forEach((item) => {
         if (item.authorId.toString() === userId.toString()) {
@@ -123,7 +126,7 @@ const hitMaxSecretListItems = (foundValidGroup: TlistGroupAny, userId: mongoose.
 };
 
 const addListItem = async (
-    group: TlistGroupAny,
+    group: TlistGroupAnyDocument,
     userId: mongoose.Schema.Types.ObjectId | string,
     itemType: 'listItems' | 'secretListItems',
     body: string,
@@ -349,7 +352,10 @@ export const addGroup = async (
     }
 };
 
-export const findItemsInGroup = (group: TlistGroupAny, itemIdArray: Schema.Types.ObjectId[] | string[]): any[] => {
+export const findItemsInGroup = (
+    group: TlistGroupAnyDocument,
+    itemIdArray: Schema.Types.ObjectId[] | string[]
+): any[] => {
     let foundItems = [];
     for (let itemId of itemIdArray) {
         let found = false;
@@ -379,7 +385,7 @@ export const findItemsInGroup = (group: TlistGroupAny, itemIdArray: Schema.Types
 };
 
 export const findItemInGroup = (
-    group: TlistGroupAny,
+    group: TlistGroupAnyDocument,
     itemId: Schema.Types.ObjectId | string
 ): [TitemTypes | 'error', IgiftListItem | null] => {
     for (let item of group.listItems) {
@@ -401,9 +407,9 @@ export const findItemInGroup = (
 // TODO change this to throw exceptions
 export const findUserInGroup = (
     group:
-        | TlistGroupAny
+        | TlistGroupAnyDocument
         | TlistGroupAnyWithChildren
-        | LeanDocument<TlistGroupAny>
+        | LeanDocument<TlistGroupAnyDocument>
         | LeanDocument<TlistGroupAnyWithChildren>,
     userId: Schema.Types.ObjectId | string
 ): TgroupMemberAny | null => {
@@ -419,9 +425,9 @@ export const findUserInGroup = (
 export const findUserPermissionsInGroup = (
     userId: string,
     group:
-        | LeanDocument<TlistGroupAny>
+        | LeanDocument<TlistGroupAnyDocument>
         | LeanDocument<TlistGroupAnyWithChildren>
-        | TlistGroupAny
+        | TlistGroupAnyDocument
         | TlistGroupAnyWithChildren
 ): TYPE_PERM_ALL_LIST_GROUP[] => {
     let user = findUserInGroup(group, userId);
@@ -448,7 +454,7 @@ export const findAndAddCensoredChildGroups = async (
 
 export const censorSingularGroup = (
     userId: string,
-    group: LeanDocument<TlistGroupAny>
+    group: LeanDocument<TlistGroupAnyDocument>
 ): LeanDocument<TlistGroupAnyCensoredSingular> => {
     if (LIST_GROUP_ALL_CENSORABLE.includes(group.groupVariant)) {
         let censoredGroup: LeanDocument<TlistGroupAnyCensoredSingular> = group;
