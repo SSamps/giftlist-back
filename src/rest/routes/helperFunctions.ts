@@ -34,14 +34,13 @@ import {
     invalidParentVariantError,
     TgroupMemberAny,
     TlistGroupAnyDocument,
-    TlistGroupAnyWithChildren,
     TnewBasicListFields,
     TnewGiftGroupChildFields,
     TnewGiftGroupFields,
     TnewGiftListFields,
-    TlistGroupAnyWithItemsFields,
+    TlistGroupAnyWithRegularItemsFields,
     TlistGroupAnyWithSecretItemsFields,
-    groupVariantHasItems,
+    groupVariantHasAnyItems,
     groupVariantHasSecretItems,
     TlistGroupAnyNonParentFields,
     groupVariantNeedsCensoring,
@@ -50,6 +49,7 @@ import {
     groupVariantIsAParent,
     TgiftGroupWithChildrenFields,
     TlistGroupAnyFields,
+    groupVariantHasRegularItems,
 } from '../../models/listGroups/listGroupInterfaces';
 import { TitemTypes, IgiftListItem, InewListItemFields } from '../../models/listGroups/listItemInterfaces';
 import { BasicListModel, BASIC_LIST } from '../../models/listGroups/variants/discriminators/singular/BasicListModel';
@@ -112,7 +112,7 @@ export const deleteGroupAndAnyChildGroups = async (
     }
 };
 
-const hitMaxListItems = (foundValidGroup: TlistGroupAnyWithItemsFields) => {
+const hitMaxListItems = (foundValidGroup: TlistGroupAnyWithRegularItemsFields) => {
     return foundValidGroup.listItems.length + 1 > foundValidGroup.maxListItems;
 };
 
@@ -167,7 +167,7 @@ export const handleNewListItemRequest = async (
         return res.status(404).send('Error: Group not found');
     }
 
-    if (!groupVariantHasItems(foundGroup)) {
+    if (!groupVariantHasRegularItems(foundGroup)) {
         return res.status(400).send('Error: Invalid group type');
     }
 
@@ -353,7 +353,7 @@ export const addGroup = async (
 };
 
 export const findItemsInGroup = (
-    group: TlistGroupAnyWithItemsFields | TlistGroupAnyWithSecretItemsFields,
+    group: TlistGroupAnyWithRegularItemsFields | TlistGroupAnyWithSecretItemsFields,
     itemIdArray: Schema.Types.ObjectId[] | string[]
 ): any[] => {
     let foundItems = [];
@@ -385,7 +385,7 @@ export const findItemsInGroup = (
 };
 
 export const findItemInGroup = (
-    group: TlistGroupAnyWithItemsFields | TlistGroupAnyWithSecretItemsFields,
+    group: TlistGroupAnyWithRegularItemsFields | TlistGroupAnyWithSecretItemsFields,
     itemId: Schema.Types.ObjectId | string
 ): [TitemTypes | 'error', IgiftListItem | null] => {
     for (let item of group.listItems) {
@@ -476,7 +476,7 @@ export const findOneAndUpdateUsingDiscriminator = async (
     query: Object,
     update: Object,
     options?: Object
-) => {
+): Promise<TlistGroupAnyFields> => {
     switch (variant) {
         case BASIC_LIST: {
             return await BasicListModel.findOneAndUpdate(query, update, options).lean();

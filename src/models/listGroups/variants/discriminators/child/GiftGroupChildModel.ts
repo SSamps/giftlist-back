@@ -1,7 +1,7 @@
 import { Schema } from 'mongoose';
 import { ListGroupBaseModel } from '../../../ListGroupBaseModel';
 import { PERM_GIFT_GROUP_CHILD_ALL } from '../../../listGroupPermissions';
-import { TgiftGroupChildDocument } from '../../../listGroupInterfaces';
+import { TgiftGroupChildFields } from '../../../listGroupInterfaces';
 import {
     VALIDATION_ITEM_BODY_MAX_LENGTH,
     VALIDATION_ITEM_BODY_MIN_LENGTH,
@@ -11,7 +11,7 @@ import {
 
 export const GIFT_GROUP_CHILD = 'GIFT_GROUP_CHILD';
 
-const giftGroupChildSchema = new Schema<TgiftGroupChildDocument>({
+const giftGroupChildSchema = new Schema<TgiftGroupChildFields>({
     members: [
         {
             userId: { type: Schema.Types.ObjectId, required: true },

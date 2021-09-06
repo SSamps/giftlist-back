@@ -387,10 +387,10 @@ router.put(
             }
 
             let censoredGroup;
-            if (LIST_GROUP_PARENT_VARIANTS.includes((updatedGroup as any).groupVariant)) {
-                censoredGroup = await findAndAddCensoredChildGroups(userIdToken.toString(), updatedGroup as any);
+            if (groupVariantIsAParent(updatedGroup)) {
+                censoredGroup = await findAndAddCensoredChildGroups(userIdToken.toString(), updatedGroup);
             } else {
-                censoredGroup = censorSingularGroup(userIdToken.toString(), updatedGroup as any);
+                censoredGroup = censorSingularGroup(userIdToken.toString(), updatedGroup);
             }
 
             return res.status(200).json(censoredGroup);

@@ -1,4 +1,4 @@
-import { Document, LeanDocument, Schema } from 'mongoose';
+import { Document, Schema } from 'mongoose';
 import { IbasicListItem, IgiftListItem, IgiftListItemCensored } from './listItemInterfaces';
 import {
     TYPE_PERM_ALL_LIST_GROUP,
@@ -14,6 +14,7 @@ import { GIFT_GROUP_CHILD } from './variants/discriminators/child/GiftGroupChild
 import {
     LIST_GROUP_ALL_CENSORABLE,
     LIST_GROUP_ALL_WITH_ANY_ITEMS,
+    LIST_GROUP_ALL_WITH_REGULAR_ITEMS,
     LIST_GROUP_ALL_WITH_SECRET_ITEMS,
     LIST_GROUP_PARENT_VARIANTS,
 } from './variants/listGroupVariants';
@@ -196,7 +197,8 @@ export type TgiftGroupChildFieldsCensored = IlistGroupBaseFields & IgiftGroupChi
 export type TlistGroupAnyFields = TbasicListFields | TgiftListFields | TgiftGroupFields | TgiftGroupChildFields;
 export type TlistGroupAnyDocument = Document & TlistGroupAnyFields;
 
-export type TlistGroupAnyWithItemsFields = TbasicListFields | TgiftListFields | TgiftGroupChildFields;
+export type TlistGroupAnyWithAnyItemsFields = TbasicListFields | TgiftListFields | TgiftGroupChildFields;
+export type TlistGroupAnyWithRegularItemsFields = TbasicListFields | TgiftListFields | TgiftGroupChildFields;
 export type TlistGroupAnyWithSecretItemsFields = TgiftListFields | TgiftGroupChildFields;
 
 export type TlistGroupAnyParentFields = TgiftGroupFields;
@@ -204,9 +206,9 @@ export type TlistGroupAnyNonParentFields = TbasicListFields | TgiftListFields | 
 
 export type TlistGroupAnyWithChildren = TlistGroupAnyDocument & IgroupChildren;
 
-export type TgroupMemberAny = IbasicListMember & IgiftListMember & IgiftGroupMember & IgiftGroupChildMember;
+export type TgroupMemberAny = IgroupMemberBase &
+    (IbasicListMember | IgiftListMember | IgiftGroupMember | IgiftGroupChildMember);
 
-// Censoring
 export type TlistGroupAnyCensorableFields = TgiftListFields | TgiftGroupChildFields;
 
 export type TlistGroupAnyFieldsCensored =
@@ -215,17 +217,19 @@ export type TlistGroupAnyFieldsCensored =
     | TgiftGroupFields
     | TgiftGroupChildFieldsCensored;
 
-// export type TlistGroupAnyCensoredWithChildren = TlistGroupAnyCensoredWithItems & IgroupChildren;
-
-// export type TlistGroupAnyCensoredAny = TlistGroupAnyCensoredWithItems | TlistGroupAnyCensoredWithChildren;
-
 // Group Type Predicates
 export const groupVariantIsAParent = (group: TlistGroupAnyFields): group is TgiftGroupFields => {
     return LIST_GROUP_PARENT_VARIANTS.includes(group.groupVariant);
 };
 
-export const groupVariantHasItems = (group: TlistGroupAnyFields): group is TlistGroupAnyWithItemsFields => {
+export const groupVariantHasAnyItems = (group: TlistGroupAnyFields): group is TlistGroupAnyWithAnyItemsFields => {
     return LIST_GROUP_ALL_WITH_ANY_ITEMS.includes(group.groupVariant);
+};
+
+export const groupVariantHasRegularItems = (
+    group: TlistGroupAnyFields
+): group is TlistGroupAnyWithRegularItemsFields => {
+    return LIST_GROUP_ALL_WITH_REGULAR_ITEMS.includes(group.groupVariant);
 };
 
 export const groupVariantHasSecretItems = (group: TlistGroupAnyFields): group is TlistGroupAnyWithSecretItemsFields => {

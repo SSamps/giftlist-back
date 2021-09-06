@@ -24,6 +24,7 @@ import {
     VALIDATION_ITEM_LINK_MAX_LENGTH,
     VALIDATION_ITEM_LINK_MIN_LENGTH,
 } from '../../../models/validation';
+import { groupVariantHasAnyItems, groupVariantHasSecretItems } from '../../../models/listGroups/listGroupInterfaces';
 
 const router: Router = express.Router();
 
@@ -104,7 +105,7 @@ router.delete(
                 return res.status(404).send('Error: Group not found');
             }
 
-            if (!LIST_GROUP_ALL_WITH_ANY_ITEMS.includes(foundGroup.groupVariant)) {
+            if (!groupVariantHasAnyItems(foundGroup)) {
                 return res.status(400).send('Error: Invalid group type');
             }
 
@@ -178,13 +179,13 @@ router.put(
         const { body, links } = req.body;
 
         try {
-            const foundGroup = await ListGroupBaseModel.findOne({ _id: groupId });
+            const foundGroup = await ListGroupBaseModel.findOne({ _id: groupId }).lean();
 
             if (!foundGroup) {
                 return res.status(404).send('Error: Group not found');
             }
 
-            if (!LIST_GROUP_ALL_WITH_ANY_ITEMS.includes(foundGroup.groupVariant)) {
+            if (!groupVariantHasAnyItems(foundGroup)) {
                 return res.status(400).send('Error: Invalid group type');
             }
 
@@ -244,13 +245,13 @@ router.put(
         const { action }: { action: 'SELECT' | 'DESELECT' } = req.body;
 
         try {
-            const foundGroup = await ListGroupBaseModel.findOne({ _id: groupId });
+            const foundGroup = await ListGroupBaseModel.findOne({ _id: groupId }).lean();
 
             if (!foundGroup) {
                 return res.status(404).send('Error: Group not found');
             }
 
-            if (!LIST_GROUP_ALL_WITH_ANY_ITEMS.includes(foundGroup.groupVariant)) {
+            if (!groupVariantHasAnyItems(foundGroup)) {
                 return res.status(400).send('Error: Invalid group type');
             }
 
