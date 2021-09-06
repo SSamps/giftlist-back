@@ -322,8 +322,6 @@ export const addGroup = async (
                     if (parentMember.userId.toString() === tokenUserId.toString()) {
                         childMember.permissions = giftGroupChildOwnerBasePerms;
                     } else {
-                        console.log(parentMember.userId);
-                        console.log(tokenUserId);
                         childMember.permissions = giftGroupChildMemberBasePerms;
                     }
                     return { ...childMember };

@@ -19,7 +19,6 @@ export const socketAuthMiddleware = async (
     const token = socket.handshake.auth.token;
 
     if (!token) {
-        console.log('no token');
         next(new Error('Unauthorized: missing x-auth-token'));
         return;
     }

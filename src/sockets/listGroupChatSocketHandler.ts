@@ -17,7 +17,6 @@ const listGroupChatSocketHandler = (io: Server<DefaultEventsMap, DefaultEventsMa
         io.emit(`you have connected to the chat functionality ${user.displayName}`);
 
         socket.on('giftListChat:joinRoom', async () => {
-            console.log('joining: ', groupId);
             socket.join(groupId);
             socket.broadcast.to(groupId).emit('giftListChat:message', `${user.displayName} has joined the chat`);
 
@@ -39,10 +38,6 @@ const listGroupChatSocketHandler = (io: Server<DefaultEventsMap, DefaultEventsMa
             } catch (err) {
                 console.error(err);
             }
-        });
-
-        socket.on('disconnect', () => {
-            console.log('a user disconnected from the socket');
         });
     });
 };

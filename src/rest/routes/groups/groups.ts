@@ -216,7 +216,7 @@ router.put(
     check('modification', 'modification is required').not().isEmpty(),
     check('modification', 'Invalid permission modifier').isIn(PERM_MODIFIERS_ALL),
     async (req: Request, res: Response) => {
-        console.log('put /api/groups/:groupid/permission hit');
+        console.log('PUT /api/groups/:groupid/permission hit');
 
         const errors: Result<ValidationError> = validationResult(req);
         if (!errors.isEmpty()) {
@@ -285,7 +285,7 @@ router.put(
     authMiddleware,
     check('targetUserId', 'targetUserId is required').not().isEmpty(),
     async (req: Request, res: Response) => {
-        console.log('put /api/groups/:groupid/kick hit');
+        console.log('PUT /api/groups/:groupid/kick hit');
 
         const errors: Result<ValidationError> = validationResult(req);
         if (!errors.isEmpty()) {
@@ -351,7 +351,7 @@ router.put(
         .isString()
         .isLength({ min: VALIDATION_GROUP_NAME_MIN_LENGTH, max: VALIDATION_GROUP_NAME_MAX_LENGTH }),
     async (req: Request, res: Response) => {
-        console.log('put /api/groups/:groupid/rename hit');
+        console.log('PUT /api/groups/:groupid/rename hit');
 
         const errors: Result<ValidationError> = validationResult(req);
         if (!errors.isEmpty()) {

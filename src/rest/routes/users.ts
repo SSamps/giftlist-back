@@ -358,7 +358,7 @@ router.post(
             await sendgrid.send(msg);
             return res.send(200);
         } catch (err) {
-            console.log(err.response.body.errors);
+            console.log(err.message);
             return res.send(500);
         }
     }

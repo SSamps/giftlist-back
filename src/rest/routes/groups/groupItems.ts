@@ -52,7 +52,6 @@ router.post(
         console.log('POST api/groups/giftlist/:groupid/items hit');
 
         const errors: Result<ValidationError> = validationResult(req);
-        console.log(errors.array());
         if (!errors.isEmpty()) {
             const errMsg = formatValidatorErrArrayAsMsgString(errors.array());
             return res.status(400).send('Error:' + errMsg);
