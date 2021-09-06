@@ -67,8 +67,7 @@ router.post(
                 verified: foundUser.verified,
             };
 
-            // TODO reduce lifetime of this token on release
-            jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1w' }, (err, token) => {
+            jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' }, (err, token) => {
                 if (err) throw err;
                 return res.json({ token, user });
             });

@@ -1,4 +1,4 @@
-import mongoose, { LeanDocument, Schema } from 'mongoose';
+import mongoose, { Schema } from 'mongoose';
 import {
     GiftGroupChildModel,
     GIFT_GROUP_CHILD,
@@ -40,7 +40,6 @@ import {
     TnewGiftListFields,
     TlistGroupAnyWithRegularItemsFields,
     TlistGroupAnyWithSecretItemsFields,
-    groupVariantHasAnyItems,
     groupVariantHasSecretItems,
     TlistGroupAnyNonParentFields,
     groupVariantNeedsCensoring,

@@ -41,7 +41,7 @@ interface IverificationToken {
 
 async function sendVerificationEmail(newUserId: Schema.Types.ObjectId, email: string, displayName: string) {
     const payload = { newUserId: newUserId };
-    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '3d' });
+    const token = jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '6h' });
 
     const verifyBaseLink = 'https://giftlist.sampsy.dev/verify/';
     const verifyLink = verifyBaseLink + token;
@@ -154,8 +154,7 @@ router.post(
                 verified: newUser.verified,
             };
 
-            // TODO reduce lifetime of token on release
-            jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1w' }, (err, token) => {
+            jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' }, (err, token) => {
                 if (err) throw err;
                 return res.json({ token, user });
             });
