@@ -19,10 +19,8 @@ import {
     TYPE_PERM_ALL_LIST_GROUP,
 } from '../../models/listGroups/listGroupPermissions';
 import {
-    LIST_GROUP_ALL_CENSORABLE,
     LIST_GROUP_ALL_NON_CENSORABLE,
     LIST_GROUP_ALL_WITH_MESSAGES,
-    LIST_GROUP_ALL_WITH_SECRET_ITEMS,
     LIST_GROUP_CHILD_VARIANTS,
     LIST_GROUP_PARENT_VARIANTS,
 } from '../../models/listGroups/variants/listGroupVariants';
@@ -34,11 +32,8 @@ import {
     invalidGroupVariantError,
     invalidParentError,
     invalidParentVariantError,
-    TgiftGroupDocument,
-    TgiftGroupDocumentWithChildren,
     TgroupMemberAny,
     TlistGroupAnyDocument,
-    TlistGroupAnyCensoredSingular,
     TlistGroupAnyWithChildren,
     TnewBasicListFields,
     TnewGiftGroupChildFields,
@@ -46,8 +41,15 @@ import {
     TnewGiftListFields,
     TlistGroupAnyWithItemsFields,
     TlistGroupAnyWithSecretItemsFields,
-    groupHasItems,
-    groupHasSecretItems,
+    groupVariantHasItems,
+    groupVariantHasSecretItems,
+    TlistGroupAnyNonParentFields,
+    groupVariantNeedsCensoring,
+    TlistGroupAnyFieldsCensored,
+    TlistGroupAnyParentFields,
+    groupVariantIsAParent,
+    TgiftGroupWithChildrenFields,
+    TlistGroupAnyFields,
 } from '../../models/listGroups/listGroupInterfaces';
 import { TitemTypes, IgiftListItem, InewListItemFields } from '../../models/listGroups/listItemInterfaces';
 import { BasicListModel, BASIC_LIST } from '../../models/listGroups/variants/discriminators/singular/BasicListModel';
@@ -165,7 +167,7 @@ export const handleNewListItemRequest = async (
         return res.status(404).send('Error: Group not found');
     }
 
-    if (!groupHasItems(foundGroup)) {
+    if (!groupVariantHasItems(foundGroup)) {
         return res.status(400).send('Error: Invalid group type');
     }
 
@@ -195,7 +197,7 @@ export const handleNewSecretListItemRequest = async (
         return res.status(404).send('Error: Group not found');
     }
 
-    if (!groupHasSecretItems(foundGroup)) {
+    if (!groupVariantHasSecretItems(foundGroup)) {
         return res.status(400).send('Error: Invalid group type');
     }
 
@@ -351,7 +353,7 @@ export const addGroup = async (
 };
 
 export const findItemsInGroup = (
-    group: TlistGroupAnyDocument,
+    group: TlistGroupAnyWithItemsFields | TlistGroupAnyWithSecretItemsFields,
     itemIdArray: Schema.Types.ObjectId[] | string[]
 ): any[] => {
     let foundItems = [];
@@ -365,7 +367,7 @@ export const findItemsInGroup = (
             }
         }
 
-        if (LIST_GROUP_ALL_WITH_SECRET_ITEMS.includes(group.groupVariant) && !found) {
+        if (groupVariantHasSecretItems(group) && !found) {
             for (let secretItem of group.secretListItems) {
                 if (secretItem._id.toString() === itemId.toString()) {
                     foundItems.push(secretItem);
@@ -391,7 +393,7 @@ export const findItemInGroup = (
             return ['listItem', item];
         }
     }
-    if (groupHasSecretItems(group)) {
+    if (groupVariantHasSecretItems(group)) {
         for (let secretItem of group.secretListItems) {
             if (secretItem._id.toString() === itemId.toString()) {
                 return ['secretListItem', secretItem];
@@ -403,11 +405,7 @@ export const findItemInGroup = (
 };
 
 export const findUserInGroup = (
-    group:
-        | TlistGroupAnyDocument
-        | TlistGroupAnyWithChildren
-        | LeanDocument<TlistGroupAnyDocument>
-        | LeanDocument<TlistGroupAnyWithChildren>,
+    group: TlistGroupAnyFields,
     userId: Schema.Types.ObjectId | string
 ): TgroupMemberAny | null => {
     for (let member of group.members) {
@@ -419,14 +417,7 @@ export const findUserInGroup = (
     return null;
 };
 
-export const findUserPermissionsInGroup = (
-    userId: string,
-    group:
-        | LeanDocument<TlistGroupAnyDocument>
-        | LeanDocument<TlistGroupAnyWithChildren>
-        | TlistGroupAnyDocument
-        | TlistGroupAnyWithChildren
-): TYPE_PERM_ALL_LIST_GROUP[] => {
+export const findUserPermissionsInGroup = (userId: string, group: TlistGroupAnyFields): TYPE_PERM_ALL_LIST_GROUP[] => {
     let user = findUserInGroup(group, userId);
 
     if (!user) {
@@ -437,13 +428,16 @@ export const findUserPermissionsInGroup = (
 
 export const findAndAddCensoredChildGroups = async (
     userId: string,
-    group: LeanDocument<TgiftGroupDocument>
-): Promise<LeanDocument<TgiftGroupDocumentWithChildren>> => {
+    group: TlistGroupAnyParentFields
+): Promise<TgiftGroupWithChildrenFields> => {
     let foundChildren = await ListGroupBaseModel.find({ parentGroupId: group._id }).lean();
+    let censoredChildren: TlistGroupAnyFieldsCensored[] = [];
 
-    let censoredChildren: LeanDocument<TlistGroupAnyCensoredSingular>[] = [];
     for (let i = 0; i < foundChildren.length; i++) {
-        censoredChildren.push(censorSingularGroup(userId, foundChildren[i]));
+        const group = foundChildren[i];
+        if (!groupVariantIsAParent(group)) {
+            censoredChildren.push(censorSingularGroup(userId, group));
+        }
     }
 
     return { ...group, children: censoredChildren };
@@ -451,10 +445,10 @@ export const findAndAddCensoredChildGroups = async (
 
 export const censorSingularGroup = (
     userId: string,
-    group: LeanDocument<TlistGroupAnyDocument>
-): LeanDocument<TlistGroupAnyCensoredSingular> => {
-    if (LIST_GROUP_ALL_CENSORABLE.includes(group.groupVariant)) {
-        let censoredGroup: LeanDocument<TlistGroupAnyCensoredSingular> = group;
+    group: TlistGroupAnyNonParentFields
+): TlistGroupAnyFieldsCensored => {
+    if (groupVariantNeedsCensoring(group)) {
+        let censoredGroup: TlistGroupAnyFieldsCensored = { ...group };
         let permissions = findUserPermissionsInGroup(userId, group);
 
         if (!permissions.includes(PERM_GROUP_SELECT_LIST_ITEMS)) {
@@ -467,6 +461,7 @@ export const censorSingularGroup = (
         if (!permissions.includes(PERM_GROUP_RW_SECRET_LIST_ITEMS)) {
             censoredGroup.secretListItems = undefined;
         }
+
         return censoredGroup;
     } else if (LIST_GROUP_ALL_NON_CENSORABLE.includes(group.groupVariant)) {
         return group;

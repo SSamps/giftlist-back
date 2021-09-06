@@ -28,7 +28,7 @@ import {
     findUserInGroup,
     formatValidatorErrArrayAsMsgString,
 } from '../helperFunctions';
-import { groupIsAParent } from '../../../models/listGroups/listGroupInterfaces';
+import { groupVariantIsAParent } from '../../../models/listGroups/listGroupInterfaces';
 import { VALIDATION_GROUP_NAME_MAX_LENGTH, VALIDATION_GROUP_NAME_MIN_LENGTH } from '../../../models/validation';
 
 const router: Router = express.Router();
@@ -51,7 +51,7 @@ router.get('/user', authMiddleware, async (req: Request, res: Response) => {
         let censoredGroups = [];
         for (let i = 0; i < foundGroups.length; i++) {
             let group = foundGroups[i];
-            if (groupIsAParent(group)) {
+            if (groupVariantIsAParent(group)) {
                 censoredGroups.push(await findAndAddCensoredChildGroups(userIdToken.toString(), group));
             } else {
                 censoredGroups.push(censorSingularGroup(userIdToken.toString(), group));
@@ -88,7 +88,7 @@ router.get('/:groupid', authMiddleware, async (req: Request, res: Response) => {
         }
 
         let censoredGroup;
-        if (groupIsAParent(foundGroup)) {
+        if (groupVariantIsAParent(foundGroup)) {
             censoredGroup = await findAndAddCensoredChildGroups(userIdToken.toString(), foundGroup);
         } else {
             censoredGroup = censorSingularGroup(userIdToken.toString(), foundGroup);
