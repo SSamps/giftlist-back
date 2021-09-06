@@ -3,8 +3,7 @@ import { ListGroupBaseModel } from '../../../ListGroupBaseModel';
 import { PERM_BASIC_LIST_ALL } from '../../../listGroupPermissions';
 import { TbasicListFields } from '../../../listGroupInterfaces';
 import { VALIDATION_ITEM_BODY_MAX_LENGTH, VALIDATION_ITEM_BODY_MIN_LENGTH } from '../../../../validation';
-
-export const BASIC_LIST = 'BASIC_LIST';
+import { BASIC_LIST } from '../../listGroupVariants';
 
 const basicListSchema = new Schema<TbasicListFields>({
     members: [

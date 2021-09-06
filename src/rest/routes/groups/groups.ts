@@ -2,16 +2,7 @@ import express, { Router, Request, Response } from 'express';
 import { authMiddleware } from '../../middleware/auth';
 import { check, Result, ValidationError, validationResult } from 'express-validator';
 import { ListGroupBaseModel } from '../../../models/listGroups/ListGroupBaseModel';
-import {
-    PERM_MODIFIERS_ALL,
-    PERM_MUTABLE_ALL,
-    PERM_MODIFIER_ADD,
-    PERM_MODIFIER_REMOVE,
-    PERM_GROUP_RENAME,
-    PERM_GROUP_KICK,
-    PERM_GROUP_MANAGE_PERMS,
-    PERM_GROUP_OWNER,
-} from '../../../models/listGroups/listGroupPermissions';
+import { PERM_GROUP_RENAME } from '../../../models/listGroups/listGroupPermissions';
 import {
     LIST_GROUP_ALL_TOP_LEVEL_VARIANTS,
     LIST_GROUP_ALL_VARIANTS,

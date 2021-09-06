@@ -7,11 +7,11 @@ import {
     TYPE_PERM_GIFT_GROUP_CHILD_ALL,
     TYPE_PERM_GIFT_LIST_ALL,
 } from './listGroupPermissions';
-import { BASIC_LIST } from './variants/discriminators/singular/BasicListModel';
-import { GIFT_LIST } from './variants/discriminators/singular/GiftListModel';
-import { GIFT_GROUP } from './variants/discriminators/parent/GiftGroupModel';
-import { GIFT_GROUP_CHILD } from './variants/discriminators/child/GiftGroupChildModel';
 import {
+    BASIC_LIST,
+    GIFT_GROUP,
+    GIFT_GROUP_CHILD,
+    GIFT_LIST,
     LIST_GROUP_ALL_CENSORABLE,
     LIST_GROUP_ALL_WITH_ANY_ITEMS,
     LIST_GROUP_ALL_WITH_REGULAR_ITEMS,

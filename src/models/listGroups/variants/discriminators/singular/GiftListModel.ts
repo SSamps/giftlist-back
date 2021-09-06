@@ -8,8 +8,7 @@ import {
     VALIDATION_ITEM_LINK_MAX_LENGTH,
     VALIDATION_ITEM_LINK_MIN_LENGTH,
 } from '../../../../validation';
-
-export const GIFT_LIST = 'GIFT_LIST';
+import { GIFT_LIST } from '../../listGroupVariants';
 
 const giftListSchema = new Schema<TgiftListFields>({
     members: [

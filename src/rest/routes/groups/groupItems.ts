@@ -1,12 +1,11 @@
 import express, { Router, Request, Response } from 'express';
 import { authMiddleware } from '../../middleware/auth';
-import { check, Result, ValidationError, validationResult, oneOf } from 'express-validator';
+import { check, Result, ValidationError, validationResult } from 'express-validator';
 import { ListGroupBaseModel } from '../../../models/listGroups/ListGroupBaseModel';
 import {
     PERM_GROUP_SELECT_LIST_ITEMS,
     PERM_GROUP_SELECT_SECRET_LIST_ITEMS,
 } from '../../../models/listGroups/listGroupPermissions';
-import { GIFT_LIST } from '../../../models/listGroups/variants/discriminators/singular/GiftListModel';
 import {
     findItemInGroup,
     findItemsInGroup,
@@ -16,7 +15,6 @@ import {
     handleNewListItemRequest,
     handleNewSecretListItemRequest,
 } from '../../../misc/helperFunctions';
-import { BASIC_LIST } from '../../../models/listGroups/variants/discriminators/singular/BasicListModel';
 import {
     VALIDATION_ITEM_BODY_MAX_LENGTH,
     VALIDATION_ITEM_BODY_MIN_LENGTH,
@@ -24,6 +22,7 @@ import {
     VALIDATION_ITEM_LINK_MIN_LENGTH,
 } from '../../../models/validation';
 import { groupVariantHasAnyItems } from '../../../models/listGroups/listGroupInterfaces';
+import { BASIC_LIST, GIFT_LIST } from '../../../models/listGroups/variants/listGroupVariants';
 
 const router: Router = express.Router();
 

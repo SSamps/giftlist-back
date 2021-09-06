@@ -11,13 +11,10 @@ import {
     giftListMemberBasePerms,
     PERM_GROUP_INVITE,
 } from '../../../models/listGroups/listGroupPermissions';
-import { BasicListModel, BASIC_LIST } from '../../../models/listGroups/variants/discriminators/singular/BasicListModel';
-import {
-    GiftGroupChildModel,
-    GIFT_GROUP_CHILD,
-} from '../../../models/listGroups/variants/discriminators/child/GiftGroupChildModel';
-import { GiftGroupModel, GIFT_GROUP } from '../../../models/listGroups/variants/discriminators/parent/GiftGroupModel';
-import { GiftListModel, GIFT_LIST } from '../../../models/listGroups/variants/discriminators/singular/GiftListModel';
+import { BasicListModel } from '../../../models/listGroups/variants/discriminators/singular/BasicListModel';
+import { GiftGroupChildModel } from '../../../models/listGroups/variants/discriminators/child/GiftGroupChildModel';
+import { GiftGroupModel } from '../../../models/listGroups/variants/discriminators/parent/GiftGroupModel';
+import { GiftListModel } from '../../../models/listGroups/variants/discriminators/singular/GiftListModel';
 import {
     IbasicListMember,
     IgiftGroupChildMember,
@@ -28,6 +25,12 @@ import { findUserInGroup, formatValidatorErrArrayAsMsgString } from '../../../mi
 import { SystemMessageModel } from '../../../models/messages/variants/discriminators/SystemMessageModel';
 import { TnewSystemMessageFields } from '../../../models/messages/messageInterfaces';
 import { VALIDATION_USER_EMAIL_MAX_LENGTH, VALIDATION_USER_EMAIL_MIN_LENGTH } from '../../../models/validation';
+import {
+    BASIC_LIST,
+    GIFT_GROUP,
+    GIFT_GROUP_CHILD,
+    GIFT_LIST,
+} from '../../../models/listGroups/variants/listGroupVariants';
 
 const router: Router = express.Router();
 sendgrid.setApiKey(process.env.SENDGRID_API_KEY);

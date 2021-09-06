@@ -1,10 +1,7 @@
 import mongoose, { Schema } from 'mongoose';
-import {
-    GiftGroupChildModel,
-    GIFT_GROUP_CHILD,
-} from '../models/listGroups/variants/discriminators/child/GiftGroupChildModel';
+import { GiftGroupChildModel } from '../models/listGroups/variants/discriminators/child/GiftGroupChildModel';
 import { ListGroupBaseModel } from '../models/listGroups/ListGroupBaseModel';
-import { GiftGroupModel, GIFT_GROUP } from '../models/listGroups/variants/discriminators/parent/GiftGroupModel';
+import { GiftGroupModel } from '../models/listGroups/variants/discriminators/parent/GiftGroupModel';
 import {
     basicListOwnerBasePerms,
     giftGroupChildMemberBasePerms,
@@ -19,6 +16,10 @@ import {
     TYPE_PERM_ALL_LIST_GROUP,
 } from '../models/listGroups/listGroupPermissions';
 import {
+    BASIC_LIST,
+    GIFT_GROUP,
+    GIFT_GROUP_CHILD,
+    GIFT_LIST,
     LIST_GROUP_ALL_NON_CENSORABLE,
     LIST_GROUP_ALL_WITH_MESSAGES,
     LIST_GROUP_CHILD_VARIANTS,
@@ -51,8 +52,8 @@ import {
     groupVariantHasRegularItems,
 } from '../models/listGroups/listGroupInterfaces';
 import { TitemTypes, IgiftListItem, InewListItemFields } from '../models/listGroups/listItemInterfaces';
-import { BasicListModel, BASIC_LIST } from '../models/listGroups/variants/discriminators/singular/BasicListModel';
-import { GiftListModel, GIFT_LIST } from '../models/listGroups/variants/discriminators/singular/GiftListModel';
+import { BasicListModel } from '../models/listGroups/variants/discriminators/singular/BasicListModel';
+import { GiftListModel } from '../models/listGroups/variants/discriminators/singular/GiftListModel';
 import { Response } from 'express';
 import { MessageBaseModel } from '../models/messages/MessageBaseModel';
 import { SystemMessageModel } from '../models/messages/variants/discriminators/SystemMessageModel';

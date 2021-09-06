@@ -2,8 +2,7 @@ import { Schema } from 'mongoose';
 import { ListGroupBaseModel } from '../../../ListGroupBaseModel';
 import { PERM_GIFT_GROUP_ALL } from '../../../listGroupPermissions';
 import { TgiftGroupFields } from '../../../listGroupInterfaces';
-
-export const GIFT_GROUP = 'GIFT_GROUP';
+import { GIFT_GROUP } from '../../listGroupVariants';
 
 const giftGroupSchema = new Schema<TgiftGroupFields>({
     members: [

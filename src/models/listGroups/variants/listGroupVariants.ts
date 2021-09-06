@@ -1,7 +1,7 @@
-import { GIFT_GROUP_CHILD } from './discriminators/child/GiftGroupChildModel';
-import { GIFT_GROUP } from './discriminators/parent/GiftGroupModel';
-import { BASIC_LIST } from './discriminators/singular/BasicListModel';
-import { GIFT_LIST } from './discriminators/singular/GiftListModel';
+export const BASIC_LIST = 'BASIC_LIST';
+export const GIFT_LIST = 'GIFT_LIST';
+export const GIFT_GROUP = 'GIFT_GROUP';
+export const GIFT_GROUP_CHILD = 'GIFT_GROUP_CHILD';
 
 export const LIST_GROUP_SINGLE_VARIANTS = [BASIC_LIST, GIFT_LIST];
 export const LIST_GROUP_PARENT_VARIANTS = [GIFT_GROUP];
