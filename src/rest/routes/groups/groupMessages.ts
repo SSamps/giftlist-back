@@ -65,30 +65,30 @@ router.post(
     }
 );
 
-// TODO replace deleted message with a system message
+// Not enabled on front end
 // @route POST api/groups/messages/:messageid
 // @desc Delete an message from a list group
 // @access Private
-router.delete('/messages/:messageid', authMiddleware, async (req: Request, res: Response) => {
-    console.log('DELETE api/groups/messages/:messageid');
+// router.delete('/messages/:messageid', authMiddleware, async (req: Request, res: Response) => {
+//     console.log('DELETE api/groups/messages/:messageid');
 
-    const userIdToken = req.user._id;
-    const messageIdParams = req.params.messageid;
+//     const userIdToken = req.user._id;
+//     const messageIdParams = req.params.messageid;
 
-    try {
-        const foundMessage = await UserMessageModel.findOne({ _id: messageIdParams });
+//     try {
+//         const foundMessage = await UserMessageModel.findOne({ _id: messageIdParams });
 
-        if (foundMessage?.author !== userIdToken) {
-            return res.status(401).send('Error: You can only delete your own messages');
-        }
+//         if (foundMessage?.author !== userIdToken) {
+//             return res.status(401).send('Error: You can only delete your own messages');
+//         }
 
-        await UserMessageModel.findOneAndRemove({ _id: messageIdParams });
+//         await UserMessageModel.findOneAndRemove({ _id: messageIdParams });
 
-        return res.status(200).send();
-    } catch (err) {
-        console.error('Error inside DELETE api/groups/messages/:messageid: ' + err.message);
-        return res.status(500).send('Internal server error');
-    }
-});
+//         return res.status(200).send();
+//     } catch (err) {
+//         console.error('Error inside DELETE api/groups/messages/:messageid: ' + err.message);
+//         return res.status(500).send('Internal server error');
+//     }
+// });
 
 module.exports = router;

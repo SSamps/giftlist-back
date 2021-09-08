@@ -56,7 +56,6 @@ router.get('/user', authMiddleware, async (req: Request, res: Response) => {
     }
 });
 
-// TODO censor based on user permissions
 // @route GET api/groups/:groupid
 // @desc Get a group the user owns or is a member of
 // @access Private

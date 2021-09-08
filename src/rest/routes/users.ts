@@ -62,7 +62,6 @@ async function sendVerificationEmail(newUserId: Schema.Types.ObjectId, email: st
     return;
 }
 
-// TODO improve validation of user display name, email
 // @route POST api/users
 // @desc Register a new user
 // @access Public
