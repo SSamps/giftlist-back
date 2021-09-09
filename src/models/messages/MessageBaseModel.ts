@@ -11,7 +11,12 @@ const messageBaseSchema = new Schema(
         author: {
             type: Schema.Types.ObjectId,
         },
-        creationDate: { type: Date, default: Date.now },
+        creationDate: {
+            type: Date,
+            default: () => {
+                return new Date();
+            },
+        },
         body: { type: String },
     },
     options

@@ -29,7 +29,7 @@ type TuserMessageExtraFields = {
 export type TnewUserMessageFields = TnewMessageBaseFields & TnewUserMessageExtraFields;
 
 type TuserMessageFields = TmessageBaseFields & TuserMessageExtraFields;
-export type TusermMessageDocument = Document & TuserMessageFields;
+export type TuserMessageDocument = Document & TuserMessageFields;
 
 // System messages
 

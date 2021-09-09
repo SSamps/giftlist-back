@@ -1,19 +1,14 @@
 import { Schema } from 'mongoose';
 import { ListGroupBaseModel } from '../../../ListGroupBaseModel';
 import { PERM_GIFT_GROUP_ALL } from '../../../listGroupPermissions';
-import { TgiftGroupDocument } from '../../../listGroupInterfaces';
+import { TgiftGroupFields } from '../../../listGroupInterfaces';
+import { GIFT_GROUP } from '../../listGroupVariants';
 
-export const GIFT_GROUP = 'GIFT_GROUP';
-
-const giftGroupSchema = new Schema<TgiftGroupDocument>({
-    owner: {
-        userId: { type: Schema.Types.ObjectId, required: true },
-        permissions: [{ type: String, required: true, enum: PERM_GIFT_GROUP_ALL }],
-        oldestUnreadMsg: { type: Date },
-    },
+const giftGroupSchema = new Schema<TgiftGroupFields>({
     members: [
         {
             userId: { type: Schema.Types.ObjectId, required: true },
+            displayName: { type: String, required: true },
             permissions: [{ type: String, required: true, enum: PERM_GIFT_GROUP_ALL }],
             oldestUnreadMsg: { type: Date },
             _id: false,
