@@ -163,6 +163,17 @@ router.put('/:groupid/leave', authMiddleware, async (req: Request, res: Response
         );
 
         if (LIST_GROUP_PARENT_VARIANTS.includes(foundGroup.groupVariant)) {
+            const foundChildren = await ListGroupBaseModel.find({ parentGroupId: groupIdParams });
+
+            for (let child of foundChildren) {
+                const foundUser = findUserInGroup(child, userIdToken);
+                if (foundUser) {
+                    if (foundUser.permissions.includes('GROUP_OWNER')) {
+                        await ListGroupBaseModel.deleteOne({ _id: child._id });
+                    }
+                }
+            }
+
             await ListGroupBaseModel.updateMany(
                 { parentGroupId: groupIdParams },
                 { $pull: { members: { userId: userIdToken } } }
