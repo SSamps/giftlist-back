@@ -6,34 +6,49 @@
 
 // Other Imports
 import express, { Application } from 'express';
+import http from 'http';
+import { Server } from 'socket.io';
 import connectDB from './db';
 import cors from 'cors';
+import listGroupChatSocketHandler from './sockets/listGroupChatSocketHandler';
+import { createAdapter } from '@socket.io/redis-adapter';
+import { createClient } from 'redis';
+
+// Env Vars
+const MONGO_URI = process.env.MONGO_URI;
+const REDIS_HOST = process.env.REDIS_HOST;
+const REDIS_PORT = process.env.REDIS_PORT ? parseInt(process.env.REDIS_PORT) : undefined;
+const REDIS_PASSWORD = process.env.REDIS_PASSWORD;
+
+// Connect to database
+connectDB(MONGO_URI);
 
 // Express configuration
 const app: Application = express();
 const PORT: string | number = process.env.PORT || 5000;
 
-// Connect to database
-connectDB(process.env.MONGO_URI);
-
 // // Init middleware
-app.use(express.json());
+app.use(express.json() as express.RequestHandler);
 app.use(cors());
 
 // Define Routes
-app.use('/api/users', require('./routes/users'));
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/test', require('./routes/test'));
-app.use('/api/groups', require('./routes/groups/groups'));
-app.use('/api/groups', require('./routes/groups/groupMessages'));
-app.use('/api/groups', require('./routes/groups/groupItems'));
-app.use('/api/groups', require('./routes/groups/groupInvites'));
+app.use('/api/users', require('./rest/routes/users'));
+app.use('/api/auth', require('./rest/routes/auth'));
+app.use('/api/groups', require('./rest/routes/groups/groups'));
+app.use('/api/groups', require('./rest/routes/groups/groupMessages'));
+app.use('/api/groups', require('./rest/routes/groups/groupItems'));
+app.use('/api/groups', require('./rest/routes/groups/groupInvites'));
+app.use('/api/admin', require('./rest/routes/admin'));
+
+// Socket.io configuration
+const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: '*', methods: '*' } });
+const pubClient = createClient({ host: REDIS_HOST, port: REDIS_PORT, password: REDIS_PASSWORD });
+const subClient = pubClient.duplicate();
+io.adapter(createAdapter(pubClient, subClient));
+listGroupChatSocketHandler(io);
 
 // Start app
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log('Server started on port ' + PORT);
 });
-
-// TODO IMPORTANT Sanitise all data sent to endpoints
-// TODO standardise error responses
-// TODO standardise logging

@@ -1,9 +1,10 @@
 import express, { Router, Request, Response } from 'express';
-import { IUserCensoredProps, IUserProps, UserModel } from '../models/User';
+import { IUserCensoredProps, IUserProps, UserModel } from '../../models/User';
 import { check, validationResult, Result, ValidationError } from 'express-validator';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { unverifiedUserAuthMiddleware } from '../middleware/verificationAuth';
+import { formatValidatorErrArrayAsMsgString } from '../../misc/helperFunctions';
 
 const router: Router = express.Router();
 
@@ -15,7 +16,7 @@ router.get('/', unverifiedUserAuthMiddleware, async (req, res) => {
         console.log('GET api/auth hit');
         return res.json(req.user);
     } catch (err) {
-        console.error(err.message);
+        console.error('Error inside GET api/auth: ' + err.message);
         return res.status(500).send('Server error');
     }
 });
@@ -26,13 +27,14 @@ router.get('/', unverifiedUserAuthMiddleware, async (req, res) => {
 router.post(
     '/',
     check('email', 'An email is required').not().isEmpty(),
-    check('password', 'A password is required').exists(),
+    check('password', 'A password is required').not().isEmpty(),
     async (req: Request, res: Response) => {
         console.log('POST api/auth hit');
         const errors: Result<ValidationError> = validationResult(req);
 
         if (!errors.isEmpty()) {
-            return res.status(400).json({ errors: errors.array() });
+            const errMsg = formatValidatorErrArrayAsMsgString(errors.array());
+            return res.status(400).send('Error:' + errMsg);
         }
 
         let { email, password }: IUserProps = req.body;
@@ -41,13 +43,13 @@ router.post(
             // See if user exists in the database
             let foundUser = await UserModel.findOne({ email });
             if (!foundUser) {
-                return res.status(400).json({ errors: [{ msg: 'Your email or password is incorrect.' }] });
+                return res.status(400).send('Error: Your email or password is incorrect.');
             }
 
             // Check if the password is correct
             const isMatch = await bcrypt.compare(password, foundUser.password);
             if (!isMatch) {
-                return res.status(400).json({ errors: [{ msg: 'Your email or password is incorrect.' }] });
+                return res.status(400).send('Error: Your email or password is incorrect.');
             }
 
             // Return a jwt and a cut down user
@@ -65,13 +67,12 @@ router.post(
                 verified: foundUser.verified,
             };
 
-            // TODO reduce lifetime of this token on release
-            jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1w' }, (err, token) => {
+            jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' }, (err, token) => {
                 if (err) throw err;
                 return res.json({ token, user });
             });
         } catch (err) {
-            console.error(err.message);
+            console.error('Error inside POST api/auth: ' + err.message);
             return res.status(500).send('Server error');
         }
     }

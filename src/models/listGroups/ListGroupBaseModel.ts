@@ -1,18 +1,15 @@
 import { Schema, model } from 'mongoose';
-import { TlistGroupAny } from './listGroupInterfaces';
+import { VALIDATION_GROUP_NAME_MAX_LENGTH, VALIDATION_GROUP_NAME_MIN_LENGTH } from '../validation';
+import { TlistGroupAnyFields } from './listGroupInterfaces';
 
 const options = { discriminatorKey: 'groupVariant' };
 
 const ListGroupBaseSchema = new Schema(
     {
-        owner: {
-            userId: { type: Schema.Types.ObjectId },
-            permissions: [{ type: String }],
-            oldestUnreadMsg: { type: Date },
-        },
         members: [
             {
                 userId: { type: Schema.Types.ObjectId },
+                displayName: { type: String },
                 permissions: [{ type: String }],
                 oldestUnreadMsg: { type: Date },
                 _id: false,
@@ -21,10 +18,20 @@ const ListGroupBaseSchema = new Schema(
         parentGroupId: {
             type: Schema.Types.ObjectId,
         },
-        groupName: { type: String },
-        creationDate: { type: Date, default: Date.now },
+        groupName: {
+            type: String,
+            required: true,
+            minlength: VALIDATION_GROUP_NAME_MIN_LENGTH,
+            maxlength: VALIDATION_GROUP_NAME_MAX_LENGTH,
+        },
+        creationDate: {
+            type: Date,
+            default: () => {
+                return new Date();
+            },
+        },
     },
     options
 );
 
-export const ListGroupBaseModel = model<TlistGroupAny>('ListGroup', ListGroupBaseSchema);
+export const ListGroupBaseModel = model<TlistGroupAnyFields>('ListGroup', ListGroupBaseSchema);

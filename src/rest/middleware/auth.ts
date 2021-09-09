@@ -1,6 +1,6 @@
 import jwt from 'jsonwebtoken';
 import { Request, Response, NextFunction } from 'express';
-import { IUserCensoredProps, UserModel } from '../models/User';
+import { IUserCensoredProps, UserModel } from '../../models/User';
 
 interface IauthToken {
     alg: string;
@@ -15,7 +15,6 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
     const token = req.header('x-auth-token');
     // Check if not token
     if (!token) {
-        console.log('no token');
         return res.status(401).json({ msg: 'Unauthorized: missing x-auth-token' });
     }
 
@@ -39,7 +38,6 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
         const tokenDate = new Date((decoded.iat + 1) * 1000);
 
         if (tokenDate < (oldestValidJWT as Date)) {
-            console.log('invalidated token');
             return res.status(401).json({ msg: 'Unauthorized' });
         }
 
