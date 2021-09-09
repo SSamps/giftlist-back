@@ -48,3 +48,7 @@ You can use madge to identify circular dependencies with the following command:
 You can also use madge to generate a dependency graph using the following command:
 
 > madge ./ --extensions ts -i dependencyGraph.png
+
+## Licence
+
+No licence - all rights reserved
