@@ -29,6 +29,7 @@ import {
     VALIDATION_USER_PASSWORD_MIN_UPPERCASE,
 } from '../../models/validation';
 import { BASIC_LIST, GIFT_GROUP, GIFT_LIST } from '../../models/listGroups/variants/listGroupVariants';
+import { UserMessageModel } from '../../models/messages/variants/discriminators/UserMessageModel';
 
 sendgrid.setApiKey(process.env.SENDGRID_API_KEY);
 const router: Router = express.Router();
@@ -312,6 +313,8 @@ router.put(
                 { 'members.$[member].displayName': displayName },
                 { arrayFilters: [{ 'member.userId': tokenUserId }] }
             );
+
+            await UserMessageModel.updateMany({ authorId: tokenUserId }, { authorName: displayName });
 
             let user: IUserCensoredProps = {
                 _id: updatedUser._id,
