@@ -112,6 +112,47 @@ export const deleteGroupAndAnyChildGroups = async (
     }
 };
 
+export const removeMemberFromGiftLists = async (
+    variants: typeof GIFT_LIST | typeof GIFT_GROUP_CHILD,
+    groupIds: string[] | Schema.Types.ObjectId[],
+    userId: string | Schema.Types.ObjectId,
+    displayName: string
+) => {
+    console.log('groupIds: ', groupIds);
+
+    const model = variants === GIFT_LIST ? GiftListModel : GiftGroupChildModel;
+
+    await model.updateMany(
+        { _id: { $in: groupIds } },
+        {
+            $pull: {
+                members: { userId: userId },
+                listItems: { authorId: userId },
+                secretListItems: { authorId: userId },
+            },
+        }
+    );
+
+    await model.updateMany(
+        { _id: { $in: groupIds } },
+        {
+            $pull: {
+                'listItems.$[].selectedBy': userId,
+                'secretListItems.$[].selectedBy': userId,
+            },
+        }
+    );
+
+    for (let groupId of groupIds) {
+        const newMessageFields: TnewSystemMessageFields = {
+            groupId: groupId,
+            body: `${displayName} left the group`,
+        };
+        const newMessage = new SystemMessageModel(newMessageFields);
+        await newMessage.save();
+    }
+};
+
 const hitMaxListItems = (foundValidGroup: TlistGroupAnyWithRegularItemsFields) => {
     return foundValidGroup.listItems.length + 1 > foundValidGroup.maxListItems;
 };

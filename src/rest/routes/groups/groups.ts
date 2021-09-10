@@ -4,6 +4,8 @@ import { check, Result, ValidationError, validationResult } from 'express-valida
 import { ListGroupBaseModel } from '../../../models/listGroups/ListGroupBaseModel';
 import { PERM_GROUP_RENAME } from '../../../models/listGroups/listGroupPermissions';
 import {
+    GIFT_GROUP_CHILD,
+    GIFT_LIST,
     LIST_GROUP_ALL_TOP_LEVEL_VARIANTS,
     LIST_GROUP_ALL_VARIANTS,
     LIST_GROUP_CHILD_VARIANTS,
@@ -18,6 +20,7 @@ import {
     findOneAndUpdateUsingDiscriminator,
     findUserInGroup,
     formatValidatorErrArrayAsMsgString,
+    removeMemberFromGiftLists,
 } from '../../../misc/helperFunctions';
 import { groupVariantIsAParent } from '../../../models/listGroups/listGroupInterfaces';
 import { VALIDATION_GROUP_NAME_MAX_LENGTH, VALIDATION_GROUP_NAME_MIN_LENGTH } from '../../../models/validation';
@@ -153,32 +156,42 @@ router.put('/:groupid/leave', authMiddleware, async (req: Request, res: Response
             return res.status(400).send('Error: You are not a member of the group');
         }
 
+        if (foundUser.permissions.includes('GROUP_OWNER')) {
+            return res.status(400).send('Error: You cannot leave groups you own without deleting them');
+        }
+
         if (LIST_GROUP_CHILD_VARIANTS.includes(foundGroup.groupVariant)) {
             return res.status(400).send('Error: You cannot leave child groups directly');
         }
 
-        await ListGroupBaseModel.findOneAndUpdate(
-            { _id: groupIdParams },
-            { $pull: { members: { userId: userIdToken } } }
-        );
-
-        if (LIST_GROUP_PARENT_VARIANTS.includes(foundGroup.groupVariant)) {
+        if (foundGroup.groupVariant === 'BASIC_LIST') {
+            await ListGroupBaseModel.findOneAndUpdate(
+                { _id: groupIdParams },
+                { $pull: { members: { userId: userIdToken } } }
+            );
+        } else if (foundGroup.groupVariant === 'GIFT_LIST') {
+            await removeMemberFromGiftLists(GIFT_LIST, [groupIdParams], userIdToken, foundUser.displayName);
+        } else if (foundGroup.groupVariant === 'GIFT_GROUP') {
             const foundChildren = await ListGroupBaseModel.find({ parentGroupId: groupIdParams });
 
+            let memberGroups = [];
             for (let child of foundChildren) {
                 const foundUser = findUserInGroup(child, userIdToken);
                 if (foundUser) {
                     if (foundUser.permissions.includes('GROUP_OWNER')) {
                         await ListGroupBaseModel.deleteOne({ _id: child._id });
+                    } else {
+                        memberGroups.push(child.id);
                     }
                 }
             }
-
-            await ListGroupBaseModel.updateMany(
-                { parentGroupId: groupIdParams },
+            removeMemberFromGiftLists(GIFT_GROUP_CHILD, memberGroups, userIdToken, foundUser.displayName);
+            await ListGroupBaseModel.findOneAndUpdate(
+                { _id: groupIdParams },
                 { $pull: { members: { userId: userIdToken } } }
             );
         }
+
         return res.status(200).send('Successfully left group');
     } catch (err) {
         console.error('Error inside PUT /api/groups/:groupid/leave: ' + err.message);
