@@ -1,16 +1,19 @@
 import { Schema } from 'mongoose';
 import { VALIDATION_MESSAGE_MAX_LENGTH, VALIDATION_MESSAGE_MIN_LENGTH } from '../../../validation';
 import { MessageBaseModel } from '../../MessageBaseModel';
-import { TuserMessageDocument } from '../../messageInterfaces';
+import { TuserMessageFields } from '../../messageInterfaces';
 
 export const USER_MESSAGE = 'USER_MESSAGE';
 
-const userMessageSchema = new Schema<TuserMessageDocument>({
+const userMessageSchema = new Schema<TuserMessageFields>({
     groupId: {
         type: Schema.Types.ObjectId,
     },
-    author: {
+    authorId: {
         type: Schema.Types.ObjectId,
+    },
+    authorName: {
+        type: String,
     },
     creationDate: {
         type: Date,

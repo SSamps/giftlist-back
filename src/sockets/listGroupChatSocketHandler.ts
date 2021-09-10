@@ -27,7 +27,8 @@ const listGroupChatSocketHandler = (io: Server<DefaultEventsMap, DefaultEventsMa
 
         socket.on('giftListChat:postMessage', async (body) => {
             const newMessageFields: TnewUserMessageFields = {
-                author: user._id,
+                authorId: user._id,
+                authorName: user.displayName,
                 groupId: groupId,
                 body: body,
             };
