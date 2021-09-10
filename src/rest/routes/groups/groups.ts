@@ -20,7 +20,8 @@ import {
     findOneAndUpdateUsingDiscriminator,
     findUserInGroup,
     formatValidatorErrArrayAsMsgString,
-    removeMemberFromGiftLists,
+    removeMemberFromGiftListsOrGiftGroupChildren,
+    leaveGiftGroup,
 } from '../../../misc/helperFunctions';
 import { groupVariantIsAParent } from '../../../models/listGroups/listGroupInterfaces';
 import { VALIDATION_GROUP_NAME_MAX_LENGTH, VALIDATION_GROUP_NAME_MIN_LENGTH } from '../../../models/validation';
@@ -143,6 +144,7 @@ router.put('/:groupid/leave', authMiddleware, async (req: Request, res: Response
 
     const userIdToken = req.user._id;
     const groupIdParams = req.params.groupid;
+    const userDisplayName = req.user.displayName;
 
     try {
         const foundGroup = await ListGroupBaseModel.findOne({ _id: groupIdParams });
@@ -170,28 +172,15 @@ router.put('/:groupid/leave', authMiddleware, async (req: Request, res: Response
                 { $pull: { members: { userId: userIdToken } } }
             );
         } else if (foundGroup.groupVariant === 'GIFT_LIST') {
-            await removeMemberFromGiftLists(GIFT_LIST, [groupIdParams], userIdToken, foundUser.displayName);
-        } else if (foundGroup.groupVariant === 'GIFT_GROUP') {
-            const foundChildren = await ListGroupBaseModel.find({ parentGroupId: groupIdParams });
-
-            let memberGroups = [];
-            for (let child of foundChildren) {
-                const foundUser = findUserInGroup(child, userIdToken);
-                if (foundUser) {
-                    if (foundUser.permissions.includes('GROUP_OWNER')) {
-                        await ListGroupBaseModel.deleteOne({ _id: child._id });
-                    } else {
-                        memberGroups.push(child.id);
-                    }
-                }
-            }
-            removeMemberFromGiftLists(GIFT_GROUP_CHILD, memberGroups, userIdToken, foundUser.displayName);
-            await ListGroupBaseModel.findOneAndUpdate(
-                { _id: groupIdParams },
-                { $pull: { members: { userId: userIdToken } } }
+            await removeMemberFromGiftListsOrGiftGroupChildren(
+                GIFT_LIST,
+                [groupIdParams],
+                userIdToken,
+                foundUser.displayName
             );
+        } else if (foundGroup.groupVariant === 'GIFT_GROUP') {
+            leaveGiftGroup(foundGroup._id, userIdToken, userDisplayName);
         }
-
         return res.status(200).send('Successfully left group');
     } catch (err) {
         console.error('Error inside PUT /api/groups/:groupid/leave: ' + err.message);

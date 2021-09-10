@@ -13,6 +13,8 @@ import {
     deleteGroupAndAnyChildGroups,
     findUserInGroup,
     formatValidatorErrArrayAsMsgString,
+    leaveGiftGroup,
+    removeMemberFromGiftListsOrGiftGroupChildren,
 } from '../../misc/helperFunctions';
 import {
     VALIDATION_USER_DISPLAY_NAME_MAX_LENGTH,
@@ -26,6 +28,7 @@ import {
     VALIDATION_USER_PASSWORD_MIN_SYMBOL,
     VALIDATION_USER_PASSWORD_MIN_UPPERCASE,
 } from '../../models/validation';
+import { BASIC_LIST, GIFT_GROUP, GIFT_LIST } from '../../models/listGroups/variants/listGroupVariants';
 
 sendgrid.setApiKey(process.env.SENDGRID_API_KEY);
 const router: Router = express.Router();
@@ -211,34 +214,58 @@ router.delete('/', unverifiedUserAuthMiddleware, async (req: Request, res: Respo
     console.log('DELETE api/users/ hit');
 
     const userId = req.user._id;
+    const userDisplayName = req.user.displayName;
 
     try {
         const foundGroups = await ListGroupBaseModel.find({ 'members.userId': userId });
 
         let ownedGroups = [];
-        let memberGroupIds = [];
+        let memberGroups = [];
 
         for (let group of foundGroups) {
             let foundUser = findUserInGroup(group, userId);
 
             if (foundUser?.permissions.includes(PERM_GROUP_OWNER)) {
-                ownedGroups.push(group._id);
+                ownedGroups.push(group);
             } else {
-                memberGroupIds.push(group._id);
+                memberGroups.push(group);
             }
         }
 
         if (ownedGroups.length > 0) {
             for (let group of ownedGroups) {
-                await deleteGroupAndAnyChildGroups(group, res);
+                await deleteGroupAndAnyChildGroups(group);
             }
         }
 
-        if (memberGroupIds.length > 0) {
-            await ListGroupBaseModel.updateMany(
-                { _id: { $in: memberGroupIds } },
-                { $pull: { members: { userId: userId } } }
-            );
+        const basicListIds = [];
+        const giftListIds = [];
+        const giftGroupIds = [];
+        if (memberGroups.length > 0) {
+            for (const group of memberGroups) {
+                if (group.groupVariant === BASIC_LIST) {
+                    basicListIds.push(group._id);
+                } else if (group.groupVariant === GIFT_LIST) {
+                    giftListIds.push(group._id);
+                } else if (group.groupVariant === GIFT_GROUP) {
+                    giftGroupIds.push(group._id);
+                }
+            }
+
+            if (basicListIds.length > 0) {
+                await ListGroupBaseModel.updateMany(
+                    { _id: { $in: basicListIds } },
+                    { $pull: { members: { userId: userId } } }
+                );
+            }
+
+            if (giftListIds.length > 0) {
+                removeMemberFromGiftListsOrGiftGroupChildren(GIFT_LIST, giftListIds, userId, userDisplayName);
+            }
+
+            for (const groupId of giftGroupIds) {
+                leaveGiftGroup(groupId, userId, userDisplayName);
+            }
         }
 
         await UserModel.findByIdAndDelete(userId);

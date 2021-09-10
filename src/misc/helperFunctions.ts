@@ -94,10 +94,7 @@ export const findAndDeleteGroupAndAnyChildGroupsIfAllowed = async (
     }
 };
 
-export const deleteGroupAndAnyChildGroups = async (
-    group: TlistGroupAnyDocument,
-    res: Response
-): Promise<IgroupDeletionResult> => {
+export const deleteGroupAndAnyChildGroups = async (group: TlistGroupAnyDocument): Promise<IgroupDeletionResult> => {
     if (LIST_GROUP_ALL_WITH_MESSAGES.includes(group.groupVariant)) {
         await MessageBaseModel.deleteMany({ groupId: group._id });
     }
@@ -112,14 +109,12 @@ export const deleteGroupAndAnyChildGroups = async (
     }
 };
 
-export const removeMemberFromGiftLists = async (
+export const removeMemberFromGiftListsOrGiftGroupChildren = async (
     variants: typeof GIFT_LIST | typeof GIFT_GROUP_CHILD,
     groupIds: string[] | Schema.Types.ObjectId[],
     userId: string | Schema.Types.ObjectId,
     displayName: string
 ) => {
-    console.log('groupIds: ', groupIds);
-
     const model = variants === GIFT_LIST ? GiftListModel : GiftGroupChildModel;
 
     await model.updateMany(
@@ -151,6 +146,28 @@ export const removeMemberFromGiftLists = async (
         const newMessage = new SystemMessageModel(newMessageFields);
         await newMessage.save();
     }
+};
+
+export const leaveGiftGroup = async (
+    giftGroupId: string | Schema.Types.ObjectId,
+    userId: string | Schema.Types.ObjectId,
+    displayName: string
+) => {
+    const foundChildren = await ListGroupBaseModel.find({ parentGroupId: giftGroupId });
+
+    let memberGroups = [];
+    for (let child of foundChildren) {
+        const foundUser = findUserInGroup(child, userId);
+        if (foundUser) {
+            if (foundUser.permissions.includes('GROUP_OWNER')) {
+                await ListGroupBaseModel.deleteOne({ _id: child._id });
+            } else {
+                memberGroups.push(child.id);
+            }
+        }
+    }
+    removeMemberFromGiftListsOrGiftGroupChildren(GIFT_GROUP_CHILD, memberGroups, userId, displayName);
+    await ListGroupBaseModel.findOneAndUpdate({ _id: giftGroupId }, { $pull: { members: { userId: userId } } });
 };
 
 const hitMaxListItems = (foundValidGroup: TlistGroupAnyWithRegularItemsFields) => {
