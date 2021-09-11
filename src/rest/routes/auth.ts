@@ -67,7 +67,7 @@ router.post(
                 verified: foundUser.verified,
             };
 
-            jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1h' }, (err, token) => {
+            jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '4h' }, (err, token) => {
                 if (err) throw err;
                 return res.json({ token, user });
             });
