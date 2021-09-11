@@ -94,10 +94,7 @@ export const findAndDeleteGroupAndAnyChildGroupsIfAllowed = async (
     }
 };
 
-export const deleteGroupAndAnyChildGroups = async (
-    group: TlistGroupAnyDocument,
-    res: Response
-): Promise<IgroupDeletionResult> => {
+export const deleteGroupAndAnyChildGroups = async (group: TlistGroupAnyDocument): Promise<IgroupDeletionResult> => {
     if (LIST_GROUP_ALL_WITH_MESSAGES.includes(group.groupVariant)) {
         await MessageBaseModel.deleteMany({ groupId: group._id });
     }
@@ -110,6 +107,70 @@ export const deleteGroupAndAnyChildGroups = async (
         await GiftGroupChildModel.deleteMany({ parentGroupId: group._id });
         return { status: 200, msg: '' };
     }
+};
+
+export const removeMemberFromGiftListsOrGiftGroupChildren = async (
+    variants: typeof GIFT_LIST | typeof GIFT_GROUP_CHILD,
+    groupIds: string[] | Schema.Types.ObjectId[],
+    userId: string | Schema.Types.ObjectId,
+    displayName: string
+) => {
+    const model = variants === GIFT_LIST ? GiftListModel : GiftGroupChildModel;
+
+    await model.updateMany(
+        { _id: { $in: groupIds } },
+        {
+            $pull: {
+                members: { userId: userId },
+                listItems: { authorId: userId },
+                secretListItems: { authorId: userId },
+            },
+        }
+    );
+
+    await model.updateMany(
+        { _id: { $in: groupIds } },
+        {
+            $pull: {
+                'listItems.$[].selectedBy': userId,
+                'secretListItems.$[].selectedBy': userId,
+            },
+        }
+    );
+
+    for (let groupId of groupIds) {
+        const newMessageFields: TnewSystemMessageFields = {
+            groupId: groupId,
+            body: `{userName} left the group`,
+            userId: userId,
+            userName: displayName,
+        };
+
+        const newMessage = new SystemMessageModel(newMessageFields);
+        await newMessage.save();
+    }
+};
+
+export const leaveGiftGroup = async (
+    giftGroupId: string | Schema.Types.ObjectId,
+    userId: string | Schema.Types.ObjectId,
+    displayName: string
+) => {
+    const foundChildren = await ListGroupBaseModel.find({ parentGroupId: giftGroupId });
+
+    let memberGroups = [];
+    for (let child of foundChildren) {
+        const foundUser = findUserInGroup(child, userId);
+        if (foundUser) {
+            if (foundUser.permissions.includes('GROUP_OWNER')) {
+                await ListGroupBaseModel.deleteOne({ _id: child._id });
+            } else {
+                memberGroups.push(child.id);
+            }
+        }
+    }
+    removeMemberFromGiftListsOrGiftGroupChildren(GIFT_GROUP_CHILD, memberGroups, userId, displayName);
+    await ListGroupBaseModel.findOneAndUpdate({ _id: giftGroupId }, { $pull: { members: { userId: userId } } });
 };
 
 const hitMaxListItems = (foundValidGroup: TlistGroupAnyWithRegularItemsFields) => {
@@ -246,8 +307,8 @@ const getParentAndValidateCanCreateChildren = async (
 };
 
 export const addGroup = async (
-    tokenUserId: mongoose.Schema.Types.ObjectId,
-    tokenDisplayName: string,
+    userId: mongoose.Schema.Types.ObjectId,
+    userDisplayName: string,
     groupVariant: string,
     groupName: string,
     res: Response,
@@ -262,8 +323,8 @@ export const addGroup = async (
         switch (groupVariant) {
             case BASIC_LIST: {
                 const owner: IbasicListMember = {
-                    userId: tokenUserId,
-                    displayName: tokenDisplayName,
+                    userId: userId,
+                    displayName: userDisplayName,
                     permissions: basicListOwnerBasePerms,
                 };
                 const newListGroupData: TnewBasicListFields = { members: [owner], groupName };
@@ -273,8 +334,8 @@ export const addGroup = async (
             }
             case GIFT_LIST: {
                 const owner: IgiftListMember = {
-                    userId: tokenUserId,
-                    displayName: tokenDisplayName,
+                    userId: userId,
+                    displayName: userDisplayName,
                     permissions: giftListOwnerBasePerms,
                 };
                 const newListGroupData: TnewGiftListFields = { members: [owner], groupName };
@@ -283,7 +344,9 @@ export const addGroup = async (
 
                 const newMessageFields: TnewSystemMessageFields = {
                     groupId: newListGroup._id,
-                    body: `${tokenDisplayName} created the list`,
+                    body: `{userName} created the list`,
+                    userId: userId,
+                    userName: userDisplayName,
                 };
                 const newMessage = new SystemMessageModel(newMessageFields);
                 await newMessage.save();
@@ -292,8 +355,8 @@ export const addGroup = async (
             }
             case GIFT_GROUP: {
                 const owner: IgiftGroupMember = {
-                    userId: tokenUserId,
-                    displayName: tokenDisplayName,
+                    userId: userId,
+                    displayName: userDisplayName,
                     permissions: giftGroupOwnerBasePerms,
                 };
                 const newGroupData: TnewGiftGroupFields = { members: [owner], groupName };
@@ -302,11 +365,7 @@ export const addGroup = async (
                 return res.status(200).json(newGroup);
             }
             case GIFT_GROUP_CHILD: {
-                let foundParentGroup = await getParentAndValidateCanCreateChildren(
-                    parentGroupId,
-                    tokenUserId,
-                    groupVariant
-                );
+                let foundParentGroup = await getParentAndValidateCanCreateChildren(parentGroupId, userId, groupVariant);
 
                 if (!foundParentGroup) {
                     return res.status(404).send('Error: Parent group not found');
@@ -319,7 +378,7 @@ export const addGroup = async (
                         permissions: [],
                         oldestReadMessage: undefined,
                     };
-                    if (parentMember.userId.toString() === tokenUserId.toString()) {
+                    if (parentMember.userId.toString() === userId.toString()) {
                         childMember.permissions = giftGroupChildOwnerBasePerms;
                     } else {
                         childMember.permissions = giftGroupChildMemberBasePerms;
@@ -333,7 +392,9 @@ export const addGroup = async (
 
                 const newMessageFields: TnewSystemMessageFields = {
                     groupId: newListGroup._id,
-                    body: `${tokenDisplayName} created the list`,
+                    body: `{userName} created the list`,
+                    userId: userId,
+                    userName: userDisplayName,
                 };
 
                 const newMessage = new SystemMessageModel(newMessageFields);

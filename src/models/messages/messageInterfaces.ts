@@ -19,25 +19,30 @@ type TmessageBaseFields = {
 // User messages
 
 type TnewUserMessageExtraFields = {
-    author: Schema.Types.ObjectId | string;
+    authorId: Schema.Types.ObjectId | string;
+    authorName: string;
 };
 
 type TuserMessageExtraFields = {
-    author: Schema.Types.ObjectId | string;
+    authorId: Schema.Types.ObjectId | string;
+    authorName: string;
 };
 
 export type TnewUserMessageFields = TnewMessageBaseFields & TnewUserMessageExtraFields;
 
-type TuserMessageFields = TmessageBaseFields & TuserMessageExtraFields;
+export type TuserMessageFields = TmessageBaseFields & TuserMessageExtraFields;
 export type TuserMessageDocument = Document & TuserMessageFields;
 
 // System messages
 
-type TnewSystemMessageExtraFields = {};
-type TsystemMessageExtraFields = {};
+type TnewSystemMessageExtraFields = {
+    userId?: Schema.Types.ObjectId | string;
+    userName?: string;
+};
+type TsystemMessageExtraFields = { userId?: Schema.Types.ObjectId | string; userName?: string };
 
 export type TnewSystemMessageFields = TnewMessageBaseFields & TnewSystemMessageExtraFields;
-type TsystemMessageFields = TmessageBaseFields & TsystemMessageExtraFields;
+export type TsystemMessageFields = TmessageBaseFields & TsystemMessageExtraFields;
 export type TsystemMessageDocument = Document & TmessageBaseFields;
 
 // Aggregate

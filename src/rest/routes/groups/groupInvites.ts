@@ -195,7 +195,9 @@ router.post('/invite/accept/:groupToken', authMiddleware, async (req: Request, r
 
                 const newMessageFields: TnewSystemMessageFields = {
                     groupId: groupId,
-                    body: `${tokenDisplayName} joined`,
+                    body: `{userName} joined`,
+                    userId: tokenUserId,
+                    userName: tokenDisplayName,
                 };
                 const newMessage = new SystemMessageModel(newMessageFields);
                 await newMessage.save();
