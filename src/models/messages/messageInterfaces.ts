@@ -35,11 +35,14 @@ export type TuserMessageDocument = Document & TuserMessageFields;
 
 // System messages
 
-type TnewSystemMessageExtraFields = {};
-type TsystemMessageExtraFields = {};
+type TnewSystemMessageExtraFields = {
+    userId?: Schema.Types.ObjectId | string;
+    userName?: string;
+};
+type TsystemMessageExtraFields = { userId?: Schema.Types.ObjectId | string; userName?: string };
 
 export type TnewSystemMessageFields = TnewMessageBaseFields & TnewSystemMessageExtraFields;
-type TsystemMessageFields = TmessageBaseFields & TsystemMessageExtraFields;
+export type TsystemMessageFields = TmessageBaseFields & TsystemMessageExtraFields;
 export type TsystemMessageDocument = Document & TmessageBaseFields;
 
 // Aggregate

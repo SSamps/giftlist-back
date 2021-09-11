@@ -30,6 +30,7 @@ import {
 } from '../../models/validation';
 import { BASIC_LIST, GIFT_GROUP, GIFT_LIST } from '../../models/listGroups/variants/listGroupVariants';
 import { UserMessageModel } from '../../models/messages/variants/discriminators/UserMessageModel';
+import { SystemMessageModel } from '../../models/messages/variants/discriminators/SystemMessageModel';
 
 sendgrid.setApiKey(process.env.SENDGRID_API_KEY);
 const router: Router = express.Router();
@@ -315,6 +316,7 @@ router.put(
             );
 
             await UserMessageModel.updateMany({ authorId: tokenUserId }, { authorName: displayName });
+            await SystemMessageModel.updateMany({ userId: tokenUserId }, { userName: displayName });
 
             let user: IUserCensoredProps = {
                 _id: updatedUser._id,
