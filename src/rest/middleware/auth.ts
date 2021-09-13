@@ -15,7 +15,7 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
     const token = req.header('x-auth-token');
     // Check if not token
     if (!token) {
-        return res.status(401).json({ msg: 'Unauthorized: missing x-auth-token' });
+        return res.status(401).send('Error: missing x-auth-token');
     }
 
     // Verify token
@@ -26,11 +26,11 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
         try {
             var foundUser = await UserModel.findById(decoded.user.id).select('-password');
         } catch (err) {
-            return res.status(500).json({ msg: 'Server Error' });
+            return res.status(500).send('Server Error');
         }
 
         if (!foundUser) {
-            return res.status(404).json({ msg: 'User not found' });
+            return res.status(404).send('Error: User not found');
         }
 
         const oldestValidJWT = foundUser.oldestValidJWT;
@@ -38,11 +38,11 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
         const tokenDate = new Date((decoded.iat + 1) * 1000);
 
         if (tokenDate < (oldestValidJWT as Date)) {
-            return res.status(401).json({ msg: 'Unauthorized' });
+            return res.status(401).send('Error: Unauthorized');
         }
 
         if (!foundUser.verified) {
-            return res.status(401).json({ msg: 'User not verified' });
+            return res.status(401).send('Error: User not verified');
         }
 
         var user: IUserCensoredProps = {
@@ -57,6 +57,6 @@ export async function authMiddleware(req: Request, res: Response, next: NextFunc
         next();
     } catch (err) {
         console.error(err.message);
-        return res.status(401).json({ msg: 'Unauthorized' });
+        return res.status(401).send('Error: Unauthorized');
     }
 }
