@@ -1,7 +1,6 @@
 import express, { Router, Request, Response } from 'express';
 import { authMiddleware } from '../../middleware/auth';
 import jwt from 'jsonwebtoken';
-import sendgrid from '@sendgrid/mail';
 import { check, Result, ValidationError, validationResult } from 'express-validator';
 import { ListGroupBaseModel } from '../../../models/listGroups/ListGroupBaseModel';
 import {
@@ -21,7 +20,7 @@ import {
     IgiftGroupMember,
     IgiftListMember,
 } from '../../../models/listGroups/listGroupInterfaces';
-import { findUserInGroup, formatValidatorErrArrayAsMsgString } from '../../../misc/helperFunctions';
+import { findUserInGroup, formatValidatorErrArrayAsMsgString, sendEmail } from '../../../misc/helperFunctions';
 import { SystemMessageModel } from '../../../models/messages/variants/discriminators/SystemMessageModel';
 import { TnewSystemMessageFields } from '../../../models/messages/messageInterfaces';
 import { VALIDATION_USER_EMAIL_MAX_LENGTH, VALIDATION_USER_EMAIL_MIN_LENGTH } from '../../../models/validation';
@@ -33,7 +32,6 @@ import {
 } from '../../../models/listGroups/variants/listGroupVariants';
 
 const router: Router = express.Router();
-sendgrid.setApiKey(process.env.SENDGRID_API_KEY);
 
 interface IinviteToken {
     alg: string;
@@ -110,7 +108,7 @@ router.post(
                 },
             };
 
-            await sendgrid.send(msg);
+            await sendEmail(msg);
             return res.send(200);
         } catch (err) {
             console.error('Error inside POST /api/groups/:groupid/invite/send: ' + err.message);

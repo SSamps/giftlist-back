@@ -4,7 +4,6 @@ import { Schema } from 'mongoose';
 import { IUserCensoredProps, IUser, IUserProps, UserModel } from '../../models/User';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import sendgrid from '@sendgrid/mail';
 import { unverifiedUserAuthMiddleware } from '../middleware/verificationAuth';
 import { ListGroupBaseModel } from '../../models/listGroups/ListGroupBaseModel';
 import { PERM_GROUP_OWNER } from '../../models/listGroups/listGroupPermissions';
@@ -15,6 +14,7 @@ import {
     formatValidatorErrArrayAsMsgString,
     leaveGiftGroup,
     removeMemberFromGiftListsOrGiftGroupChildren,
+    sendEmail,
 } from '../../misc/helperFunctions';
 import {
     VALIDATION_USER_DISPLAY_NAME_MAX_LENGTH,
@@ -32,7 +32,6 @@ import { BASIC_LIST, GIFT_GROUP, GIFT_LIST } from '../../models/listGroups/varia
 import { UserMessageModel } from '../../models/messages/variants/discriminators/UserMessageModel';
 import { SystemMessageModel } from '../../models/messages/variants/discriminators/SystemMessageModel';
 
-sendgrid.setApiKey(process.env.SENDGRID_API_KEY);
 const router: Router = express.Router();
 
 interface IverificationToken {
@@ -63,7 +62,7 @@ async function sendVerificationEmail(newUserId: Schema.Types.ObjectId, email: st
             verifyLink: verifyLink,
         },
     };
-    await sendgrid.send(msg);
+    await sendEmail(msg);
     return;
 }
 
@@ -389,7 +388,7 @@ router.post(
                 },
             };
 
-            await sendgrid.send(msg);
+            await sendEmail(msg);
             return res.send(200);
         } catch (err) {
             console.error('Error inside POST api/users/resetpassword: ' + err.message);
