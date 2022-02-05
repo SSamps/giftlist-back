@@ -50,6 +50,7 @@ import {
     TgiftGroupWithChildrenFields,
     TlistGroupAnyFields,
     groupVariantHasRegularItems,
+    TgiftGroupChildDocument,
 } from '../models/listGroups/listGroupInterfaces';
 import { TitemTypes, IgiftListItem, InewListItemFields } from '../models/listGroups/listItemInterfaces';
 import { BasicListModel } from '../models/listGroups/variants/discriminators/singular/BasicListModel';
@@ -59,11 +60,22 @@ import { MessageBaseModel } from '../models/messages/MessageBaseModel';
 import { SystemMessageModel } from '../models/messages/variants/discriminators/SystemMessageModel';
 import { TnewSystemMessageFields } from '../models/messages/messageInterfaces';
 import { ValidationError } from 'express-validator';
+import sendgrid from '@sendgrid/mail';
+import { IUserProps, UserModel } from '../models/User';
+import { Personalization } from '@sendgrid/helpers/classes';
+import type { MailDataRequired } from '@sendgrid/helpers/classes/mail';
+import type { PersonalizationData } from '@sendgrid/helpers/classes/personalization';
+
+sendgrid.setApiKey(process.env.SENDGRID_API_KEY);
 
 export interface IgroupDeletionResult {
     status: number;
     msg: string;
 }
+
+export const sendEmail = async (msg: MailDataRequired) => {
+    await sendgrid.send(msg);
+};
 
 export const findAndDeleteGroupAndAnyChildGroupsIfAllowed = async (
     userId: Schema.Types.ObjectId,
@@ -387,7 +399,7 @@ export const addGroup = async (
                 });
 
                 const newListGroupData: TnewGiftGroupChildFields = { members: members, groupName, parentGroupId };
-                const newListGroup = new GiftGroupChildModel(newListGroupData);
+                const newListGroup: TgiftGroupChildDocument = new GiftGroupChildModel(newListGroupData);
                 await newListGroup.save();
 
                 const newMessageFields: TnewSystemMessageFields = {
@@ -399,6 +411,47 @@ export const addGroup = async (
 
                 const newMessage = new SystemMessageModel(newMessageFields);
                 await newMessage.save();
+
+                if (members.length > 1) {
+                    const memberIds = members.map((member) => {
+                        return member.userId;
+                    });
+
+                    let memberData: IUserProps[] = await UserModel.find({ _id: { $in: memberIds } }).lean();
+
+                    const membersToEmail: string[] = memberData
+                        .filter((member) => member._id.toString() != userId.toString())
+                        .map((member) => {
+                            return member.email;
+                        });
+
+                    let personalizations: PersonalizationData[] = [];
+
+                    membersToEmail.forEach((email) => {
+                        let personalization = new Personalization();
+                        personalization.setTo(email);
+                        personalizations.push(personalization.toJSON());
+                    });
+
+                    const newListLink: string = `giftlist.sampsy.dev/list/${newListGroup._id}`;
+
+                    const msg = {
+                        personalizations: personalizations,
+                        from: {
+                            name: 'GiftList',
+                            email: 'notifications.giftlist@sampsy.dev',
+                        },
+                        templateId: 'd-ae7c62f4baa148e8bcfffef1ece36a0a',
+                        dynamic_template_data: {
+                            creatorDisplayName: userDisplayName,
+                            newListName: groupName,
+                            parentGroupName: foundParentGroup.groupName,
+                            newListLink: newListLink,
+                        },
+                    };
+
+                    await sendEmail(msg);
+                }
 
                 return res.status(200).json(newListGroup);
             }
