@@ -5,17 +5,11 @@ import { ExtendedError } from 'socket.io/dist/namespace';
 import { ListGroupBaseModel } from '../../models/listGroups/ListGroupBaseModel';
 import { findUserInGroup } from '../../misc/helperFunctions';
 
-export interface socketWithUser extends Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap> {
-    data: {
-        user: IUserCensoredProps;
-    };
-}
-
 export const socketGroupMiddleware = async (
-    socket: socketWithUser,
+    socket: Socket<DefaultEventsMap, DefaultEventsMap, DefaultEventsMap>,
     next: (err?: ExtendedError | undefined) => void
 ) => {
-    const user = socket.data.user;
+    const user: IUserCensoredProps = socket.data.user;
     const groupId = socket.handshake.query.groupId as string;
     try {
         let foundGroup = await ListGroupBaseModel.findOne({ _id: groupId }).lean();

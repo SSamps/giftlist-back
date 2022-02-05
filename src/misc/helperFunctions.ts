@@ -111,7 +111,7 @@ export const deleteGroupAndAnyChildGroups = async (group: TlistGroupAnyDocument)
 
 export const removeMemberFromGiftListsOrGiftGroupChildren = async (
     variants: typeof GIFT_LIST | typeof GIFT_GROUP_CHILD,
-    groupIds: string[] | Schema.Types.ObjectId[],
+    groupIds: (string | Schema.Types.ObjectId)[],
     userId: string | Schema.Types.ObjectId,
     displayName: string
 ) => {

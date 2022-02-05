@@ -1,4 +1,4 @@
-FROM node:current-alpine3.14
+FROM node:lts-alpine3.15
 WORKDIR /app
 RUN npm install -g nodemon
 COPY package*.json ./
