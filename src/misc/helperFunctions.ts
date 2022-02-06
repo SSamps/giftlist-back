@@ -433,7 +433,7 @@ export const addGroup = async (
                         personalizations.push(personalization.toJSON());
                     });
 
-                    const newListLink: string = `giftlist.sampsy.dev/list/${newListGroup._id}`;
+                    const newListLink: string = `https://giftlist.sampsy.dev/list/${newListGroup._id}`;
 
                     const msg = {
                         personalizations: personalizations,
