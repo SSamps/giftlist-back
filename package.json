@@ -13,9 +13,9 @@
         "dockerBuildImageDev": "docker build -t listapp-backend:latest --file docker/dev/Dockerfile .",
         "dockerBuildContainer": "docker run --name listapp-backend -d -p 5000:5000 -e PORT=5000 --env-file .env --network gift-list listapp-backend:latest",
         "dockerBuildImageProd": "docker build -t listapp-backend:latest --file docker/prod/Dockerfile .",
-        "dockerRemoveImageGcp": "docker image rm eu.gcr.io/gift-list-2021/listapp-backend --force",
-        "dockerBuildImageGcp": "docker build -t eu.gcr.io/gift-list-2021/listapp-backend --file docker/prod/Dockerfile .",
-        "dockerPushGcp": "docker push eu.gcr.io/gift-list-2021/listapp-backend",
+        "dockerRemoveImageGcp": "docker image rm europe-docker.pkg.dev/gift-list-2021/giftlist/giftlist-back --force",
+        "dockerBuildImageGcp": "docker build -t europe-docker.pkg.dev/gift-list-2021/giftlist/giftlist-back --file docker/prod/Dockerfile .",
+        "dockerPushGcp": "docker push europe-docker.pkg.dev/gift-list-2021/giftlist/giftlist-back",
         "exportDev": "npm run dockerRemoveContainer && npm run dockerRemoveImage && npm run dockerBuildImageDev && npm run dockerBuildContainer",
         "export": "npm run dockerRemoveContainer && npm run dockerRemoveImage && npm run dockerBuildImageProd && npm run dockerBuildContainer",
         "push": "npm run dockerRemoveImageGcp && npm run dockerBuildImageGcp && npm run dockerPushGcp"
