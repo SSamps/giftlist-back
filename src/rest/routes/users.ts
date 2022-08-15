@@ -333,6 +333,26 @@ router.put(
     }
 );
 
+// @route PUT api/users/
+// @desc Update a user's display name
+// @access Private
+router.get('/test', authMiddleware, async (req: Request, res: Response) => {
+    console.log('PUT api/users/test hit');
+    try {
+        const tokenUserId = req.user._id;
+
+        const responseBody = {
+            message: 'hi ' + req.user.displayName,
+            data: 'fsgsgfaghfshf',
+        };
+
+        return res.status(200).send(responseBody);
+    } catch (err) {
+        console.error('Error inside PUT api/users/test: ' + err.message);
+        return res.status(500).send('Server error: ' + err.message);
+    }
+});
+
 interface IpasswordResetToken {
     alg: string;
     typ: string;
