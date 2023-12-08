@@ -20,7 +20,7 @@ const listGroupChatSocketHandler = (io: Server<DefaultEventsMap, DefaultEventsMa
             socket.join(groupId);
             socket.broadcast.to(groupId).emit('giftListChat:message', `${user.displayName} has joined the chat`);
 
-            const foundMessages = await MessageBaseModel.find({ groupId: groupId });
+            const foundMessages = await MessageBaseModel.find({ groupId: groupId }).sort({ creationDate: 'asc' });
 
             socket.emit('giftListChat:joinRoom-success', foundMessages);
         });
