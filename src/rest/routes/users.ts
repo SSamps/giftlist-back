@@ -4,6 +4,8 @@ import { Schema } from 'mongoose';
 import { IUserCensoredProps, IUser, IUserProps, UserModel } from '../../models/User';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import * as postmark from 'postmark';
+
 import { unverifiedUserAuthMiddleware } from '../middleware/verificationAuth';
 import { ListGroupBaseModel } from '../../models/listGroups/ListGroupBaseModel';
 import { PERM_GROUP_OWNER } from '../../models/listGroups/listGroupPermissions';
@@ -50,18 +52,16 @@ async function sendVerificationEmail(newUserId: Schema.Types.ObjectId, email: st
     const verifyBaseLink = 'https://giftlist.sampsy.dev/verify/';
     const verifyLink = verifyBaseLink + token;
 
-    const msg = {
-        to: email,
-        from: {
-            name: 'GiftList',
-            email: 'welcome.giftlist@sampsy.dev',
-        },
-        templateId: 'd-965b63e57066478db17d0c6ae5f1203b',
-        dynamic_template_data: {
+    const msg: postmark.TemplatedMessage = {
+        From: 'notifications.giftlist@sampsy.dev',
+        To: email,
+        TemplateId: 34766021,
+        TemplateModel: {
             displayName: displayName,
             verifyLink: verifyLink,
         },
     };
+
     await sendEmail(msg);
     return;
 }
@@ -375,14 +375,11 @@ router.post(
             const passwordResetBaseLink = 'https://giftlist.sampsy.dev/resetpassword/';
             const passwordResetLink = passwordResetBaseLink + token;
 
-            const msg = {
-                to: foundUser.email,
-                from: {
-                    name: 'GiftList',
-                    email: 'recovery.giftlist@sampsy.dev',
-                },
-                templateId: 'd-077bcbf43c8148c7a119f24b9b231acc',
-                dynamic_template_data: {
+            const msg: postmark.TemplatedMessage = {
+                From: 'notifications.giftlist@sampsy.dev',
+                To: foundUser.email,
+                TemplateId: 34766934,
+                TemplateModel: {
                     displayName: foundUser.displayName,
                     passwordResetLink: passwordResetLink,
                 },

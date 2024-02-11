@@ -17,7 +17,7 @@ Back End:
 -   MongoDB + Mongoose for the primary database & schema
 -   Socket.io to enable real-time chat
 -   Redis Pub/Sub to allow real-time communication between users connected to different containers
--   Emails via Sendgrid
+-   Emails via Postmark
 -   JWT auth
 
 Front End:

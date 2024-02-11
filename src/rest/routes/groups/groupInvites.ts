@@ -3,6 +3,7 @@ import { authMiddleware } from '../../middleware/auth';
 import jwt from 'jsonwebtoken';
 import { check, Result, ValidationError, validationResult } from 'express-validator';
 import { ListGroupBaseModel } from '../../../models/listGroups/ListGroupBaseModel';
+import * as postmark from 'postmark';
 import {
     giftGroupChildMemberBasePerms,
     giftGroupMemberBasePerms,
@@ -94,14 +95,13 @@ router.post(
             const inviteBaseLink = 'https://giftlist.sampsy.dev/invite/';
             const inviteLink = inviteBaseLink + token;
 
-            const msg = {
-                to: req.body.invitedEmails,
-                from: {
-                    name: 'GiftList',
-                    email: 'invites.giftlist@sampsy.dev',
-                },
-                templateId: 'd-cc51518222ad4be5b77288e51c7b02a3',
-                dynamic_template_data: {
+            let emails: string = req.body.invitedEmails.join(', ');
+
+            const msg: postmark.TemplatedMessage = {
+                From: 'notifications.giftlist@sampsy.dev',
+                Bcc: emails,
+                TemplateId: 34767103,
+                TemplateModel: {
                     groupName: groupName,
                     senderName: senderName,
                     inviteLink: inviteLink,
