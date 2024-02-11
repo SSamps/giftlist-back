@@ -462,37 +462,4 @@ router.post(
     }
 );
 
-// @route POST api/users/resetpassword/:token
-// @desc Reset a password using a token from an email
-// @access Private
-router.get('/test', async (req: Request, res: Response) => {
-    process.env.POSTMARK_API_KEY;
-    console.log('POST test hit');
-    let client: postmark.ServerClient = new postmark.ServerClient(process.env.POSTMARK_API_KEY);
-    client
-        .sendEmailWithTemplate({
-            From: 'notifications.giftlist@sampsy.dev',
-            To: 'simon@sampsy.dev',
-            TemplateId: 34767103,
-            TemplateModel: {
-                senderName: 'Jack',
-                groupName: 'The Group',
-                inviteLink: 'https://www.google.com',
-            },
-            // TemplateModel: {
-            //     creatorDisplayName: 'Jack',
-            //     newListName: `Jack's List`,
-            //     parentGroupName: 'BigGroup',
-            //     newListLink: 'https://www.google.com',
-            // },
-        })
-        .then((response) => {
-            console.log('Sending message');
-            console.log(response.To);
-            console.log(response.Message);
-        });
-
-    return res.send(200);
-});
-
 module.exports = router;
