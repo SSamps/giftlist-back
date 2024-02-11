@@ -8,7 +8,7 @@ The back end requires an .env file in the root directory with the following valu
 | -------------------- | --------------------------------------------------------------------------------------------- |
 | MONGO_URI            | The connection details including credentials of the mongoDB                                   |
 | JWT_SECRET           | A secret password to be used by jsonwebtoken                                                  |
-| SENDGRID_API_KEY     | The connection details including credentials of the sendgrid API                              |
+| POSTMARK_API_KEY     | The connection details including credentials of the postmark API                              |
 | REDIS_HOST           | The hostname (URI) of the Redis DB used by the socket.io implementation                       |
 | REDIS_PORT           | The port of the Redis DB                                                                      |
 | REDIS_PASSWORD       | The password of the Redis DB                                                                  |

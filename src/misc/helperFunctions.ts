@@ -1,4 +1,5 @@
 import mongoose, { Schema } from 'mongoose';
+import * as postmark from 'postmark';
 import { GiftGroupChildModel } from '../models/listGroups/variants/discriminators/child/GiftGroupChildModel';
 import { ListGroupBaseModel } from '../models/listGroups/ListGroupBaseModel';
 import { GiftGroupModel } from '../models/listGroups/variants/discriminators/parent/GiftGroupModel';
@@ -60,21 +61,17 @@ import { MessageBaseModel } from '../models/messages/MessageBaseModel';
 import { SystemMessageModel } from '../models/messages/variants/discriminators/SystemMessageModel';
 import { TnewSystemMessageFields } from '../models/messages/messageInterfaces';
 import { ValidationError } from 'express-validator';
-import sendgrid from '@sendgrid/mail';
 import { IUserProps, UserModel } from '../models/User';
-import { Personalization } from '@sendgrid/helpers/classes';
-import type { MailDataRequired } from '@sendgrid/helpers/classes/mail';
-import type { PersonalizationData } from '@sendgrid/helpers/classes/personalization';
-
-sendgrid.setApiKey(process.env.SENDGRID_API_KEY);
 
 export interface IgroupDeletionResult {
     status: number;
     msg: string;
 }
 
-export const sendEmail = async (msg: MailDataRequired) => {
-    await sendgrid.send(msg);
+export const sendEmail = async (msg: postmark.TemplatedMessage) => {
+    let client: postmark.ServerClient = new postmark.ServerClient(process.env.POSTMARK_API_KEY);
+
+    await client.sendEmailWithTemplate(msg);
 };
 
 export const findAndDeleteGroupAndAnyChildGroupsIfAllowed = async (
@@ -419,30 +416,20 @@ export const addGroup = async (
 
                     let memberData: IUserProps[] = await UserModel.find({ _id: { $in: memberIds } }).lean();
 
-                    const membersToEmail: string[] = memberData
+                    const membersToEmail: string = memberData
                         .filter((member) => member._id.toString() != userId.toString())
                         .map((member) => {
                             return member.email;
-                        });
-
-                    let personalizations: PersonalizationData[] = [];
-
-                    membersToEmail.forEach((email) => {
-                        let personalization = new Personalization();
-                        personalization.setTo(email);
-                        personalizations.push(personalization.toJSON());
-                    });
+                        })
+                        .join(', ');
 
                     const newListLink: string = `https://giftlist.sampsy.dev/list/${newListGroup._id}`;
 
-                    const msg = {
-                        personalizations: personalizations,
-                        from: {
-                            name: 'GiftList',
-                            email: 'notifications.giftlist@sampsy.dev',
-                        },
-                        templateId: 'd-ae7c62f4baa148e8bcfffef1ece36a0a',
-                        dynamic_template_data: {
+                    const msg: postmark.TemplatedMessage = {
+                        From: 'notifications.giftlist@sampsy.dev',
+                        Bcc: membersToEmail,
+                        TemplateId: 34766524,
+                        TemplateModel: {
                             creatorDisplayName: userDisplayName,
                             newListName: groupName,
                             parentGroupName: foundParentGroup.groupName,
