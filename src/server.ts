@@ -19,6 +19,7 @@ const MONGO_URI = process.env.MONGO_URI;
 const REDIS_HOST = process.env.REDIS_HOST;
 const REDIS_PORT = process.env.REDIS_PORT ? parseInt(process.env.REDIS_PORT) : undefined;
 const REDIS_PASSWORD = process.env.REDIS_PASSWORD;
+const REDIS_KEY_PREFIX = process.env.REDIS_KEY_PREFIX ?? 'giftlist';
 
 // Connect to database
 connectDB(MONGO_URI);
@@ -46,7 +47,11 @@ const server = http.createServer(app);
 const io = new Server(server, { cors: { origin: '*', methods: '*' } });
 const pubClient = createClient({ host: REDIS_HOST, port: REDIS_PORT, password: REDIS_PASSWORD });
 const subClient = pubClient.duplicate();
-io.adapter(createAdapter(pubClient, subClient));
+pubClient.on('error', (err) => console.error('Redis pub client error:', err));
+subClient.on('error', (err) => console.error('Redis sub client error:', err));
+pubClient.on('ready', () => console.log('Redis pub client ready'));
+subClient.on('ready', () => console.log('Redis sub client ready'));
+io.adapter(createAdapter(pubClient, subClient, { key: REDIS_KEY_PREFIX }));
 listGroupChatSocketHandler(io);
 
 // Start app
